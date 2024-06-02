@@ -147,6 +147,13 @@
 (unless (package-installed-p 'lsp-ui)
   (package-install 'lsp-ui))
 
+(use-package lsp-pyright
+  :ensure t
+  :hook (python-mode . (lambda ()
+                         (require 'lsp-pyright)
+                         (lsp-deferred))))  ;; Or lsp if you don't want deferred loading
+(add-hook 'lsp-mode-hook 'company-mode)
+
 ; ;; Optional: Install lsp-markdown for enhanced Markdown support
 ; (unless (package-installed-p 'lsp-markdown)
 ;   (package-install 'lsp-markdown))
@@ -155,6 +162,17 @@
 (add-hook 'markdown-mode-hook #'lsp)
 (add-hook 'markdown-mode-hook #'lsp-ui-mode)
 
+
+
+
+; treesit：需要了解一下其原理和用法
+; treesit-auto：自动安装treesit
+(use-package treesit-auto
+  :ensure t
+  :demand t
+  :config
+  (setq treesit-auto-install 'prompt)
+  (global-treesit-auto-mode))
 
 (use-package treesit
   :when (and (fboundp 'treesit-available-p) (treesit-available-p))
@@ -211,6 +229,8 @@
 	  (toml       . ("https://github.com/tree-sitter/tree-sitter-toml"))
 	  (zig        . ("https://github.com/GrayJack/tree-sitter-zig")))))
 
+
+
 ;; Download Evil
 (unless (package-installed-p 'evil)
   (package-install 'evil))
@@ -225,8 +245,10 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   '("691d671429fa6c6d73098fc6ff05d4a14a323ea0a18787daeb93fde0e48ab18b" "014cb63097fc7dbda3edf53eb09802237961cbb4c9e9abd705f23b86511b0a69" "4ade6b630ba8cbab10703b27fd05bb43aaf8a3e5ba8c2dc1ea4a2de5f8d45882" default))
  '(package-selected-packages
-   '(company impatient-mode grip-mode markdown-preview-mode markdown-mode rainbow-delimiters zprint-mode doom-modeline which-key counsel ivy)))
+   '(doom-themes julia-ts-mode treesit-auto lsp-pyright company impatient-mode grip-mode markdown-preview-mode markdown-mode rainbow-delimiters zprint-mode doom-modeline which-key counsel ivy)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
