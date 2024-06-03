@@ -1,4 +1,8 @@
-
+;; 启用的扩展有：
+;; - ivy
+;; - counsel
+;; - swiper
+;; - which-key
 
 ;; 一些有用的扩展包
 ;; 搜索三剑客：ivy, counsel,swiper

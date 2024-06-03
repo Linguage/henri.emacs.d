@@ -1,4 +1,11 @@
-;;; init-LangServ.el --- configurations for Programmers
+;;; init-programming.el --- configurations for Programmers
+;; 启用的扩展有：
+;; - company-mode：自动补全
+;; - eglot：语言服务器协议支持
+;; - tree-sitter：语法高亮和导航
+;; - flycheck：语法检查
+;; - rainbow-delimiters：括号和花括号着色
+
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Core Services    ;;
@@ -30,17 +37,6 @@
 	    (lambda () (unless (member major-mode '(emacs-lisp-mode))
 			 (eglot-ensure)))))
 
-;; 启用 eglot
-(require 'eglot)
-
-;; 自动启动 eglot
-(add-hook 'c-mode-hook 'eglot-ensure)
-(add-hook 'c++-mode-hook 'eglot-ensure)
-(add-hook 'python-mode-hook 'eglot-ensure)
-(add-hook 'fortran-mode-hook 'eglot-ensure)
-(add-hook 'julia-mode-hook 'eglot-ensure)
-(add-hook 'haskell-mode-hook 'eglot-ensure)
-(add-hook 'rust-mode-hook 'eglot-ensure)
 
 
 ;; =============================================================================
@@ -123,13 +119,49 @@
 (add-hook 'after-init-hook #'global-flycheck-mode)
 ;; Rainbow delimiters for colorizing parentheses and braces
 
+;; =============================================================================
+;; 编程语言配置
 
+; ;; 启用 eglot
+; (require 'eglot)
+
+; ;; 自动启动 eglot
+; (add-hook 'c-mode-hook 'eglot-ensure)
+; (add-hook 'c++-mode-hook 'eglot-ensure)
+; (add-hook 'python-mode-hook 'eglot-ensure)
+; (add-hook 'fortran-mode-hook 'eglot-ensure)
+; (add-hook 'julia-mode-hook 'eglot-ensure)
+; (add-hook 'haskell-mode-hook 'eglot-ensure)
+; (add-hook 'rust-mode-hook 'eglot-ensure)
+
+
+;;;;;;;;;;;;;;;;;;;;;;;
+;; C/C++ programming ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+
+(require 'eglot)
+(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+(add-hook 'c-mode-hook #'eglot-ensure)
+(add-hook 'c++-mode-hook #'eglot-ensure)
+
+(use-package quickrun
+  :ensure t
+  :commands (quickrun)
+  :init
+  (quickrun-add-command "c++/c1z"
+    '((:command . "g++")
+      (:exec . ("%c -std=c++1z %o -o %e %s"
+                "%e %a"))
+      (:remove . ("%e")))
+    :default "c++"))
+
+(global-set-key (kbd "<f5>") 'quickrun)
 
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;; Rust Programming ;;
 ;;;;;;;;;;;;;;;;;;;;;;
-(use-package rust-mode :ensure t)
+; (use-package rust-mode :ensure t)
 
 
 ;; Julia programming language support
@@ -142,7 +174,7 @@
 ; (add-to-list 'auto-mode-alist '("\\.jl\\'" . (lambda ()
 ;                                                (ensure-julia-mode-installed)
 ;                                                (julia-mode))))
-(use-package julia-mode :ensure t)
+; (use-package julia-mode :ensure t)
 
 (provide 'init-programming)
 

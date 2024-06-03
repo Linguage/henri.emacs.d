@@ -1,3 +1,11 @@
+;; 启用的扩展有：
+;; - markdown-mode
+;; - markdown-preview-mode
+;; - grip-mode
+;; 待添加：
+;; org-mode
+;; AucTex
+
 ;;-------------------------
 ;; 配置markdown语法支持
 ;;-------------------------
