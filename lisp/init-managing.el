@@ -24,4 +24,12 @@
   (which-key-mode))
 
 
+;; NeoTree的相关设置
+(use-package neotree
+  :ensure t
+  :defer t
+  :config
+  ; (setq neo-theme (if (display-graphic-p) 'nerd 'arrow)); 设置 NeoTree 主题为 icons 或 arrow
+  ) 
+(global-set-key (kbd "<f8>") 'neotree)
 (provide 'init-managing)

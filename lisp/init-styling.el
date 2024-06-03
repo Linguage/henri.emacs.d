@@ -3,6 +3,11 @@
 ;; 初始配置 ;;
 ;; ============
 ;; 设置Emacs的外观
+(set-frame-size (selected-frame) 160 45) ; 设置窗口大小为120列宽，40行高
+;; 打开时的emacs窗口位于屏幕正中间
+(add-to-list 'default-frame-alist '(top . 0.5))
+(add-to-list 'default-frame-alist '(left . 0.5))
+;; 设置主题
 (load-theme 'modus-operandi t) ; 使用Modus Operandi主题，这是一个现代化且舒适的主题
 (menu-bar-mode -1) ; 关闭菜单栏
 (tool-bar-mode -1) ; 关闭工具栏

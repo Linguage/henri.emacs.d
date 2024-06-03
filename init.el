@@ -1,3 +1,4 @@
+;;;
 ;; ============
 ;; 扩展包管理 ;;
 ;; ============
@@ -37,6 +38,26 @@
   (package-install 'evil))
 (require 'evil)
 (evil-mode 1)
+
+;; Set zsh as the default shell
+(setq shell-file-name "/bin/zsh")  ;; 确保这是 zsh 的实际路径
+(setq explicit-shell-file-name shell-file-name)
+(add-to-list 'exec-path "/bin")  ;; 更新 exec-path，如果 zsh 不在默认路径中
+(setenv "SHELL" shell-file-name)
+
+
+(use-package exec-path-from-shell
+  :ensure t
+  :config
+  ;; Initialize environment variables from the shell
+  (exec-path-from-shell-initialize)
+  ;; Copy PATH and other necessary environment variables
+  (exec-path-from-shell-copy-env "PATH")
+  (exec-path-from-shell-copy-env "ZSH")
+  (exec-path-from-shell-copy-env "CONDA_PREFIX")
+  (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV")
+  (exec-path-from-shell-copy-env "SHELL"))
+
 
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (when (file-exists-p custom-file)

@@ -51,6 +51,9 @@
   (setq treesit-auto-install 'prompt)
   (global-treesit-auto-mode))
 
+;; 配置treesit
+;; 这里的配置是根据官方文档进行的，并没有使用任何插件，仅仅是配置了treesit的语法高亮和导航。
+;; 具体的语法高亮和导航功能需要使用插件来实现。
 (use-package treesit
   :when (and (fboundp 'treesit-available-p) (treesit-available-p))
   :mode (("\\(?:Dockerfile\\(?:\\..*\\)?\\|\\.[Dd]ockerfile\\)\\'" . dockerfile-ts-mode)
@@ -61,7 +64,7 @@
 	 ("\\.y[a]?ml\\'" . yaml-ts-mode))
   :config (setq treesit-font-lock-level 4)
   :init
-  (setq major-mode-remap-alist
+  (setq major-mode-remap-alist 
 	'((sh-mode         . bash-ts-mode)
 	  (c-mode          . c-ts-mode)
 	  (c++-mode        . c++-ts-mode)
@@ -135,46 +138,113 @@
 ; (add-hook 'rust-mode-hook 'eglot-ensure)
 
 
+(require 'eglot)
+;; C/C++
+(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+;; Python
+(add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
+;; Fortran
+(add-to-list 'eglot-server-programs '(fortran-mode . ("fortls")))
+
+(add-hook 'c-mode-hook #'eglot-ensure)
+(add-hook 'c++-mode-hook #'eglot-ensure)
+(add-hook 'python-mode-hook 'eglot-ensure)
+(add-hook 'fortran-mode-hook 'eglot-ensure)
+
 ;;;;;;;;;;;;;;;;;;;;;;;
 ;; C/C++ programming ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
-(require 'eglot)
-(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
-(add-hook 'c-mode-hook #'eglot-ensure)
-(add-hook 'c++-mode-hook #'eglot-ensure)
+(use-package c-mode
+  :ensure nil ; c-mode is built-in
+  :hook ((c-mode . eglot-ensure)
+         (c-mode . company-mode))
+  :mode (("\\.c\\'" . c-ts-mode)))
+
+(use-package c++-mode
+  :ensure nil ; c++-mode is built-in
+  :hook ((c++-mode . eglot-ensure)
+         (c++-mode . company-mode))
+  :mode (("\\.cpp\\'" . c++-ts-mode)
+         ("\\.hpp\\'" . c++-ts-mode)
+         ("\\.h\\'" . c++-ts-mode)))
+
+(use-package fortran-mode
+  :ensure nil ; fortran-mode is built-in
+  :hook ((fortran-mode . eglot-ensure)
+         (fortran-mode . company-mode))
+  :mode (("\\.f\\'" . fortran-ts-mode)
+         ("\\.f90\\'" . fortran-ts-mode)
+         ("\\.f95\\'" . fortran-ts-mode)))
+
+(use-package julia-mode
+  :ensure t
+  :hook ((julia-mode . eglot-ensure)
+         (julia-mode . company-mode))
+  :mode (("\\.jl\\'" . julia-ts-mode)))
+
 
 (use-package quickrun
   :ensure t
   :commands (quickrun)
   :init
+;; 设置默认使用 zsh 作为 shell
+  (setq quickrun-shell "/bin/zsh")
+  ;; C++ 配置
   (quickrun-add-command "c++/c1z"
     '((:command . "g++")
       (:exec . ("%c -std=c++1z %o -o %e %s"
                 "%e %a"))
       (:remove . ("%e")))
-    :default "c++"))
+    :default "c++")
+	  ;; C 配置
+  (quickrun-add-command "c/gcc"
+    '((:command . "gcc")
+      (:exec . ("%c %o -o %e %s"
+                "%e %a"))
+      (:remove . ("%e")))
+    :default "c")
+  ;; Fortran 配置
+  (quickrun-add-command "fortran"
+    '((:command . "gfortran")
+      (:exec . ("%c %o -o %e %s"
+                "%e %a"))
+      (:remove . ("%e")))
+    :default "fortran")
+)
 
 (global-set-key (kbd "<f5>") 'quickrun)
 
 
-;;;;;;;;;;;;;;;;;;;;;;
-;; Rust Programming ;;
-;;;;;;;;;;;;;;;;;;;;;;
-; (use-package rust-mode :ensure t)
 
 
-;; Julia programming language support
-;; 为.jl文件启用julia-mode(只有打开.jl文件才会启用julia-mode)
-; (defun ensure-julia-mode-installed ()
-;   "Ensure that `julia-mode` is installed. If not, install it."
-;   (unless (package-installed-p 'julia-mode)
-;     (package-refresh-contents)
-;     (package-install 'julia-mode)))
-; (add-to-list 'auto-mode-alist '("\\.jl\\'" . (lambda ()
-;                                                (ensure-julia-mode-installed)
-;                                                (julia-mode))))
-; (use-package julia-mode :ensure t)
+
+(use-package conda
+  :ensure t
+  :init
+  ;; 设置 Conda 的基础路径，替换为您的 Conda 安装路径
+  (setq conda-anaconda-home (expand-file-name "~/miniconda3"))
+  (setq conda-env-home-directory (expand-file-name "~/miniconda3"))
+  ;; 初始化 conda
+  (conda-env-initialize-interactive-shells)
+  (conda-env-initialize-eshell)
+  (conda-env-autoactivate-mode t))
+
+(use-package python
+  :ensure t
+;   :bind (:map python-ts-mode-map
+;               ("<f7>" . recompile)
+;               ("<f6>" . eglot-format))
+  :hook ((python-ts-mode . eglot-ensure)
+         (python-ts-mode . company-mode))
+  :mode (("\\.py\\'" . python-ts-mode)))
+
+; (use-package highlight-indent-guides
+;   :ensure t
+;   :hook (python-ts-mode . highlight-indent-guides-mode)
+;   :config
+;   (set-face-foreground 'highlight-indent-guides-character-face "white")
+;   (setq highlight-indent-guides-method 'character))
 
 (provide 'init-programming)
 
