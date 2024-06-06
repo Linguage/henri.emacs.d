@@ -33,6 +33,12 @@
 (load-file (expand-file-name "lisp/init-writing.el" user-emacs-directory))
 
 ;; 键位配置
+;; which-key
+(use-package which-key
+  :ensure t
+  :config
+  (which-key-mode))
+
 ;; Evil-mode
 (unless (package-installed-p 'evil)
   (package-install 'evil))
@@ -58,6 +64,28 @@
   (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV")
   (exec-path-from-shell-copy-env "SHELL"))
 
+
+;; 配置 eshell
+(defun open-eshell-and-split-windows ()
+  "Open eshell and split windows for optimal layout."
+  (interactive)
+  (split-window-right)                ;; 在右侧分割窗口
+  (other-window 1)                    ;; 切换到右侧窗口
+  (split-window-below)                ;; 在右侧窗口分割出下方窗口
+  (eshell)                            ;; 打开 eshell
+  (other-window 1)                    ;; 切换到上方窗口
+  (quickrun))                         ;; 打开 quickrun
+
+;; 设置初始布局
+(defun my-setup-windows ()
+  "Setup my custom window layout."
+  (interactive)
+  (delete-other-windows)              ;; 关闭其他窗口
+  ; (neotree-show)                      ;; 打开 neotree
+  (open-eshell-and-split-windows))    ;; 打开 eshell 和 quickrun
+
+;; 在 Emacs 启动时设置窗口布局
+(add-hook 'emacs-startup-hook 'my-setup-windows)
 
 (setq custom-file (locate-user-emacs-file "custom.el"))
 (when (file-exists-p custom-file)

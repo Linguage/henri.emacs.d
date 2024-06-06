@@ -42,7 +42,9 @@
 
 
 ;; 加载主题
-(load-theme 'modus-operandi t)
+; (load-theme 'modus-operandi t)
+(load-theme 'doom-one-light t)
+; (load-theme 'doom-homage-white t)
 
 ;; 启用模型线
 (use-package rainbow-delimiters
@@ -60,10 +62,19 @@
 
 ;; 设置字体
 ; (set-frame-font "Cascadia Code NF-14" nil t)
-(when (member "Cascadia Code NF" (font-family-list))
-  (set-face-attribute 'default nil :family "Cascadia Code NF" :height 140))
-(when (member "STKaiTi" (font-family-list))
-  (dolist (charset '(han kana symbol cjk-misc bopomofo))
-    (set-fontset-font (frame-parameter nil 'font) charset "STKaiTi" nil 'prepend)))
+; (when (member "Cascadia Code NF" (font-family-list))
+;   (set-face-attribute 'default nil :family "Cascadia Code NF" :height 140))
+; (when (member "STKaiTi" (font-family-list))
+;   (dolist (charset '(han kana symbol cjk-misc bopomofo))
+;     (set-fontset-font (frame-parameter nil 'font) charset "STKaiTi" nil 'prepend)))
+
+
+
+
+
+;; 使用JetBrains Mono字体，字号设为14
+(set-frame-font "JetBrains Mono-14" nil t)
+(when (member "JetBrains Mono" (font-family-list))
+  (set-face-attribute 'default nil :family "JetBrains Mono" :height 140))
 
 (provide 'init-styling)

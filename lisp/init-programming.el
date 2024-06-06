@@ -215,29 +215,76 @@
 
 (global-set-key (kbd "<f5>") 'quickrun)
 
+;;;;;;;;;;;;;;;;;;;;;;;;
+;; Python programming ;;
+;;;;;;;;;;;;;;;;;;;;;;;;
 
+(use-package elpy
+  :ensure t
+  :init
+  (elpy-enable))
 
+(use-package pyvenv
+  :ensure t
+  :config
+  (setenv "WORKON_HOME" "~/.conda/envs")
+  (pyvenv-mode 1))
 
+(use-package company
+  :ensure t
+  :config
+  (add-hook 'after-init-hook 'global-company-mode))
+
+(use-package company-jedi
+  :ensure t
+  :config
+  (add-to-list 'company-backends 'company-jedi))
 
 (use-package conda
   :ensure t
   :init
-  ;; 设置 Conda 的基础路径，替换为您的 Conda 安装路径
-  (setq conda-anaconda-home (expand-file-name "~/miniconda3"))
-  (setq conda-env-home-directory (expand-file-name "~/miniconda3"))
-  ;; 初始化 conda
+  (setq conda-anaconda-home (expand-file-name "~/miniconda3/"))
+  (setq conda-env-home-directory (expand-file-name "~/miniconda3/"))
+  :config
   (conda-env-initialize-interactive-shells)
   (conda-env-initialize-eshell)
   (conda-env-autoactivate-mode t))
 
-(use-package python
+(defun my/python-mode-hook ()
+  (conda-env-activate "base")) ; 默认激活的conda环境
+
+(add-hook 'python-mode-hook 'my/python-mode-hook)
+
+(defun my/python-mode-setup ()
+  (add-to-list 'company-backends 'company-jedi))
+
+(add-hook 'python-mode-hook 'my/python-mode-setup)
+
+(add-hook 'python-mode-hook 'font-lock-mode)
+
+(use-package imenu
   :ensure t
-;   :bind (:map python-ts-mode-map
-;               ("<f7>" . recompile)
-;               ("<f6>" . eglot-format))
-  :hook ((python-ts-mode . eglot-ensure)
-         (python-ts-mode . company-mode))
-  :mode (("\\.py\\'" . python-ts-mode)))
+  :config
+  (setq imenu-auto-rescan t))
+
+(use-package imenu-list
+  :ensure t
+  :bind (("C-' C-'" . imenu-list-smart-toggle))
+  :config
+  (setq imenu-list-focus-after-activation t)
+  (setq imenu-list-auto-resize t))
+
+(use-package realgud
+  :ensure t
+  :config
+  (require 'realgud))
+
+
+(global-set-key (kbd "<f6>") 'realgud:pdb)
+(global-set-key (kbd "<f9>") 'realgud:cmd-break)
+(global-set-key (kbd "<f10>") 'realgud:cmd-step-over)
+(global-set-key (kbd "<f11>") 'realgud:cmd-step)
+(global-set-key (kbd "<f12>") 'realgud:cmd-next)
 
 ; (use-package highlight-indent-guides
 ;   :ensure t
@@ -245,6 +292,14 @@
 ;   :config
 ;   (set-face-foreground 'highlight-indent-guides-character-face "white")
 ;   (setq highlight-indent-guides-method 'character))
+
+(use-package leetcode
+  :ensure t
+  :config
+  (setq leetcode-prefer-language "python") ;; 选择你喜欢的语言，例如： "python", "cpp", "java", etc.
+  (setq leetcode-save-solutions t)         ;; 保存解决方案到文件
+  (setq leetcode-directory "~/leetcode/")  ;; 保存解决方案的目录
+  (setq leetcode-coding-preference 'contest)) ;; 可以选择 'contest 或 'study，取决于你的用途
 
 (provide 'init-programming)
 

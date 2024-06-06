@@ -18,11 +18,6 @@
   :ensure t
   :bind (("C-s" . swiper)))
 
-(use-package which-key
-  :ensure t
-  :config
-  (which-key-mode))
-
 
 ;; NeoTree的相关设置
 (use-package neotree
