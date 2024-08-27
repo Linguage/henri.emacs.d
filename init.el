@@ -40,10 +40,10 @@
   (which-key-mode))
 
 ;; Evil-mode
-(unless (package-installed-p 'evil)
-  (package-install 'evil))
-(require 'evil)
-(evil-mode 1)
+; (unless (package-installed-p 'evil)
+;   (package-install 'evil))
+; (require 'evil)
+; (evil-mode 1)
 
 ;; Set zsh as the default shell
 (setq shell-file-name "/bin/zsh")  ;; 确保这是 zsh 的实际路径
@@ -71,10 +71,11 @@
   (interactive)
   (split-window-right)                ;; 在右侧分割窗口
   (other-window 1)                    ;; 切换到右侧窗口
-  (split-window-below)                ;; 在右侧窗口分割出下方窗口
+;;  (split-window-below)                ;; 在右侧窗口分割出下方窗口
   (eshell)                            ;; 打开 eshell
-  (other-window 1)                    ;; 切换到上方窗口
-  (quickrun))                         ;; 打开 quickrun
+;;  (other-window 1)                    ;; 切换到上方窗口
+ ;; (quickrun)
+ )                         ;; 打开 quickrun
 
 ;; 设置初始布局
 (defun my-setup-windows ()
