@@ -77,6 +77,8 @@
  ;; (quickrun)
  )                         ;; 打开 quickrun
 
+(global-visual-line-mode 1)
+
 ;; 设置初始布局
 (defun my-setup-windows ()
   "Setup my custom window layout."

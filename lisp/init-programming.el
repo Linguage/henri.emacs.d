@@ -152,6 +152,20 @@
 (add-hook 'fortran-mode-hook 'eglot-ensure)
 
 ;;;;;;;;;;;;;;;;;;;;;;;
+;; Lisp programming ;;
+;;;;;;;;;;;;;;;;;;;;;;;
+;; MELPA repository
+; (setq inferior-lisp-program "sbcl")
+
+;; Load SLIME when starting Emacs
+(setq inferior-lisp-program "/opt/homebrew/bin/sbcl")  ;; 根据 SBCL 的安装路径设置
+; (add-to-list 'load-path "/path/to/slime/")  ;; SLIME 的安装路径
+(use-package slime
+  :ensure t
+)
+(slime-setup)
+
+;;;;;;;;;;;;;;;;;;;;;;;
 ;; C/C++ programming ;;
 ;;;;;;;;;;;;;;;;;;;;;;;
 
