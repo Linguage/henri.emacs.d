@@ -1,7 +1,7 @@
 ;;; init-styling.el --- Emacs 界面外观定制 -*- lexical-binding: t -*-
 
-;; Author: Your Name
-;; Maintainer: Your Name
+;; Author: Henri
+;; Maintainer: Henri
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: faces, frames, themes

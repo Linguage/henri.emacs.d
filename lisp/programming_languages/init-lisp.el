@@ -1,4 +1,12 @@
-;; =============================================================================
+;;; init_lisp.el --- Common lisp  开发环境配置 -*- lexical-binding: t -*-
+
+;; Author: Henri
+;; Maintainer: Henri
+;; Version: 1.0
+;; Package-Requires: ((emacs "29.1"))
+;; Keywords: languages, lisp, development
+
+;; ============================================================================
 ;; Lisp 开发环境配置
 ;; SLIME：Superior Lisp Interaction Mode for Emacs
 (use-package slime

@@ -1,7 +1,7 @@
 ;;; init.el --- Emacs 配置入口文件 -*- lexical-binding: t -*-
 
-;; Author: Your Name
-;; Maintainer: Your Name
+;; Author: Henri
+;; Maintainer: Henri
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: convenience

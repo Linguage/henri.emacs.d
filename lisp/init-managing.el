@@ -1,7 +1,7 @@
 ;;; init-managing.el --- Emacs 基础管理功能配置 -*- lexical-binding: t -*-
 
-;; Author: Your Name
-;; Maintainer: Your Name
+;; Author: Henri
+;; Maintainer: Henri
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Keywords: convenience

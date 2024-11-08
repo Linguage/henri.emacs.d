@@ -1,7 +1,7 @@
 ;;; init-programming.el --- 编程开发环境配置 -*- lexical-binding: t -*-
 
-;; Author: Your Name
-;; Maintainer: Your Name
+;; Author: Henri
+;; Maintainer: Henri
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "29.1"))
 ;; Homepage: your-homepage
