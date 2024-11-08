@@ -77,7 +77,9 @@
   (setq neo-autorefresh t) ; 自动刷新
   (setq neo-window-fixed-size nil) ; 窗口大小可调整
   (add-hook 'neo-after-create-hook
-            (lambda (&rest _) (display-line-numbers-mode -1))) ; 关闭行号显示
+            (lambda (&rest _)
+              (display-line-numbers-mode -1) ; 关闭行号显示
+              (setq truncate-lines t))) ; 禁止自动换行
   (defun henri/neotree-project-dir ()
     "打开项目根目录中的 NeoTree。"
     (interactive)

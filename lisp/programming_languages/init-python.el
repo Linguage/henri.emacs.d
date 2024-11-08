@@ -48,6 +48,16 @@
   (setenv "WORKON_HOME" "~/.conda/envs")
   (pyvenv-mode 1))
 
+; ;; tree-siter
+;     (use-package tree-sitter
+;     :ensure t
+;     :hook (python-mode . tree-sitter-mode)
+;           (python-mode . tree-sitter-hl-mode))
+  
+;   (use-package tree-sitter-langs
+;     :ensure t
+;     :after tree-sitter)
+
 ;; =============================================================================
 ;; IDE 功能配置
 

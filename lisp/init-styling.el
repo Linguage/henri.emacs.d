@@ -34,7 +34,7 @@
 ;; 基础界面设置
 
 ;; 窗口布局配置
-(set-frame-size (selected-frame) 160 45)   ; 设置窗口大小
+(set-frame-size (selected-frame) 130 40)   ; 设置窗口大小
 (add-to-list 'default-frame-alist '(top . 0.5))    ; 窗口垂直居中
 (add-to-list 'default-frame-alist '(left . 0.5))   ; 窗口水平居中
 (add-to-list 'default-frame-alist '(alpha . (95 . 95))) ; 设置透明度
@@ -71,7 +71,9 @@
 (use-package doom-themes
   :ensure t
   :config
-  (load-theme 'doom-one-light t))
+  ; (load-theme 'doom-one-light t))
+    (load-theme 'doom-dracula t))  ;; 更换主题为 doom-dracula
+
 
 ;; 彩虹括号
 (use-package rainbow-delimiters
@@ -81,10 +83,21 @@
 ;; 状态栏美化
 (use-package doom-modeline
   :ensure t
-  :init (doom-modeline-mode 1))
+  :init
+  (doom-modeline-mode 1))
+
 
 ;; =============================================================================
 ;; 字体配置
+;; windows系统需要安装NerdFontsSymbolsOnly字体，否则会出现图标显示异常
+
+
+(use-package all-the-icons
+  :ensure t)
+
+(require 'all-the-icons)
+
+
 (defun henri/get-os-type ()
   "获取当前操作系统类型。"
   (cond
@@ -112,7 +125,7 @@
      ;; Windows 字体设置
      ((eq os-type 'windows)
       (set-face-attribute 'default nil
-                         :family "Cascadia Code"
+                         :family "Fira Code"
                          :height 120)
       (dolist (charset '(kana han symbol cjk-misc bopomofo))
         (set-fontset-font t charset
