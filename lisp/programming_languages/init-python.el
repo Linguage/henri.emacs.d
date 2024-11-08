@@ -76,15 +76,15 @@
 ;; =============================================================================
 ;; Jupyter 支持
 
-(use-package ein
-  :ensure t
-  :config
-  (setq ein:output-area-inlined-images t))  ; 支持显示内嵌图片
+; (use-package ein
+;   :ensure t
+;   :config
+;   (setq ein:output-area-inlined-images t))  ; 支持显示内嵌图片
 
-(use-package jupyter
-  :ensure t
-  :config
-  (setq jupyter-repl-echo-eval-p t))        ; 显示执行的代码
+; (use-package jupyter
+;   :ensure t
+;   :config
+;   (setq jupyter-repl-echo-eval-p t))        ; 显示执行的代码
 
 ;; =============================================================================
 ;; 调试配置
