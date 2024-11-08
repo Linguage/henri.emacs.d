@@ -85,13 +85,60 @@
 
 ;; =============================================================================
 ;; 字体配置
+(defun henri/get-os-type ()
+  "获取当前操作系统类型。"
+  (cond
+   ((eq system-type 'darwin) 'macos)
+   ((eq system-type 'gnu/linux)
+    (if (string-match "Microsoft" (shell-command-to-string "uname -r"))
+        'wsl
+      'linux))
+   ((eq system-type 'windows-nt) 'windows)
+   (t 'unknown)))
 
-;; 设置等宽编程字体
-(set-frame-font "JetBrains Mono-14" nil t)
-(when (member "JetBrains Mono" (font-family-list))
-  (set-face-attribute 'default nil 
-                      :family "JetBrains Mono" 
-                      :height 140))
+(defun henri/set-font ()
+  "根据操作系统设置字体。"
+  (let ((os-type (henri/get-os-type)))
+    (cond
+     ;; macOS 字体设置
+     ((eq os-type 'macos)
+      (set-face-attribute 'default nil 
+                         :family "JetBrains Mono"
+                         :height 140)
+      (dolist (charset '(kana han symbol cjk-misc bopomofo))
+        (set-fontset-font t charset
+                         (font-spec :family "PingFang SC"))))
+     
+     ;; Windows 字体设置
+     ((eq os-type 'windows)
+      (set-face-attribute 'default nil
+                         :family "Cascadia Code"
+                         :height 120)
+      (dolist (charset '(kana han symbol cjk-misc bopomofo))
+        (set-fontset-font t charset
+                         (font-spec :family "Microsoft YaHei"))))
+     
+     ;; WSL 字体设置
+     ((eq os-type 'wsl)
+      (set-face-attribute 'default nil
+                         :family "Cascadia Code"
+                         :height 120)
+      (dolist (charset '(kana han symbol cjk-misc bopomofo))
+        (set-fontset-font t charset
+                         (font-spec :family "Microsoft YaHei"))))
+     
+     ;; Linux 字体设置
+     ((eq os-type 'linux)
+      (set-face-attribute 'default nil
+                         :family "Source Code Pro"
+                         :height 120)
+      (dolist (charset '(kana han symbol cjk-misc bopomofo))
+        (set-fontset-font t charset
+                         (font-spec :family "Noto Sans CJK SC")))))))
+
+;; 应用字体设置
+(when window-system
+  (henri/set-font))
 
 (provide 'init-styling)
 

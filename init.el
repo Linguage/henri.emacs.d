@@ -21,16 +21,47 @@
 ;;    - init-programming -- 编程开发环境
 ;;    - init-writing   -- 写作环境配置
 
-;; 3. 功能增强
-;;    - which-key      -- 快捷键提示
-;;    - exec-path-from-shell -- 环境变量同步
-;;    - eshell        -- Shell 环境配置
-
-;; 4. 布局管理
-;;    - 窗口分割      -- 自定义窗口布局
-;;    - 启动布局      -- 自动设置初始布局
-
 ;;; Code:
+;;; init.el --- Emacs 配置入口文件 -*- lexical-binding: t -*-
+
+;; =============================================================================
+;; 启动性能优化
+
+;; 禁用文件名处理程序
+(defvar default-file-name-handler-alist file-name-handler-alist)
+(setq file-name-handler-alist nil)
+
+;; 启动时间统计
+(defvar henri/startup-time-init (current-time))
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (message "Emacs 启动耗时 %.2f 秒，共进行 %d 次 GC"
+                     (float-time (time-subtract (current-time) henri/startup-time-init))
+                     gcs-done)))
+
+;; =============================================================================
+;; 快速启动模式
+
+; (defvar henri/file-name-handler-alist file-name-handler-alist)
+; (defvar henri/normal-gc-cons-threshold (* 16 1024 1024))
+; (defvar henri/init-gc-cons-threshold (* 128 1024 1024))
+
+; ;; 临时提高 GC 阈值
+; (setq gc-cons-threshold henri/init-gc-cons-threshold
+;       gc-cons-percentage 0.6
+;       file-name-handler-alist nil)
+
+; ;; 首次空闲时恢复正常设置
+; (add-hook 'emacs-startup-hook
+;           (lambda ()
+;             (run-with-idle-timer
+;              1 nil
+;              (lambda ()
+;                (setq gc-cons-threshold henri/normal-gc-cons-threshold
+;                      gc-cons-percentage 0.1
+;                      file-name-handler-alist henri/file-name-handler-alist)
+;                (garbage-collect)))))
+
 
 ;; =============================================================================
 ;; 包管理配置
@@ -60,57 +91,12 @@
 (load-file (expand-file-name "lisp/init-programming.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/init-writing.el" user-emacs-directory))
 
+
 ;; =============================================================================
 ;; 功能增强配置
 
-;; 快捷键提示
-(use-package which-key
-  :ensure t
-  :config
-  (which-key-mode))
 
-;; Shell 环境配置
-(setq shell-file-name "/bin/zsh")
-(setq explicit-shell-file-name shell-file-name)
-(add-to-list 'exec-path "/bin")
-(setenv "SHELL" shell-file-name)
 
-;; 环境变量同步
-(use-package exec-path-from-shell
-  :ensure t
-  :config
-  (exec-path-from-shell-initialize)
-  (exec-path-from-shell-copy-env "PATH")
-  (exec-path-from-shell-copy-env "ZSH")
-  (exec-path-from-shell-copy-env "CONDA_PREFIX")
-  (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV")
-  (exec-path-from-shell-copy-env "SHELL"))
-
-;; =============================================================================
-;; 窗口布局配置
-
-;; 自定义 eshell 窗口布局函数
-(defun open-eshell-and-split-windows ()
-  "打开 eshell 并优化窗口布局。
-在右侧分割出一个新窗口并打开 eshell。"
-  (interactive)
-  (split-window-right)
-  (other-window 1)
-  (eshell))
-
-;; 启用全局自动换行
-(global-visual-line-mode 1)
-
-;; 设置初始窗口布局
-(defun my-setup-windows ()
-  "设置自定义的窗口布局。
-清除其他窗口并设置 eshell 布局。"
-  (interactive)
-  (delete-other-windows)
-  (open-eshell-and-split-windows))
-
-;; 在 Emacs 启动时应用窗口布局
-(add-hook 'emacs-startup-hook 'my-setup-windows)
 
 ;; =============================================================================
 ;; 性能优化配置
