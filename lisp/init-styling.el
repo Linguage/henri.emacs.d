@@ -134,7 +134,7 @@
      ;; WSL 字体设置
      ((eq os-type 'wsl)
       (set-face-attribute 'default nil
-                         :family "Cascadia Code"
+                         :family "Cascadia Code PL"
                          :height 120)
       (dolist (charset '(kana han symbol cjk-misc bopomofo))
         (set-fontset-font t charset
@@ -143,7 +143,7 @@
      ;; Linux 字体设置
      ((eq os-type 'linux)
       (set-face-attribute 'default nil
-                         :family "Source Code Pro"
+                         :family "Cascadia Code PL"
                          :height 120)
       (dolist (charset '(kana han symbol cjk-misc bopomofo))
         (set-fontset-font t charset
