@@ -1,286 +1,233 @@
-;;; init-programming.el --- configurations for Programmers
-;; 启用的扩展有：
-;; - company-mode：自动补全
-;; - eglot：语言服务器协议支持
-;; - tree-sitter：语法高亮和导航
-;; - flycheck：语法检查
-;; - rainbow-delimiters：括号和花括号着色
+;;; init-programming.el --- 编程开发环境配置 -*- lexical-binding: t -*-
+
+;; Author: Your Name
+;; Maintainer: Your Name
+;; Version: 1.0
+;; Package-Requires: ((emacs "29.1"))
+;; Homepage: your-homepage
+;; Keywords: programming, development, tools
+
+;;; Commentary:
+
+;; 本配置文件提供完整的编程开发环境支持，包含以下主要模块：
+
+;; 1. 核心编程功能
+;;    - company-mode    -- 智能代码补全框架
+;;    - eglot          -- 轻量级 LSP 客户端
+;;    - tree-sitter    -- 增强的语法分析和高亮
+;;    - flycheck       -- 实时语法检查
+
+;; 2. 编程语言支持
+;;    - Lisp (SLIME)   -- Common Lisp 开发环境
+;;    - C/C++          -- 支持 tree-sitter 模式
+;;    - Fortran        -- 现代 Fortran 支持
+;;    - Julia          -- 科学计算语言支持
+;;    - Python         -- Python 开发环境
+
+;; 3. 开发工具
+;;    - imenu          -- 代码导航和大纲
+;;    - imenu-list     -- 代码结构侧边栏
+;;    - realgud        -- 统一调试器界面
+;;    - quickrun       -- 快速运行代码
+;;    - leetcode       -- LeetCode 刷题工具
+
+;; 使用说明：
+;; 1. 确保 Emacs 版本 >= 29.1
+;; 2. 安装必要的外部依赖（clangd, pylsp, fortls 等）
+;; 3. 按需配置各语言的 LSP 服务器
+
+;;; Code:
 
 
-;;;;;;;;;;;;;;;;;;;;;;
-;; Core Services    ;;
-;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 核心编程功能配置                 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; =============================================================================
-;; Company mode for autocompletionp
-;; 自动补全设置：company
-;; Install company-mode if not already installed
-(unless (package-installed-p 'company)
-  (package-install 'company))
-
-;; Enable company-mode globally
-(add-hook 'after-init-hook 'global-company-mode)
-
-;; Optional: Customize company-mode settings
-(setq company-idle-delay 0.2) ; Delay before suggestions are shown
-(setq company-minimum-prefix-length 2) ; Minimum prefix length before suggestions are shown
+;; 代码补全配置：company-mode
+;; 提供智能的代码补全功能，支持多种后端补全源
+(use-package company
+  :ensure t
+  :hook (after-init . global-company-mode)
+  :config
+  (setq company-idle-delay 0.2)            ; 设置延迟显示建议的时间
+  (setq company-minimum-prefix-length 2))   ; 设置触发补全的最小前缀长度
 
 ;; =============================================================================
-;; eglot for language server protocol support
-;; Language Server (eglot - builtin since v29)
+;; 语言服务器协议(LSP)支持：eglot
+;; Emacs 29+ 内置的轻量级 LSP 客户端
 (use-package eglot
-  :bind ("C-c e f" . eglot-format)
+  :ensure t
+  :bind ("C-c e f" . eglot-format)         ; 绑定格式化快捷键
   :init
+  ;; 导入前自动格式化
   (advice-add 'eglot-code-action-organize-imports :before #'eglot-format-buffer)
-  (add-hook 'eglot-managed-mode-hook (lambda () (add-hook 'before-save-hook #'eglot-format-buffer)))
+  ;; 保存前自动格式化
+  (add-hook 'eglot-managed-mode-hook 
+            (lambda () 
+              (add-hook 'before-save-hook #'eglot-format-buffer)))
+  ;; 自动启用 eglot（除 elisp-mode 外）
   (add-hook 'prog-mode-hook
-	    (lambda () (unless (member major-mode '(emacs-lisp-mode))
-			 (eglot-ensure)))))
-
-
+            (lambda () 
+              (unless (member major-mode '(emacs-lisp-mode))
+                (eglot-ensure))))
+  :config
+  ;; 配置语言服务器
+  (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+  (add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
+  (add-to-list 'eglot-server-programs '(fortran-mode . ("fortls")))
+  ;; 为特定模式启用 eglot
+  (dolist (hook '(c-mode-hook
+                  c++-mode-hook
+                  python-mode-hook
+                  fortran-mode-hook))
+    (add-hook hook #'eglot-ensure)))
 
 ;; =============================================================================
-;; tree-sitter for syntax highlighting and navigation
+;; 语法树分析：tree-sitter
+;; 提供精确的语法分析和语法高亮功能
 
-; treesit：需要了解一下其原理和用法
-; treesit-auto：自动安装treesit
+;; tree-sitter 自动安装和管理
 (use-package treesit-auto
   :ensure t
   :demand t
   :config
-  (setq treesit-auto-install 'prompt)
-  (global-treesit-auto-mode))
+  (setq treesit-auto-install 'prompt)      ; 提示是否安装语法解析器
+  (global-treesit-auto-mode))              ; 全局启用自动模式
 
-;; 配置treesit
-;; 这里的配置是根据官方文档进行的，并没有使用任何插件，仅仅是配置了treesit的语法高亮和导航。
-;; 具体的语法高亮和导航功能需要使用插件来实现。
+;; tree-sitter 核心配置
 (use-package treesit
-  :when (and (fboundp 'treesit-available-p) (treesit-available-p))
+  :when (and (fboundp 'treesit-available-p) 
+             (treesit-available-p))
   :mode (("\\(?:Dockerfile\\(?:\\..*\\)?\\|\\.[Dd]ockerfile\\)\\'" . dockerfile-ts-mode)
-	 ("\\.go\\'" . go-ts-mode)
-	 ("/go\\.mod\\'" . go-mod-ts-mode)
-	 ("\\.rs\\'" . rust-ts-mode)
-	 ("\\.ts\\'" . typescript-ts-mode)
-	 ("\\.y[a]?ml\\'" . yaml-ts-mode))
-  :config (setq treesit-font-lock-level 4)
+         ("\\.go\\'" . go-ts-mode)
+         ("/go\\.mod\\'" . go-mod-ts-mode)
+         ("\\.rs\\'" . rust-ts-mode)
+         ("\\.ts\\'" . typescript-ts-mode)
+         ("\\.y[a]?ml\\'" . yaml-ts-mode))
+  :config
+  (setq treesit-font-lock-level 4)         ; 设置语法高亮级别
   :init
+  ;; 设置模式映射表
   (setq major-mode-remap-alist 
-	'((sh-mode         . bash-ts-mode)
-	  (c-mode          . c-ts-mode)
-	  (c++-mode        . c++-ts-mode)
-	  (c-or-c++-mode   . c-or-c++-ts-mode)
-	  (css-mode        . css-ts-mode)
-	  (js-mode         . js-ts-mode)
-	  (java-mode       . java-ts-mode)
-	  (js-json-mode    . json-ts-mode)
-	  (julia-mode      . julia-ts-mode)
-	  (makefile-mode   . cmake-ts-mode)
-	  (python-mode     . python-ts-mode)
-	  (ruby-mode       . ruby-ts-mode)
-	  (conf-toml-mode  . toml-ts-mode)))
+        '((sh-mode        . bash-ts-mode)
+          (c-mode         . c-ts-mode)
+          (c++-mode       . c++-ts-mode)
+          (c-or-c++-mode  . c-or-c++-ts-mode)
+          (css-mode       . css-ts-mode)
+          (js-mode        . js-ts-mode)
+          (java-mode      . java-ts-mode)
+          (js-json-mode   . json-ts-mode)
+          (julia-mode     . julia-ts-mode)
+          (makefile-mode  . cmake-ts-mode)
+          (python-mode    . python-ts-mode)
+          (ruby-mode      . ruby-ts-mode)
+          (conf-toml-mode . toml-ts-mode)))
+  ;; 配置语言源
   (setq treesit-language-source-alist
-	'((bash       . ("https://github.com/tree-sitter/tree-sitter-bash"))
-	  (c          . ("https://github.com/tree-sitter/tree-sitter-c"))
-	  (cpp        . ("https://github.com/tree-sitter/tree-sitter-cpp"))
-	  (css        . ("https://github.com/tree-sitter/tree-sitter-css"))
-	  (cmake      . ("https://github.com/uyha/tree-sitter-cmake"))
-	  (csharp     . ("https://github.com/tree-sitter/tree-sitter-c-sharp.git"))
-	  (dockerfile . ("https://github.com/camdencheek/tree-sitter-dockerfile"))
-	  (elisp      . ("https://github.com/Wilfred/tree-sitter-elisp"))
-	  (go         . ("https://github.com/tree-sitter/tree-sitter-go"))
-	  (gomod      . ("https://github.com/camdencheek/tree-sitter-go-mod.git"))
-	  (html       . ("https://github.com/tree-sitter/tree-sitter-html"))
-	  (java       . ("https://github.com/tree-sitter/tree-sitter-java.git"))
-	  (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
-	  (json       . ("https://github.com/tree-sitter/tree-sitter-json"))
-	  (lua        . ("https://github.com/Azganoth/tree-sitter-lua"))
-	  (make       . ("https://github.com/alemuller/tree-sitter-make"))
-	  (markdown   . ("https://github.com/MDeiml/tree-sitter-markdown" nil "tree-sitter-markdown/src"))
-	  (ocaml      . ("https://github.com/tree-sitter/tree-sitter-ocaml" nil "ocaml/src"))
-	  (org        . ("https://github.com/milisims/tree-sitter-org"))
-	  (python     . ("https://github.com/tree-sitter/tree-sitter-python"))
-	  (php        . ("https://github.com/tree-sitter/tree-sitter-php"))
-	  (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" nil "typescript/src"))
-	  (tsx        . ("https://github.com/tree-sitter/tree-sitter-typescript" nil "tsx/src"))
-	  (ruby       . ("https://github.com/tree-sitter/tree-sitter-ruby"))
-	  (rust       . ("https://github.com/tree-sitter/tree-sitter-rust"))
-	  (sql        . ("https://github.com/m-novikov/tree-sitter-sql"))
-	  (vue        . ("https://github.com/merico-dev/tree-sitter-vue"))
-	  (yaml       . ("https://github.com/ikatyang/tree-sitter-yaml"))
-	  (toml       . ("https://github.com/tree-sitter/tree-sitter-toml"))
-	  (zig        . ("https://github.com/GrayJack/tree-sitter-zig")))))
+        '((bash       . ("https://github.com/tree-sitter/tree-sitter-bash"))
+          (c          . ("https://github.com/tree-sitter/tree-sitter-c"))
+          (cpp        . ("https://github.com/tree-sitter/tree-sitter-cpp"))
+          (css        . ("https://github.com/tree-sitter/tree-sitter-css"))
+          (cmake      . ("https://github.com/uyha/tree-sitter-cmake"))
+          (csharp     . ("https://github.com/tree-sitter/tree-sitter-c-sharp.git"))
+          (dockerfile . ("https://github.com/camdencheek/tree-sitter-dockerfile"))
+          (elisp      . ("https://github.com/Wilfred/tree-sitter-elisp"))
+          (go         . ("https://github.com/tree-sitter/tree-sitter-go"))
+          (gomod      . ("https://github.com/camdencheek/tree-sitter-go-mod.git"))
+          (html       . ("https://github.com/tree-sitter/tree-sitter-html"))
+          (java       . ("https://github.com/tree-sitter/tree-sitter-java.git"))
+          (javascript . ("https://github.com/tree-sitter/tree-sitter-javascript"))
+          (json       . ("https://github.com/tree-sitter/tree-sitter-json"))
+          (lua        . ("https://github.com/Azganoth/tree-sitter-lua"))
+          (make       . ("https://github.com/alemuller/tree-sitter-make"))
+          (markdown   . ("https://github.com/MDeiml/tree-sitter-markdown" nil "tree-sitter-markdown/src"))
+          (ocaml      . ("https://github.com/tree-sitter/tree-sitter-ocaml" nil "ocaml/src"))
+          (org        . ("https://github.com/milisims/tree-sitter-org"))
+          (python     . ("https://github.com/tree-sitter/tree-sitter-python"))
+          (php        . ("https://github.com/tree-sitter/tree-sitter-php"))
+          (typescript . ("https://github.com/tree-sitter/tree-sitter-typescript" nil "typescript/src"))
+          (tsx        . ("https://github.com/tree-sitter/tree-sitter-typescript" nil "tsx/src"))
+          (ruby       . ("https://github.com/tree-sitter/tree-sitter-ruby"))
+          (rust       . ("https://github.com/tree-sitter/tree-sitter-rust"))
+          (sql        . ("https://github.com/m-novikov/tree-sitter-sql"))
+          (vue        . ("https://github.com/merico-dev/tree-sitter-vue"))
+          (yaml       . ("https://github.com/ikatyang/tree-sitter-yaml"))
+          (toml       . ("https://github.com/tree-sitter/tree-sitter-toml"))
+          (zig        . ("https://github.com/GrayJack/tree-sitter-zig")))))
 
 ;; =============================================================================
-
-;; Flycheck for syntax checking
 ;; 语法检查：flycheck
-;; Install flycheck if not already installed
-(unless (package-installed-p 'flycheck)
-  (package-install 'flycheck))
+;; 实时语法检查工具，支持多种编程语言
+(use-package flycheck
+  :ensure t
+  :hook (after-init . global-flycheck-mode))
 
-;; Enable flycheck globally
-(add-hook 'after-init-hook #'global-flycheck-mode)
-;; Rainbow delimiters for colorizing parentheses and braces
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; 编程语言支持配置                 ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; =============================================================================
-;; 编程语言配置
-
-; ;; 启用 eglot
-; (require 'eglot)
-
-; ;; 自动启动 eglot
-; (add-hook 'c-mode-hook 'eglot-ensure)
-; (add-hook 'c++-mode-hook 'eglot-ensure)
-; (add-hook 'python-mode-hook 'eglot-ensure)
-; (add-hook 'fortran-mode-hook 'eglot-ensure)
-; (add-hook 'julia-mode-hook 'eglot-ensure)
-; (add-hook 'haskell-mode-hook 'eglot-ensure)
-; (add-hook 'rust-mode-hook 'eglot-ensure)
+;; Lisp 开发环境配置
+;; 从单独的配置文件加载 Python 相关设置
+(load-file (expand-file-name "lisp/programming_languages/init-lisp.el" user-emacs-directory))
 
 
-(require 'eglot)
-;; C/C++
-(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
-;; Python
-(add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
-;; Fortran
-(add-to-list 'eglot-server-programs '(fortran-mode . ("fortls")))
+;; =============================================================================
+;; C/C++ 开发环境配置
+;; 使用内置的 c-mode 和 c++-mode，配合 tree-sitter 提供现代化的开发体验
 
-(add-hook 'c-mode-hook #'eglot-ensure)
-(add-hook 'c++-mode-hook #'eglot-ensure)
-(add-hook 'python-mode-hook 'eglot-ensure)
-(add-hook 'fortran-mode-hook 'eglot-ensure)
-
-;;;;;;;;;;;;;;;;;;;;;;;
-;; Lisp programming ;;
-;;;;;;;;;;;;;;;;;;;;;;;
-;; MELPA repository
-; (setq inferior-lisp-program "sbcl")
-
-;; Load SLIME when starting Emacs
-(setq inferior-lisp-program "/opt/homebrew/bin/sbcl")  ;; 根据 SBCL 的安装路径设置
-; (add-to-list 'load-path "/path/to/slime/")  ;; SLIME 的安装路径
-(use-package slime
-  :ensure t
-)
-(slime-setup)
-
-;;;;;;;;;;;;;;;;;;;;;;;
-;; C/C++ programming ;;
-;;;;;;;;;;;;;;;;;;;;;;;
-
+;; C 语言配置
 (use-package c-mode
-  :ensure nil ; c-mode is built-in
+  :ensure nil
   :hook ((c-mode . eglot-ensure)
          (c-mode . company-mode))
   :mode (("\\.c\\'" . c-ts-mode)))
 
+;; C++ 语言配置
 (use-package c++-mode
-  :ensure nil ; c++-mode is built-in
+  :ensure nil
   :hook ((c++-mode . eglot-ensure)
          (c++-mode . company-mode))
   :mode (("\\.cpp\\'" . c++-ts-mode)
          ("\\.hpp\\'" . c++-ts-mode)
          ("\\.h\\'" . c++-ts-mode)))
 
+;; =============================================================================
+;; 科学计算相关语言配置
+
+;; Fortran 语言配置
 (use-package fortran-mode
-  :ensure nil ; fortran-mode is built-in
+  :ensure nil
   :hook ((fortran-mode . eglot-ensure)
          (fortran-mode . company-mode))
   :mode (("\\.f\\'" . fortran-ts-mode)
          ("\\.f90\\'" . fortran-ts-mode)
          ("\\.f95\\'" . fortran-ts-mode)))
 
+;; Julia 语言配置
 (use-package julia-mode
   :ensure t
   :hook ((julia-mode . eglot-ensure)
          (julia-mode . company-mode))
   :mode (("\\.jl\\'" . julia-ts-mode)))
 
+;; =============================================================================
+;; Python 开发环境配置
+;; 从单独的配置文件加载 Python 相关设置
+(load-file (expand-file-name "lisp/programming_languages/init-python.el" user-emacs-directory))
 
-(use-package quickrun
-  :ensure t
-  :commands (quickrun)
-  :init
-;; 设置默认使用 zsh 作为 shell
-  (setq quickrun-shell "/bin/zsh")
-  ;; C++ 配置
-  (quickrun-add-command "c++/c1z"
-    '((:command . "g++")
-      (:exec . ("%c -std=c++1z %o -o %e %s"
-                "%e %a"))
-      (:remove . ("%e")))
-    :default "c++")
-	  ;; C 配置
-  (quickrun-add-command "c/gcc"
-    '((:command . "gcc")
-      (:exec . ("%c %o -o %e %s"
-                "%e %a"))
-      (:remove . ("%e")))
-    :default "c")
-  ;; Fortran 配置
-  (quickrun-add-command "fortran"
-    '((:command . "gfortran")
-      (:exec . ("%c %o -o %e %s"
-                "%e %a"))
-      (:remove . ("%e")))
-    :default "fortran")
-)
+;; =============================================================================
+;; 代码导航与调试工具配置
 
-(global-set-key (kbd "<f5>") 'quickrun)
-
-;;;;;;;;;;;;;;;;;;;;;;;;
-;; Python programming ;;
-;;;;;;;;;;;;;;;;;;;;;;;;
-
-(use-package elpy
-  :ensure t
-  :init
-  (elpy-enable))
-
-(use-package pyvenv
-  :ensure t
-  :config
-  (setenv "WORKON_HOME" "~/.conda/envs")
-  (pyvenv-mode 1))
-
-(use-package company
-  :ensure t
-  :config
-  (add-hook 'after-init-hook 'global-company-mode))
-
-(use-package company-jedi
-  :ensure t
-  :config
-  (add-to-list 'company-backends 'company-jedi))
-
-(use-package conda
-  :ensure t
-  :init
-  (setq conda-anaconda-home (expand-file-name "~/miniconda3/"))
-  (setq conda-env-home-directory (expand-file-name "~/miniconda3/"))
-  :config
-  (conda-env-initialize-interactive-shells)
-  (conda-env-initialize-eshell)
-  (conda-env-autoactivate-mode t))
-
-(defun my/python-mode-hook ()
-  (conda-env-activate "base")) ; 默认激活的conda环境
-
-(add-hook 'python-mode-hook 'my/python-mode-hook)
-
-(defun my/python-mode-setup ()
-  (add-to-list 'company-backends 'company-jedi))
-
-(add-hook 'python-mode-hook 'my/python-mode-setup)
-
-(add-hook 'python-mode-hook 'font-lock-mode)
-
+;; 代码大纲：imenu
 (use-package imenu
   :ensure t
   :config
-  (setq imenu-auto-rescan t))
+  (setq imenu-auto-rescan t))              ; 自动重新扫描代码结构
 
+;; 代码大纲侧边栏：imenu-list
 (use-package imenu-list
   :ensure t
   :bind (("C-' C-'" . imenu-list-smart-toggle))
@@ -288,32 +235,61 @@
   (setq imenu-list-focus-after-activation t)
   (setq imenu-list-auto-resize t))
 
+;; 调试器支持：realgud
 (use-package realgud
   :ensure t
   :config
-  (require 'realgud))
+  (require 'realgud)
+  ;; 调试快捷键设置
+  :bind (("<f6>" . realgud:pdb)
+         ("<f9>" . realgud:cmd-break)
+         ("<f10>" . realgud:cmd-step-over)
+         ("<f11>" . realgud:cmd-step)
+         ("<f12>" . realgud:cmd-next)))
 
+;; =============================================================================
+;; 代码运行工具配置
 
-(global-set-key (kbd "<f6>") 'realgud:pdb)
-(global-set-key (kbd "<f9>") 'realgud:cmd-break)
-(global-set-key (kbd "<f10>") 'realgud:cmd-step-over)
-(global-set-key (kbd "<f11>") 'realgud:cmd-step)
-(global-set-key (kbd "<f12>") 'realgud:cmd-next)
+;; 快速运行代码：quickrun
+(use-package quickrun
+  :ensure t
+  :commands (quickrun)
+  :bind ("<f5>" . quickrun)
+  :init
+  (setq quickrun-shell "/bin/zsh")         ; 使用 zsh 作为默认 shell
+  :config
+  ;; C++ 运行配置
+  (quickrun-add-command "c++/c1z"
+    '((:command . "g++")
+      (:exec . ("%c -std=c++1z %o -o %e %s"
+                "%e %a"))
+      (:remove . ("%e")))
+    :default "c++")
+  ;; C 运行配置
+  (quickrun-add-command "c/gcc"
+    '((:command . "gcc")
+      (:exec . ("%c %o -o %e %s"
+                "%e %a"))
+      (:remove . ("%e")))
+    :default "c")
+  ;; Fortran 运行配置
+  (quickrun-add-command "fortran"
+    '((:command . "gfortran")
+      (:exec . ("%c %o -o %e %s"
+                "%e %a"))
+      (:remove . ("%e")))
+    :default "fortran"))
 
-; (use-package highlight-indent-guides
-;   :ensure t
-;   :hook (python-ts-mode . highlight-indent-guides-mode)
-;   :config
-;   (set-face-foreground 'highlight-indent-guides-character-face "white")
-;   (setq highlight-indent-guides-method 'character))
-
+;; =============================================================================
+;; LeetCode 刷题配置
 (use-package leetcode
   :ensure t
   :config
-  (setq leetcode-prefer-language "python") ;; 选择你喜欢的语言，例如： "python", "cpp", "java", etc.
-  (setq leetcode-save-solutions t)         ;; 保存解决方案到文件
-  (setq leetcode-directory "~/leetcode/")  ;; 保存解决方案的目录
-  (setq leetcode-coding-preference 'contest)) ;; 可以选择 'contest 或 'study，取决于你的用途
+  (setq leetcode-prefer-language "python") ; 设置默认编程语言
+  (setq leetcode-save-solutions t)         ; 启用解决方案自动保存
+  (setq leetcode-directory "~/leetcode/")  ; 设置保存目录
+  (setq leetcode-coding-preference 'contest)) ; 设置编码偏好
+
 
 (provide 'init-programming)
 
