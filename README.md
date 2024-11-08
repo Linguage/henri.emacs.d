@@ -113,7 +113,8 @@ mv ~/.emacs.d ~/.emacs.d.bak
 ```
 2. 克隆仓库:
 ```bash
-git clone https://github.com/yourusername/henri.emacs.d.git ~/.emacs.d
+git clone https://github.com/PeakHan618/henri.emacs.d.git ~/.emacs.d
+
 ```
 
 3. 启动 Emacs，系统将自动安装所需包。
