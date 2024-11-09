@@ -67,12 +67,73 @@
 ;; =============================================================================
 ;; 主题美化配置
 
-;; doom 主题
+;; =============================================================================
+;; 主题配置
+
+;; 定义一个变量来控制是否启用随机主题
+(defvar enable-random-theme t
+  "如果为 t，则启用随机主题；如为nil启用默认主题。")
+
+;; 定义默认主题
+(defvar default-theme 'doom-solarized-light
+  "默认主题名称。")
+
+;; 定义所有可用主题的列表
+(defvar available-themes
+  '(doom-Iosvkem
+    doom-acario-dark
+    doom-acario-light
+    doom-challenger-deep
+    doom-city-lights
+    doom-dark+
+    doom-dracula
+    doom-ephemeral
+    doom-fairy-floss
+    doom-gruvbox
+    doom-horizon
+    doom-laserwave
+    doom-manegarm
+    doom-material
+    doom-molokai
+    doom-monokai-classic
+    doom-monokai-pro
+    doom-monokai-spectrum
+    doom-moonlight
+    doom-nord-light
+    doom-nord
+    doom-nova
+    doom-oceanic-next
+    doom-one-light
+    doom-one
+    doom-opera-light
+    doom-opera
+    doom-outrun-electric
+    doom-palenight
+    doom-peacock
+    doom-rouge
+    doom-snazzy
+    doom-solarized-dark
+    doom-solarized-light
+    doom-sourcerer
+    doom-spacegrey
+    doom-tomorrow-day
+    doom-tomorrow-night
+    doom-vibrant
+    doom-wilmersdorf)
+  "可用的主题列表。")
+
+;; 随机选择主题的函数
+(defun load-random-theme ()
+  "随机选择并加载一个主题。"
+  (load-theme (nth (random (length available-themes)) available-themes) t))
+
+;; 安装并配置 doom-themes
 (use-package doom-themes
   :ensure t
   :config
-  ; (load-theme 'doom-one-light t))
-    (load-theme 'doom-dracula t))  ;; 更换主题为 doom-dracula
+  (if enable-random-theme
+      (load-random-theme)
+    (load-theme default-theme t)))
 
 
 ;; 彩虹括号
