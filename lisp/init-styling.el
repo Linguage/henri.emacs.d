@@ -71,7 +71,7 @@
 ;; 主题配置
 
 ;; 定义一个变量来控制是否启用随机主题
-(defvar enable-random-theme t
+(defvar enable-random-theme nil
   "如果为 t，则启用随机主题；如为nil启用默认主题。")
 
 ;; 定义默认主题
@@ -142,10 +142,26 @@
   :hook (prog-mode . rainbow-delimiters-mode))
 
 ;; 状态栏美化
+;; 安装并配置 doom-modeline
 (use-package doom-modeline
   :ensure t
   :init
-  (doom-modeline-mode 1))
+  (doom-modeline-mode 1)
+  :config
+  ;; 设置 doom-modeline 主题
+  ; (setq doom-modeline-theme 'doom-modeline) ; 默认主题
+  (setq doom-modeline-theme 'doom-modeline-light) ; 亮色主题
+  ; (setq doom-modeline-theme 'doom-modeline-dark) ; 暗色主题
+    ;; 其他配置选项
+  (setq doom-modeline-height 30) ; 设置模型线高度
+  (setq doom-modeline-bar-width 4) ; 设置模型线宽度
+  (setq doom-modeline-lsp t) ; 启用 LSP 状态显示
+  (setq doom-modeline-github t) ; 启用 GitHub 状态显示
+  (setq doom-modeline-mu4e t) ; 启用 mu4e 状态显示
+  (setq doom-modeline-irc t) ; 启用 IRC 状态显示
+  (setq doom-modeline-minor-modes t) ; 显示次要模式
+  (setq doom-modeline-enable-word-count t) ; 启用字数统计
+  )
 
 
 ;; =============================================================================
