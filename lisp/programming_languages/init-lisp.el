@@ -12,16 +12,25 @@
 (use-package slime
   :ensure t
   :init
-  (setq inferior-lisp-program "/opt/homebrew/bin/sbcl")  ; 设置 SBCL 解释器路径
+  ;; 设置 SBCL 解释器路径
+  (setq inferior-lisp-program (if (eq system-type 'darwin)
+                                  "/opt/homebrew/bin/sbcl" ; macOS 路径
+                                  "/usr/bin/sbcl"))        ; Linux 路径
   :config
-  (slime-setup '(slime-fancy                    ; 加载扩展模块
+  ;; 加载扩展模块
+  (slime-setup '(slime-fancy                    ; 常用增强功能
                  slime-asdf                      ; ASDF 支持
                  slime-quicklisp                 ; Quicklisp 支持
-                 slime-banner                    ; 显示欢迎信息
+                 slime-banner                    ; 欢迎信息
                  slime-repl                      ; REPL 增强
                  slime-autodoc))                 ; 自动文档
-  (setq slime-complete-symbol-function 'slime-fuzzy-complete-symbol) ; 模糊补全
-  (setq slime-net-coding-system 'utf-8-unix))   ; 设置编码
+
+  ;; 设置模糊补全
+  (setq slime-complete-symbol-function 'slime-fuzzy-complete-symbol)
+
+  ;; 设置编码
+  (setq slime-net-coding-system 'utf-8-unix))
+
 
 ;; ParEdit - 结构化编辑
 (use-package paredit
