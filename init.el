@@ -68,10 +68,9 @@
 (require 'package)
 
 ;; 配置包管理源
-(setq package-archives 
-      '(("tunu_gnu"    . "http://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-        ("tunu_nongnu" . "http://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
-        ("tunu_melpa"  . "http://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+(setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                         ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                         ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 
 ;; 初始化包管理
 (package-initialize)
@@ -84,8 +83,18 @@
 (eval-when-compile
   (require 'use-package))
 
+;; 设置 Emacs 启动时的默认目录
+(setq default-directory "~/Documents/EmacsNotes/")
+
+; ;; 启动时打开特定文件
+; (find-file "~/Documents/Code-Test/Emacs/test.org")
+
+; ;; 启动时打开特定目录
+; (dired "~/Documents/Code-Test/Emacs/")
+
 ;; =============================================================================
 ;; 加载核心配置模块
+;; 功能增强配置
 (load-file (expand-file-name "lisp/init-managing.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/init-styling.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/init-programming.el" user-emacs-directory))
@@ -93,9 +102,6 @@
 
 
 ;; =============================================================================
-;; 功能增强配置
-
-
 
 
 ;; =============================================================================

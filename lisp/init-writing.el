@@ -86,6 +86,49 @@
   :config
   (setq org-superstar-special-todo-items t))
 
+
+; (use-package org-download
+;   :ensure t
+;   :config
+;   ;; 设置拖放图片的默认目录
+;   (setq org-download-image-dir "./images")
+;   ;; 自动插入图片链接
+;   (add-hook 'dired-mode-hook 'org-download-enable))
+
+(setq org-latex-compiler "xelatex")
+(setq org-latex-pdf-process
+      '("rm -f %b.aux %b.log %b.out %b.toc %b.bbl %b.blg"  ; 先清理临时文件
+        "xelatex -interaction nonstopmode -output-directory %o %f"
+        "xelatex -interaction nonstopmode -output-directory %o %f"
+        "xelatex -interaction nonstopmode -output-directory %o %f"
+        "rm -f %b.aux %b.log %b.out %b.toc %b.bbl %b.blg")) ; 编译后再清理
+
+(defun my/org-export-add-latex-class (_backend)
+  "在导出为 LaTeX/PDF 之前自动添加 #+LATEX_CLASS: ctexart.
+_BACKEND 是导出后端，由钩子提供但在此函数中未使用。"
+  (save-excursion
+    (goto-char (point-min))
+    (unless (re-search-forward "^#\\+LATEX_CLASS: ctexart" nil t)
+      (insert "#+LATEX_CLASS: ctexart\n\n"))))
+
+(add-hook 'org-export-before-processing-hook 'my/org-export-add-latex-class)
+;; 增加对中文的支持
+(with-eval-after-load 'ox-latex
+  (add-to-list 'org-latex-classes
+               '("ctexart"
+                 "\\documentclass[11pt]{ctexart}
+\\usepackage[UTF8]{ctex}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{graphicx}
+\\usepackage{hyperref}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+
+
 ;; =============================================================================
 ;; LaTeX 配置
 
