@@ -87,6 +87,44 @@
   (setq org-superstar-special-todo-items t))
 
 
+;; 基础 Org 日记设置
+(require 'org)
+
+;; 设置日记存放目录
+(setq org-directory "~/Documents/EmacsNotes/Journal")
+(setq org-default-notes-file (concat org-directory "/notes.org"))
+
+;; 配置日记模板
+(setq org-capture-templates
+      '(("j" "日记" entry (file+olp+datetree "~/Documents/EmacsNotes/Journal/diary.org")
+         "* %U %?\n%i\n** 今日要点\n\n** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
+         :empty-lines 1)))
+
+;; 设置快捷键
+(global-set-key (kbd "C-c c") 'org-capture)  ;; 快速创建日记
+(global-set-key (kbd "C-c a") 'org-agenda)   ;; 打开议程视图
+
+
+;; 添加搜索功能
+(defun my/search-diary ()
+  "在日记中搜索关键词"
+  (interactive)
+  (let ((keyword (read-string "搜索关键词: ")))
+    (org-search-view nil keyword)))
+;; filepath: ~/.emacs.d/init.el
+;; 设置 Org-mode 的 Agenda 文件
+(setq org-agenda-files '("/Users/henri/Documents/EmacsNotes/Journal/diary.org"))
+
+;; 自定义 Agenda 视图，包含日记条目
+(setq org-agenda-custom-commands
+      '(("j" "Journal entries"
+         ((agenda "")
+          (alltodo "")
+          (tags "journal")))))
+(global-set-key (kbd "C-c s") 'my/search-diary)
+
+
+
 ; (use-package org-download
 ;   :ensure t
 ;   :config
