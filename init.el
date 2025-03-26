@@ -72,15 +72,15 @@
 ;                          ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
 ;                          ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
 
-(setq package-archives
-      '(("gnu" . "https://elpa.gnu.org/packages/")
-        ("melpa" . "https://melpa.org/packages/")
-        ("org" . "https://orgmode.org/elpa/")))
+; (setq package-archives
+;       '(("gnu" . "https://elpa.gnu.org/packages/")
+;         ("melpa" . "https://melpa.org/packages/")
+;         ("org" . "https://orgmode.org/elpa/")))
 
-;; 使用 USTC 镜像源（中科大）
-; (setq package-archives '(("gnu"    . "http://mirrors.ustc.edu.cn/elpa/gnu/")
-;                          ("nongnu" . "http://mirrors.ustc.edu.cn/elpa/nongnu/")
-;                          ("melpa"  . "http://mirrors.ustc.edu.cn/elpa/melpa/")))
+; 使用 USTC 镜像源（中科大）
+(setq package-archives '(("gnu"    . "http://mirrors.ustc.edu.cn/elpa/gnu/")
+                         ("nongnu" . "http://mirrors.ustc.edu.cn/elpa/nongnu/")
+                         ("melpa"  . "http://mirrors.ustc.edu.cn/elpa/melpa/")))
 
 ;; 或使用 163 镜像源
 ;; (setq package-archives '(("gnu"    . "http://mirrors.163.com/elpa/gnu/")
