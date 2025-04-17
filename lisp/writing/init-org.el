@@ -22,6 +22,48 @@
   :config
   (setq org-superstar-special-todo-items t))
 
+
+
+
+(setq org-latex-pdf-process
+      '("pdflatex -interaction nonstopmode -output-directory %o %f"
+        "bibtex %b"
+        "pdflatex -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -interaction nonstopmode -output-directory %o %f"))
+
+;; =============================================================================
+;; Org Mode 配置
+
+;; =============================================================================
+;; pdf-tools
+(use-package pdf-tools
+  :ensure t
+  :config
+  (pdf-tools-install)
+  ;; 设置 PDF-tools 兼容性
+  ;; 禁用 PDF 查看模式下的行号显示
+  (add-hook 'pdf-view-mode-hook
+            (lambda ()
+              (display-line-numbers-mode -1))))
+
+(add-to-list 'auto-mode-alist '("\\.pdf\\'" . pdf-view-mode))
+
+
+
+;; 修改 org-open-pdf-after-export 函数确保使用 pdf-tools
+(defun org-open-pdf-after-export (backend)
+  "Open the generated PDF file in pdf-tools after org-mode export."
+  (when (eq backend 'latex)
+    (let ((pdf-file (concat (file-name-sans-extension buffer-file-name) ".pdf")))
+      (when (file-exists-p pdf-file)
+        (find-file pdf-file)
+        ;; 确保在此处关闭行号显示
+        (when (bound-and-true-p display-line-numbers-mode)
+          (display-line-numbers-mode -1))))))
+(add-hook 'org-export-after-processing-hook 'org-open-pdf-after-export)
+
+;; ...existing code...
+
 ;; 基础 Org Journal 设置
 (require 'org)
 

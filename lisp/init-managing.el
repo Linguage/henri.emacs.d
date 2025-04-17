@@ -162,6 +162,18 @@
   :config
   (which-key-mode))
 
+
+;; ================================
+;; Evil Mode 
+
+(use-package evil
+  :ensure t
+  :init
+  (setq evil-want-integration t)
+  (setq evil-want-keybinding nil) ; 如果需要与其他插件集成
+  :config
+  (evil-mode 1))
+
 (provide 'init-managing)
 
 ;;; init-managing.el ends here
