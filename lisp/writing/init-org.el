@@ -288,133 +288,145 @@ _BACKEND 是导出后端，由钩子提供但在此函数中未使用。"
                  ("\\paragraph{%s}" . "\\paragraph*{%s}")
                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
-;; =============================================================================
 
-; ;; 安装并配置 org-journal
-; (use-package org-journal
+; ;; ...existing code...
+
+; ;; =========================================================================
+; ;; Org Mode 高级学术写作增强配置
+
+; ;; 改进引用功能配置
+; (use-package org-ref
 ;   :ensure t
-;   :defer t
-;   :custom
-;   (org-journal-dir "~/Documents/EmacsNotes/TexNotes/NotesOrg/Journal")
-;   (org-journal-file-format "%Y%m%d.org")
-;   (org-journal-date-format "%A, %Y年%m月%d日")
-;   (org-journal-enable-agenda-integration t)
-;   :bind (("C-c j j" . org-journal-new-entry)
-;          ("C-c j s" . org-journal-search)
-;          ("C-c j v" . my/view-journal-by-date)
-;          ("C-c j e" . my/org-journal-summarize-expenses))
 ;   :config
-;   (setq org-journal-file-type 'monthly)
+;   ;; 设置参考文献样式
+;   (setq org-ref-default-bibliography '("~/Documents/bibliography/references.bib")
+;         org-ref-pdf-directory "~/Documents/bibliography/bibtex-pdfs/"
+;         org-ref-bibliography-notes "~/Documents/bibliography/notes.org"
+;         org-ref-cite-format 'natbib)
   
-;   ;; 设置日记模板，包含花销记录区域
-;   (setq org-journal-template
-;         "* %<%H:%M> 日记内容
-;   %?
+;   ;; 改进引用链接外观
+;   (setq org-ref-label-use-font-lock t
+;         org-ref-cite-use-font-lock t)
   
-;   ** 今日任务
-;   - [ ] 
-  
-;   ** 今日感想
-  
-;   ** 花销记录
-;   | 项目 | 金额 | 类别 | 备注 |
-;   |------+------+------+------|
-;   |      |      |      |      |
-;   #+TBLFM: @>$2=vsum(@I..@II)
-;   "))
+;   ;; 增强引用插入体验
+;   (define-key org-mode-map (kbd "C-c ]") 'org-ref-insert-link))
 
-; (defun my/org-journal-summarize-expenses (start-date end-date)
-;   "汇总从START-DATE到END-DATE期间的所有花销。"
-;   (interactive
-;    (let* ((start (org-read-date nil nil nil "开始日期: "))
-;           (end (org-read-date nil nil nil "结束日期: ")))
-;      (list start end)))
-;   (let ((files (directory-files org-journal-dir t "^[0-9]\\{8\\}\\.org$"))
-;         (expenses '())
-;         (total 0.0))
-;     (dolist (file files)
-;       (let ((file-date (replace-regexp-in-string "^.*\\([0-9]\\{8\\}\\)\\.org$" "\\1" file)))
-;         (when (and (string-lessp start-date file-date)
-;                    (string-lessp file-date end-date))
-;           (with-temp-buffer
-;             (insert-file-contents file)
-;             (goto-char (point-min))
-;             (while (re-search-forward "^\\s-*|\\s-*\\(.+?\\)\\s-*|\\s-*\\([0-9.]+\\)\\s-*|\\s-*\\(.+?\\)\\s-*|" nil t)
-;               (let ((item (match-string 1))
-;                     (amount (string-to-number (match-string 2)))
-;                     (category (match-string 3)))
-;                 (when (> amount 0)
-;                   (push (list file-date item amount category) expenses)
-;                   (setq total (+ total amount)))))))))
-    
-;     ;; 创建汇总报告
-;     (with-current-buffer (get-buffer-create "*花销汇总*")
-;       (erase-buffer)
-;       (org-mode)
-;       (insert (format "#+TITLE: %s至%s花销汇总\n\n" start-date end-date))
-;       (insert "| 日期 | 项目 | 金额 | 类别 |\n")
-;       (insert "|------+------+------+------|\n")
-      
-;       (dolist (expense (reverse expenses))
-;         (insert (format "| %s | %s | %.2f | %s |\n" 
-;                         (nth 0 expense) (nth 1 expense) 
-;                         (nth 2 expense) (nth 3 expense))))
-      
-;       (insert "|------+------+------+------|\n")
-;       (insert (format "| 总计 |      | %.2f |      |\n" total))
-;       (org-table-align)
-      
-;       ;; 添加图表
-;       (insert "\n** 按类别统计\n")
-;       (let ((categories (make-hash-table :test 'equal)))
-;         (dolist (expense expenses)
-;           (let ((category (nth 3 expense))
-;                 (amount (nth 2 expense)))
-;             (puthash category (+ (gethash category categories 0.0) amount) categories)))
-        
-;         (insert "| 类别 | 金额 | 百分比 |\n")
-;         (insert "|------+------+--------|\n")
-        
-;         (maphash (lambda (category amount)
-;                    (insert (format "| %s | %.2f | %.1f%% |\n" 
-;                                   category amount (* 100 (/ amount total)))))
-;                  categories)
-        
-;         (insert "|------+------+--------|\n")
-;         (insert (format "| 总计 | %.2f | 100%% |\n" total))
-;         (org-table-align))
-      
-;       (switch-to-buffer (current-buffer)))))
-
-
-
-; ;; 配置 PDF 导出选项
+; ;; 参考文献导出增强
 ; (with-eval-after-load 'ox-latex
-;   ;; 设置中文支持
-;   (setq org-latex-compiler "xelatex")
-;   (setq org-latex-pdf-process
-;         '("xelatex -interaction nonstopmode -output-directory %o %f"
-;           "xelatex -interaction nonstopmode -output-directory %o %f"))
+;   ;; 添加参考文献支持包
+;   (add-to-list 'org-latex-packages-alist '("" "natbib" t))
+;   (add-to-list 'org-latex-packages-alist '("" "cleveref" t)) ;; 增强内部引用
   
-;   ;; 自定义 LaTeX 类，使日记打印更美观
-;   (add-to-list 'org-latex-classes
-;                '("journal"
-;                  "\\documentclass[12pt,a4paper]{article}
-;                   \\usepackage{xeCJK}
-;                   \\setCJKmainfont{SimSun}
-;                   \\usepackage[top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
-;                   \\usepackage{fancyhdr}
-;                   \\pagestyle{fancy}
-;                   \\fancyhf{}
-;                   \\fancyhead[L]{\\rightmark}
-;                   \\fancyhead[R]{\\leftmark}
-;                   \\fancyfoot[C]{\\thepage}
-;                   \\renewcommand{\\headrulewidth}{0.4pt}
-;                   \\renewcommand{\\footrulewidth}{0.4pt}"
-;                  ("\\section{%s}" . "\\section*{%s}")
-;                  ("\\subsection{%s}" . "\\subsection*{%s}")
-;                  ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-;                  ("\\paragraph{%s}" . "\\paragraph*{%s}")
-;                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
+;   ;; 自动添加参考文献列表
+;   (setq org-latex-prefer-user-labels t)
+  
+;   ;; 允许在生成的PDF中进行交叉引用
+;   (add-to-list 'org-latex-packages-alist '("" "hyperref" t)))
+
+; ;; 脚注增强配置
+; (with-eval-after-load 'org
+;   ;; 启用脚注功能
+;   (setq org-export-with-footnotes t)
+  
+;   ;; 使用行内脚注
+;   (setq org-footnote-define-inline t)
+  
+;   ;; 脚注自动排序
+;   (setq org-footnote-auto-adjust t)
+  
+;   ;; 设置快捷键
+;   (define-key org-mode-map (kbd "C-c f") 'org-footnote-new))
+
+; ;; 内部链接增强
+; (with-eval-after-load 'org
+;   ;; 自动为标题创建ID
+;   (use-package org-id
+;     :ensure nil
+;     :config
+;     (setq org-id-link-to-org-use-id 'create-if-interactive)
+;     (setq org-id-track-globally t))
+  
+;   ;; 启用交叉引用功能
+;   (setq org-latex-hyperref-template 
+;         "\\hypersetup{\n pdfauthor={%a},\n pdftitle={%t},\n pdfkeywords={%k},\n pdfsubject={%d},\n pdfcreator={%c},\n pdflang={%L},\n colorlinks=true,\n linkcolor=blue,\n citecolor=blue,\n urlcolor=blue}\n")
+
+;   ;; 便捷地插入内部链接
+;   (defun my/org-insert-internal-link ()
+;     "在当前位置插入到文档中其他标题的链接。"
+;     (interactive)
+;     (let* ((targets (org-map-entries 
+;                     (lambda () 
+;                       (cons 
+;                        (nth 4 (org-heading-components)) 
+;                        (org-id-get-create)))
+;                     t 'file))
+;            (target (completing-read "链接到: " targets))
+;            (id (cdr (assoc target targets))))
+;       (insert (format "[[id:%s][%s]]" id target))))
+;   (define-key org-mode-map (kbd "C-c l") 'my/org-insert-internal-link))
+
+; ;; 导出增强 - 代码和方程式编号支持
+; (with-eval-after-load 'ox-latex
+;   ;; 代码块编号
+;   (setq org-latex-listings t)
+;   (add-to-list 'org-latex-packages-alist '("" "listings" t))
+  
+;   ;; 方程式编号
+;   (add-to-list 'org-latex-packages-alist '("" "amsmath" t))
+;   (setq org-latex-prefer-user-labels t))
+
+; ;; 创建复杂学术文档模板
+; (defun my/create-academic-template ()
+;   "创建一个带有标准学术文章结构的Org模板"
+;   (interactive)
+;   (find-file (read-file-name "创建学术文档: " "~/Documents/"))
+;   (erase-buffer)
+;   (insert "#+TITLE: 在此输入标题
+; #+AUTHOR: Henri
+; #+DATE: \today
+; #+LATEX_CLASS: ctexart
+; #+OPTIONS: toc:t num:t
+; #+BIBLIOGRAPHY: references.bib
+; #+LATEX_HEADER: \\usepackage{amsmath,amssymb,graphicx}
+; #+LATEX_HEADER: \\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue]{hyperref}
+
+; * 摘要
+; 在此输入摘要...
+
+; * 引言
+; 在此输入引言...
+
+; * 方法
+; 在此输入方法...
+
+; * 结果
+; 在此输入结果...
+
+; * 讨论
+; 在此输入讨论...
+
+; * 结论
+; 在此输入结论...
+
+; * 参考文献
+; <<bibliography>>
+; bibliographystyle:unsrt
+; bibliography:references.bib
+; "))
+
+; ;; 绑定快捷键
+; (global-set-key (kbd "C-c t a") 'my/create-academic-template)
+
+; ;; 优化导出 - 确保正确处理参考文献
+; (setq org-latex-pdf-process
+;       '("rm -f %b.aux %b.log %b.out %b.toc %b.bbl %b.blg"
+;         "xelatex -interaction nonstopmode -output-directory %o %f"
+;         "bibtex %b"
+;         "xelatex -interaction nonstopmode -output-directory %o %f"
+;         "xelatex -interaction nonstopmode -output-directory %o %f"
+;         "rm -f %b.aux %b.log %b.out %b.toc")) ;保留 .bbl 和 .blg 文件以便调试
+
+; ;; ...existing code...
+
 
 (provide 'init-org)
