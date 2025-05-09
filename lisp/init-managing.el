@@ -162,6 +162,17 @@
   :config
   (which-key-mode))
 
+;; =============================================================================
+;; 版本控制 (Magit)
+(use-package magit
+  :ensure t
+  :defer t ; 或者 :defer 0.5 如果你经常使用它并希望它更快加载
+  :bind (("C-x g" . magit-status))
+  :config
+  ;; Magit 的其他配置可以放在这里
+  ;; 例如，如果你想在 magit-status 缓冲区中默认展开所有 diff：
+  ;; (setq magit-section-initial-visibility-alist '((diff . show)))
+  )
 
 ;; ================================
 ;; Evil Mode 
@@ -173,6 +184,8 @@
   (setq evil-want-keybinding nil) ; 如果需要与其他插件集成
   :config
   (evil-mode 1))
+
+
 
 (provide 'init-managing)
 
