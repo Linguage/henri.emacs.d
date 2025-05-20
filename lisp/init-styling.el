@@ -70,13 +70,13 @@
 ;; =============================================================================
 ;; 主题配置
 
+
+
+
 ;; 定义一个变量来控制是否启用随机主题
 (defvar enable-random-theme nil
   "如果为 t，则启用随机主题；如为nil启用默认主题。")
 
-;; 定义默认主题
-(defvar default-theme 'doom-solarized-light
-  "默认主题名称。")
 
 ;; 定义所有可用主题的列表
 (defvar available-themes
@@ -126,6 +126,24 @@
 (defun load-random-theme ()
   "随机选择并加载一个主题。"
   (load-theme (nth (random (length available-themes)) available-themes) t))
+  
+;; 定义白天和夜晚使用的主题
+(defvar day-theme 'doom-acario-light
+  "白天（9:00-18:00）使用的主题。")
+(defvar night-theme 'doom-one ; 您可以更改为您喜欢的深色主题
+  "夜晚（18:00-次日9:00）使用的主题。")
+
+;; 根据时间设置主题的函数
+(defun henri/set-theme-based-on-time ()
+  "根据当前时间设置白天或夜晚主题。"
+  (let ((current-hour (nth 2 (decode-time (current-time)))))
+    (if (and (>= current-hour 9) (< current-hour 18)) ; 早上9点到下午6点之前
+        (progn
+          (message "Applying day theme: %s" day-theme)
+          (load-theme day-theme t))
+      (progn
+        (message "Applying night theme: %s" night-theme)
+        (load-theme night-theme t)))))
 
 ;; 安装并配置 doom-themes
 (use-package doom-themes
@@ -133,7 +151,7 @@
   :config
   (if enable-random-theme
       (load-random-theme)
-    (load-theme default-theme t)))
+    (henri/set-theme-based-on-time))) ; 调用新函数根据时间设置主题
 
 
 ;; 彩虹括号

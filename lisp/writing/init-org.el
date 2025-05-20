@@ -82,7 +82,7 @@
          :empty-lines 1)
         
         ("s" "学习日志" entry (file+olp+datetree "~/Documents/EmacsNotes/Journal/studylog.org")
-         "* %U %? :journal:study:\n%i\n** 学习内容\n\n** 重要笔记\n\n** 资源链接\n"
+         "* %U %? :journal:study:\n%i\n** 主题与工作\n\n** 要点笔记\n\n** 资源链接\n"
          :empty-lines 1)))
 
 ;; 设置快捷键
