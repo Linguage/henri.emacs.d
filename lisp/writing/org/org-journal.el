@@ -192,8 +192,8 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
 
 (global-set-key (kbd "C-c c") 'org-capture)            ;; 快速创建日志
 (global-set-key (kbd "C-c a") 'org-agenda)             ;; 打开议程视图
-(global-set-key (kbd "C-c s") 'my/search-journal)      ;; 搜索日志
-(global-set-key (kbd "C-c d") 'my/view-diary-by-date)  ;; 直接查看个人日记
+(global-set-key (kbd "C-c j s") 'my/search-journal)      ;; 搜索日志
+(global-set-key (kbd "C-c j d") 'my/view-diary-by-date)  ;; 直接查看个人日记
 
 (provide 'org-journal)
 

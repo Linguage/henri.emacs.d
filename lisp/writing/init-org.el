@@ -1,4 +1,3 @@
-
 ;;; init-org.el --- Org Mode 模块化配置入口 -*- lexical-binding: t -*-
 
 ;; Author: Henri
@@ -37,14 +36,17 @@
 ;; 3. 日志系统 - 推荐  
 (require 'org-journal)
 
-;; 4. LaTeX 导出 - 推荐
+;; 4. LaTeX 导出 - 推荐（新的统一管理系统）
 (require 'org-latex)
 
-;; 5. HTML 导出 - 推荐
-(require 'org-html)
+;; 5. LaTeX 主题扩展 - 可选
+(condition-case err
+    (require 'org-themes)
+  (error 
+   (message "org-themes 加载失败: %s" (error-message-string err))))
 
-;; 6. 学术写作 - 可选（功能被注释，可根据需要启用）
-;; (require 'org-academic)
+;; 6. 学术写作 - 可选（简化版本）
+(require 'org-academic)
 
 
 
