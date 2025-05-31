@@ -110,6 +110,11 @@
 ; (dired "~/Documents/Code-Test/Emacs/")
 
 ;; =============================================================================
+;; 早期警告修复
+;; 在加载其他模块之前先加载警告修复
+(load-file (expand-file-name "lisp/fix-warnings.el" user-emacs-directory))
+
+;; =============================================================================
 ;; 加载核心配置模块
 ;; 功能增强配置
 (load-file (expand-file-name "lisp/init-managing.el" user-emacs-directory))

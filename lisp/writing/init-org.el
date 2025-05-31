@@ -12,10 +12,10 @@
 
 ;; 子模块说明：
 ;; - org-base.el     : 基础配置和美化
-;; - org-pdf.el      : PDF 工具和查看
+;; - org-latex.el    : LaTeX/PDF 导出和工具（合并版本）
 ;; - org-journal.el  : 日志系统和 Agenda
-;; - org-latex.el    : LaTeX 导出配置
-;; - org-academic.el : 学术写作功能（可选）
+;; - org-html.el     : HTML 导出和主题
+;; - org-academic.el : 学术写作模板系统
 
 ;;; Code:
 
@@ -30,25 +30,22 @@
 ;; 1. 基础配置 - 必需
 (require 'org-base)
 
-;; 2. PDF 工具 - 推荐
-(require 'org-pdf)
+;; 2. LaTeX/PDF 导出 - 必需（合并了 PDF 工具）
+(require 'org-latex)
 
 ;; 3. 日志系统 - 推荐  
 (require 'org-journal)
 
-;; 4. LaTeX 导出 - 推荐（新的统一管理系统）
-(require 'org-latex)
+;; 4. HTML 导出 - 推荐
+(require 'org-html)
 
-;; 5. LaTeX 主题扩展 - 可选
-(condition-case err
-    (require 'org-themes)
-  (error 
-   (message "org-themes 加载失败: %s" (error-message-string err))))
-
-;; 6. 学术写作 - 可选（简化版本）
+;; 5. 学术写作 - 新增
 (require 'org-academic)
 
+;; =============================================================================
+;; 初始化学术写作环境
 
+(add-hook 'after-init-hook 'org-academic-init)
 
 (provide 'init-org)
 

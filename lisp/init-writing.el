@@ -20,9 +20,8 @@
 ;;    - org-superstar     -- 美化列表符号
 ;;    - org-fancy-priorities -- 优先级美化
 
-;; 3. LaTeX 支持
-;;    - AucTeX            -- TeX/LaTeX 支持
-;;    - CDLaTeX           -- 快速输入支持
+;; 3. LaTeX 支持 (模块化配置)
+;;    - 使用 LaTeX/ 目录下的模块化配置
 
 ;;; Code:
 
@@ -62,28 +61,19 @@
   (setq markdown-preview-eww-open-on-start t)   ; 打开文件时自动预览
   (setq markdown-preview-eww-relative-images t)) ; 支持相对路径图片
 
-
 ;; =============================================================================
-;; Org Mode配置
+;; Org Mode 配置
 
 (load-file (expand-file-name "lisp/writing/init-org.el" user-emacs-directory))
 
-
 ;; =============================================================================
-;; LaTeX 配置
+;; LaTeX 支持 - 最小化配置
 
-(use-package tex
-  :ensure auctex
-  :defer t
-  :config
-  (setq TeX-auto-save t)
-  (setq TeX-parse-self t)
-  (setq-default TeX-master nil))
+;; 添加 LaTeX 配置目录到 load-path
+(add-to-list 'load-path (expand-file-name "lisp/writing/LaTeX/" user-emacs-directory))
 
-(use-package cdlatex
-  :ensure t
-  :hook ((latex-mode . turn-on-cdlatex)
-         (org-mode . turn-on-org-cdlatex)))
+;; 加载最小化 LaTeX 配置（仅服务于 Org 导出）
+(require 'latex-minimal)
 
 (provide 'init-writing)
 

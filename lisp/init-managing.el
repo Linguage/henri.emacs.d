@@ -109,13 +109,19 @@
 ;; 环境变量同步优化
 (use-package exec-path-from-shell
   :ensure t
-  :defer 2  ; 延迟 2 秒加载
+  :defer 3  ; 延迟 3 秒加载，进一步减少启动时间
   :init
-  (setq exec-path-from-shell-check-startup-files nil) ; 禁用启动文件检查
+  ;; 更激进的性能优化设置
+  (setq exec-path-from-shell-check-startup-files nil)    ; 禁用启动文件检查
+  (setq exec-path-from-shell-debug nil)                  ; 禁用调试输出
+  (setq exec-path-from-shell-shell-name "zsh")           ; 明确指定shell
+  (setq exec-path-from-shell-arguments '("-l"))          ; 减少参数
   (setq exec-path-from-shell-variables '("PATH" "SHELL")) ; 仅同步必要变量
   :config
   (when (memq window-system '(mac ns))
-    (exec-path-from-shell-initialize)))
+    ;; 使用静默模式初始化
+    (let ((inhibit-message t))
+      (exec-path-from-shell-initialize))))
 
 ;; Conda 环境变量仅在需要时加载
 (defun henri/setup-conda-env ()
