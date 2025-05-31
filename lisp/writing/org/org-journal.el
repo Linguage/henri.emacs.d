@@ -195,6 +195,53 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
 (global-set-key (kbd "C-c j s") 'my/search-journal)      ;; 搜索日志
 (global-set-key (kbd "C-c j d") 'my/view-diary-by-date)  ;; 直接查看个人日记
 
+;; =============================================================================
+;; 期刊PDF导出配置
+
+(defun org-journal-setup-pdf-export ()
+  "为期刊文件设置PDF导出的1cm页边距"
+  (interactive)
+  (when (buffer-file-name)
+    (save-excursion
+      (goto-char (point-min))
+      ;; 检查是否已经有LATEX_CLASS设置
+      (unless (re-search-forward "^#\\+LATEX_CLASS:" nil t)
+        ;; 如果没有，在适当位置添加
+        (goto-char (point-min))
+        (if (re-search-forward "^#\\+STARTUP:" nil t)
+            (progn
+              (end-of-line)
+              (insert "\n#+LATEX_CLASS: journal")
+              (when (called-interactively-p 'any)
+                (save-buffer)))
+          ;; 如果没有STARTUP行，在其他位置添加
+          (goto-char (point-min))
+          (if (re-search-forward "^#\\+OPTIONS:" nil t)
+              (progn
+                (end-of-line)
+                (insert "\n#+LATEX_CLASS: journal")
+                (when (called-interactively-p 'any)
+                  (save-buffer)))
+            ;; 如果都没有，在最前面添加
+            (goto-char (point-min))
+            (insert "#+LATEX_CLASS: journal\n")
+            (when (called-interactively-p 'any)
+              (save-buffer))))))
+    (message "已为当前期刊文件设置1cm页边距的PDF导出")))
+
+(defun org-journal-auto-setup-pdf ()
+  "如果当前文件包含journal标签，自动设置PDF导出"
+  (when (and (derived-mode-p 'org-mode)
+             (or (save-excursion
+                   (goto-char (point-min))
+                   (re-search-forward ":journal:" nil t))
+                 (string-match-p "journal\\|diary\\|worklog\\|studylog" 
+                               (buffer-file-name))))
+    (org-journal-setup-pdf-export)))
+
+;; 自动为期刊文件设置正确的LaTeX类
+(add-hook 'org-mode-hook 'org-journal-auto-setup-pdf)
+
 (provide 'org-journal)
 
 ;;; org-journal.el ends here

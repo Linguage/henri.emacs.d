@@ -9,3 +9,6 @@
 !lisp/
 !lisp/**
 !lisp/**/**
+
+.DS_Store
+**/.DS_Store

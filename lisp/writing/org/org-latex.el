@@ -140,7 +140,7 @@
 \\usepackage{amssymb}
 \\usepackage{graphicx}
 \\usepackage{hyperref}
-\\usepackage[top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\\usepackage[top=2cm, bottom=2cm, left=1.5cm, right=1.5cm]{geometry}
 \\linespread{1.15}
 \\setlength{\\parskip}{0.5em}
 [NO-DEFAULT-PACKAGES]
@@ -162,9 +162,35 @@
 \\usepackage{amssymb}
 \\usepackage{graphicx}
 \\usepackage{hyperref}
-\\usepackage[top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\\usepackage[top=2cm, bottom=2cm, left=1.5cm, right=1.5cm]{geometry}
 \\linespread{1.15}
 \\setlength{\\parskip}{0.5em}
+[NO-DEFAULT-PACKAGES]
+[PACKAGES]
+[EXTRA]"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+  ;; 添加专门的期刊文档类（1cm页边距）
+  (add-to-list 'org-latex-classes
+               '("journal"
+                 "\\documentclass[11pt]{article}
+\\usepackage[UTF8,fontset=fandol]{ctex}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{graphicx}
+\\usepackage{hyperref}
+\\usepackage[top=2cm, bottom=2cm, left=1.5cm, right=1.5cm]{geometry}
+\\linespread{1.15}
+\\setlength{\\parskip}{0.5em}
+\\usepackage{fancyhdr}
+\\pagestyle{fancy}
+\\fancyhf{}
+\\rhead{\\thepage}
+\\lhead{日志}
 [NO-DEFAULT-PACKAGES]
 [PACKAGES]
 [EXTRA]"

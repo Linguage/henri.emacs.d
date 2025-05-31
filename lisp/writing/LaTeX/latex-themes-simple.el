@@ -16,9 +16,9 @@
 ;; 核心主题定义
 
 (defvar latex-themes-simple-alist
-  '(("academic" . 
+  '(    ("academic" . 
      "% Academic Theme
-\\usepackage[margin=1in]{geometry}
+\\usepackage[margin=1cm]{geometry}
 \\usepackage{setspace}
 \\onehalfspacing
 \\usepackage{fancyhdr}
@@ -29,14 +29,14 @@
     
     ("minimal" . 
      "% Minimal Theme  
-\\usepackage[margin=1.2in]{geometry}
+\\usepackage[margin=1cm]{geometry}
 \\usepackage{microtype}
 \\setlength{\\parindent}{0pt}
 \\setlength{\\parskip}{6pt plus 2pt minus 1pt}")
     
     ("elegant" .
      "% Elegant Theme
-\\usepackage[margin=1in]{geometry}
+\\usepackage[margin=1cm]{geometry}
 \\usepackage{microtype}
 \\usepackage{titlesec}
 \\titleformat{\\section}{\\Large\\bfseries}{\\thesection}{1em}{}
@@ -44,7 +44,7 @@
     
     ("modern" .
      "% Modern Theme
-\\usepackage[margin=1in]{geometry}
+\\usepackage[margin=1cm]{geometry}
 \\usepackage{xcolor}
 \\definecolor{modernblue}{RGB}{0,123,191}
 \\usepackage{titlesec}
