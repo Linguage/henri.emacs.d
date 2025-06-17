@@ -188,9 +188,12 @@
 
 
 (use-package all-the-icons
-  :ensure t)
-
-(require 'all-the-icons)
+  :ensure t
+  :config
+  ;; 检查字体是否已安装，如果没有则安装
+  (unless (member "all-the-icons" (font-family-list))
+    (when (display-graphic-p)
+      (all-the-icons-install-fonts t))))
 
 
 (defun henri/get-os-type ()
@@ -247,6 +250,124 @@
 ;; 应用字体设置
 (when window-system
   (henri/set-font))
+
+;; =============================================================================
+;; 标签页配置 (Centaur Tabs)
+
+(use-package centaur-tabs
+  :ensure t
+  :demand t
+  :config
+  ;; 启用 centaur-tabs
+  (centaur-tabs-mode t)
+    ;; 基础设置
+  (setq centaur-tabs-style "bar")              ; 标签页样式: "alternate", "bar", "box", "chamfer", "rounded", "slant", "wave", "zigzag"
+  (setq centaur-tabs-height 32)                ; 标签页高度
+  (setq centaur-tabs-set-icons nil)            ; 暂时禁用图标避免字体问题
+  (setq centaur-tabs-show-new-tab-button t)    ; 显示新建标签按钮
+  (setq centaur-tabs-set-close-button t)       ; 显示关闭按钮
+  (setq centaur-tabs-close-button "×")         ; 关闭按钮样式
+  (setq centaur-tabs-new-tab-button "+")       ; 新建按钮样式
+  (setq centaur-tabs-set-modified-marker t)    ; 显示修改标记
+  (setq centaur-tabs-modified-marker "●")      ; 修改标记样式
+  
+  ;; 标签页分组
+  (setq centaur-tabs-adjust-buffer-order t)    ; 自动调整标签页顺序
+  (setq centaur-tabs-enable-buffer-alphabetical-reordering t) ; 按字母顺序排序
+  
+  ;; 鼠标操作
+  (setq centaur-tabs-enable-ido-completion nil) ; 禁用 ido 补全
+  
+  ;; 定制标签页分组规则
+  (defun centaur-tabs-buffer-groups ()
+    "自定义缓冲区分组规则"
+    (list
+     (cond
+      ;; Org 模式文件
+      ((derived-mode-p 'org-mode)
+       "Org")
+      ;; 编程语言文件
+      ((or (derived-mode-p 'prog-mode)
+           (derived-mode-p 'python-mode)
+           (derived-mode-p 'emacs-lisp-mode)
+           (derived-mode-p 'js-mode)
+           (derived-mode-p 'c-mode)
+           (derived-mode-p 'java-mode))
+       "Programming")
+      ;; 文本文件
+      ((or (derived-mode-p 'text-mode)
+           (derived-mode-p 'markdown-mode)
+           (derived-mode-p 'latex-mode))
+       "Text")
+      ;; Dired 目录浏览
+      ((derived-mode-p 'dired-mode)
+       "Dired")
+      ;; 系统缓冲区
+      ((string-equal "*" (substring (buffer-name) 0 1))
+       "System")
+      ;; 默认分组
+      (t
+       "General"))))
+  
+  ;; 隐藏特定缓冲区的标签页
+  (defun centaur-tabs-hide-tab (x)
+    "隐藏不需要显示标签页的缓冲区"
+    (let ((name (format "%s" x)))
+      (or
+       ;; 当前缓冲区不是文件缓冲区
+       (string-prefix-p "*epc" name)
+       (string-prefix-p "*helm" name)
+       (string-prefix-p "*Helm" name)
+       (string-prefix-p "*Compile-Log*" name)
+       (string-prefix-p "*lsp" name)
+       (string-prefix-p "*company" name)
+       (string-prefix-p "*Flycheck" name)
+       (string-prefix-p "*tramp" name)
+       (string-prefix-p " *Mini" name)
+       (string-prefix-p "*help" name)
+       (string-prefix-p "*straight" name)
+       (string-prefix-p " *temp" name)
+       (string-prefix-p "*Help" name)
+       (string-prefix-p "*mybuf" name)
+       ;; 不是普通文件或者目录
+       (and (string-prefix-p "magit" name)
+            (not (file-name-extension name))))))
+  
+  ;; 键盘快捷键
+  :bind
+  ("C-<prior>" . centaur-tabs-backward)        ; Ctrl+PageUp: 前一个标签
+  ("C-<next>" . centaur-tabs-forward)          ; Ctrl+PageDown: 后一个标签
+  ("C-c t s" . centaur-tabs-counsel-switch-group) ; 切换标签组
+  ("C-c t p" . centaur-tabs-group-by-projectile-project) ; 按项目分组
+  ("C-c t g" . centaur-tabs-group-buffer-groups) ; 重新分组
+  )
+
+;; 可选：添加额外的鼠标滚轮支持
+(global-set-key [mouse-4] 'centaur-tabs-backward) ; 鼠标滚轮向上
+(global-set-key [mouse-5] 'centaur-tabs-forward)  ; 鼠标滚轮向下
+
+;; 可选：标签页主题美化 (与当前主题集成)
+(defun henri/centaur-tabs-theme ()
+  "为 centaur-tabs 设置主题颜色"
+  (when (display-graphic-p)
+    ;; 根据当前主题调整标签页颜色
+    (centaur-tabs-headline-match)))
+
+;; 在主题加载后应用标签页主题
+(add-hook 'doom-themes-after-load-theme-hook #'henri/centaur-tabs-theme)
+
+;; 安全启用图标的函数
+(defun henri/enable-centaur-tabs-icons ()
+  "安全地启用 centaur-tabs 图标。"
+  (when (and (featurep 'all-the-icons)
+             (member "all-the-icons" (font-family-list))
+             (display-graphic-p))
+    (setq centaur-tabs-set-icons t)
+    (centaur-tabs-mode t)  ; 重新启用以应用图标设置
+    (message "Centaur-tabs 图标已启用")))
+
+;; 延迟启用图标，确保字体已加载
+(run-with-idle-timer 3 nil #'henri/enable-centaur-tabs-icons)
 
 (provide 'init-styling)
 
