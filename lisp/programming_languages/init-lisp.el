@@ -14,9 +14,10 @@
 ;;; Code:
 
 ;; =============================================================================
-;; 通用 Lisp 编辑功能
+;; 通用 Lisp 编辑功能 (延迟加载)
 (use-package paredit
   :ensure t
+  :defer t  ; 延迟加载
   :hook ((emacs-lisp-mode lisp-mode scheme-mode slime-repl-mode) . paredit-mode)
   :config
   (show-paren-mode 1)                      ; 显示匹配的括号
@@ -24,13 +25,15 @@
 
 (use-package rainbow-delimiters
   :ensure t
+  :defer t  ; 延迟加载
   :hook ((emacs-lisp-mode lisp-mode scheme-mode slime-repl-mode) . rainbow-delimiters-mode))
 
 ;; =============================================================================
-;; Common Lisp 开发环境
+;; Common Lisp 开发环境 (延迟加载)
 (use-package slime
   :ensure t
-  :defer t
+  :defer t  ; 延迟加载，仅在需要时启动
+  :commands (slime slime-connect slime-mode)
   :init
   (setq inferior-lisp-program "sbcl")      ; 设置 Lisp 解释器
   :config
@@ -58,26 +61,30 @@
 
 (use-package slime-company
   :ensure t
+  :defer t  ; 延迟加载
   :after (slime company)
   :config
   (setq slime-company-completion 'fuzzy
         slime-company-after-completion 'slime-company-just-one-space))
 
 ;; =============================================================================
-;; Scheme 开发环境
+;; Scheme 开发环境 (延迟加载)
 (use-package geiser
   :ensure t
-  :defer t
+  :defer t  ; 延迟加载
+  :commands (geiser geiser-mode run-geiser)
   :config
   (setq geiser-active-implementations '(racket guile))
   (setq geiser-repl-use-other-window t))
 
 (use-package geiser-racket
   :ensure t
+  :defer t  ; 延迟加载
   :after geiser)
 
 (use-package geiser-guile
   :ensure t
+  :defer t  ; 延迟加载
   :after geiser)
 
 ;; =============================================================================

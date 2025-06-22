@@ -102,14 +102,15 @@
 
 
 ;; =============================================================================
-;; Shell 环境配置
+;; Shell 环境配置 (延迟加载)
 (setq shell-file-name "/bin/zsh"
       explicit-shell-file-name "/bin/zsh")
 
-;; 环境变量同步优化
+;; 环境变量同步优化 - 更激进的延迟加载
 (use-package exec-path-from-shell
   :ensure t
-  :defer 3  ; 延迟 3 秒加载，进一步减少启动时间
+  :defer t  ; 完全延迟加载，仅在首次需要时加载
+  :commands (exec-path-from-shell-initialize exec-path-from-shell-copy-env)
   :init
   ;; 更激进的性能优化设置
   (setq exec-path-from-shell-check-startup-files nil)    ; 禁用启动文件检查
@@ -123,41 +124,62 @@
     (let ((inhibit-message t))
       (exec-path-from-shell-initialize))))
 
+;; 延迟初始化 shell 环境变量 - 仅在需要时加载
+(defun henri/initialize-shell-env ()
+  "延迟初始化 shell 环境变量。"
+  (interactive)
+  (when (memq window-system '(mac ns))
+    (require 'exec-path-from-shell)
+    (exec-path-from-shell-initialize)))
+
 ;; Conda 环境变量仅在需要时加载
 (defun henri/setup-conda-env ()
   "设置 Conda 环境变量。"
   (interactive)
+  (henri/initialize-shell-env)  ; 确保 shell 环境已初始化
   (exec-path-from-shell-copy-env "CONDA_PREFIX")
   (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV"))
 
+;; 在空闲时或首次使用编程模式时初始化 shell 环境
+(run-with-idle-timer 10 nil #'henri/initialize-shell-env)  ; 延迟10秒
+(add-hook 'prog-mode-hook #'henri/initialize-shell-env)
+
 ;; =============================================================================
-;; 窗口布局配置
+;; 窗口布局配置 (延迟加载)
 (use-package eshell
   :ensure nil  ; 内置包不需要安装
   :defer t    ; 延迟加载
-  :commands (eshell)
+  :commands (eshell eshell-command)
   :init
-  (setq eshell-prefer-lisp-functions t)) ; 优先使用 Lisp 函数
+  (setq eshell-prefer-lisp-functions t) ; 优先使用 Lisp 函数
+  :config
+  ;; eshell 的配置仅在首次使用时加载
+  (setq eshell-history-size 1000)
+  (setq eshell-save-history-on-exit t))
 
-;; 延迟窗口布局设置
+;; 延迟窗口布局设置 - 进一步延迟
 (defun henri/setup-window-layout ()
   "延迟设置窗口布局。"
   (run-with-idle-timer
-   2 nil
+   5 nil  ; 延迟5秒，给启动更多时间
    (lambda ()
      (when (and (display-graphic-p)
                 (not (member (buffer-name) '("*scratch*" "*Messages*"))))
        (split-window-right)
        (other-window 1)
-       (eshell)))))
+       ;; 延迟加载 eshell
+       (if (featurep 'eshell)
+           (eshell)
+         (require 'eshell)
+         (eshell))))))
 
-;; 仅在图形界面时设置窗口布局
+;; 仅在图形界面且空闲时设置窗口布局
 (when (display-graphic-p)
-  (add-hook 'emacs-startup-hook #'henri/setup-window-layout))
+  (run-with-idle-timer 3 nil #'henri/setup-window-layout))
 
 ;; 全局设置延迟到空闲时加载
 (run-with-idle-timer
- 1 nil
+ 2 nil  ; 延迟2秒
  (lambda ()
    (global-visual-line-mode 1)))
 
