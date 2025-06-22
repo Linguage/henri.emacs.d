@@ -252,18 +252,21 @@
   (henri/set-font))
 
 ;; =============================================================================
-;; 标签页配置 (Centaur Tabs)
+;; 标签页配置 (Centaur Tabs) - 延迟加载避免崩溃
 
 (use-package centaur-tabs
   :ensure t
-  :demand t
+  :defer t  ; 延迟加载，而不是立即加载
+  :init
+  ;; 在图形环境下延迟启动 centaur-tabs
+  (when (display-graphic-p)
+    (add-hook 'emacs-startup-hook 'henri/setup-centaur-tabs))
+  
   :config
-  ;; 启用 centaur-tabs
-  (centaur-tabs-mode t)
-    ;; 基础设置
-  (setq centaur-tabs-style "bar")              ; 标签页样式: "alternate", "bar", "box", "chamfer", "rounded", "slant", "wave", "zigzag"
+  ;; 基础设置
+  (setq centaur-tabs-style "bar")              ; 标签页样式
   (setq centaur-tabs-height 32)                ; 标签页高度
-  (setq centaur-tabs-set-icons nil)            ; 暂时禁用图标避免字体问题
+  (setq centaur-tabs-set-icons nil)            ; 初始禁用图标，后续安全启用
   (setq centaur-tabs-show-new-tab-button t)    ; 显示新建标签按钮
   (setq centaur-tabs-set-close-button t)       ; 显示关闭按钮
   (setq centaur-tabs-close-button "×")         ; 关闭按钮样式
@@ -332,42 +335,72 @@
        ;; 不是普通文件或者目录
        (and (string-prefix-p "magit" name)
             (not (file-name-extension name))))))
-  
-  ;; 键盘快捷键
+    ;; 键盘快捷键
   :bind
   ("C-<prior>" . centaur-tabs-backward)        ; Ctrl+PageUp: 前一个标签
   ("C-<next>" . centaur-tabs-forward)          ; Ctrl+PageDown: 后一个标签
-  ("C-c t s" . centaur-tabs-counsel-switch-group) ; 切换标签组
-  ("C-c t p" . centaur-tabs-group-by-projectile-project) ; 按项目分组
-  ("C-c t g" . centaur-tabs-group-buffer-groups) ; 重新分组
+  ;; 移除可能有问题的函数绑定
   )
 
-;; 可选：添加额外的鼠标滚轮支持
-(global-set-key [mouse-4] 'centaur-tabs-backward) ; 鼠标滚轮向上
-(global-set-key [mouse-5] 'centaur-tabs-forward)  ; 鼠标滚轮向下
+;; 延迟设置函数，确保安全启动
+(defun henri/setup-centaur-tabs ()
+  "安全地设置和启动 centaur-tabs"
+  (interactive)
+  (run-with-idle-timer 
+   2 nil
+   (lambda ()
+     (when (and (display-graphic-p)
+                (not (bound-and-true-p centaur-tabs-mode)))
+       ;; 先确保包已加载
+       (require 'centaur-tabs nil t)
+       ;; 启用 tabs 模式
+       (centaur-tabs-mode 1)
+       (message "Centaur-tabs 已启用")
+       ;; 设置鼠标滚轮支持
+       (henri/setup-tabs-mouse-support)
+       ;; 尝试启用图标（如果字体可用）
+       (henri/maybe-enable-tabs-icons)))))
+
+;; 鼠标支持设置
+(defun henri/setup-tabs-mouse-support ()
+  "设置标签页的鼠标支持"
+  (global-set-key [mouse-4] 'centaur-tabs-backward) ; 鼠标滚轮向上
+  (global-set-key [mouse-5] 'centaur-tabs-forward)) ; 鼠标滚轮向下
+
+;; 安全的图标启用函数
+(defun henri/maybe-enable-tabs-icons ()
+  "尝试安全地启用 centaur-tabs 图标"
+  (when (and (featurep 'all-the-icons)
+             (display-graphic-p))
+    ;; 在图形环境下检查字体
+    (condition-case err
+        (when (and (> (length (font-family-list)) 0)
+                   (or (member "all-the-icons" (font-family-list))
+                       (member "All The Icons" (font-family-list))))
+          (setq centaur-tabs-set-icons t)
+          ;; 重新应用设置
+          (when (bound-and-true-p centaur-tabs-mode)
+            (centaur-tabs-mode -1)
+            (centaur-tabs-mode 1))
+          (message "Centaur-tabs 图标已启用"))
+      (error 
+       (message "图标启用失败: %s" err)))))
 
 ;; 可选：标签页主题美化 (与当前主题集成)
 (defun henri/centaur-tabs-theme ()
   "为 centaur-tabs 设置主题颜色"
-  (when (display-graphic-p)
+  (when (and (display-graphic-p)
+             (bound-and-true-p centaur-tabs-mode))
     ;; 根据当前主题调整标签页颜色
-    (centaur-tabs-headline-match)))
+    (condition-case nil
+        (centaur-tabs-headline-match)
+      (error nil))))
 
 ;; 在主题加载后应用标签页主题
 (add-hook 'doom-themes-after-load-theme-hook #'henri/centaur-tabs-theme)
 
-;; 安全启用图标的函数
-(defun henri/enable-centaur-tabs-icons ()
-  "安全地启用 centaur-tabs 图标。"
-  (when (and (featurep 'all-the-icons)
-             (member "all-the-icons" (font-family-list))
-             (display-graphic-p))
-    (setq centaur-tabs-set-icons t)
-    (centaur-tabs-mode t)  ; 重新启用以应用图标设置
-    (message "Centaur-tabs 图标已启用")))
-
-;; 延迟启用图标，确保字体已加载
-(run-with-idle-timer 3 nil #'henri/enable-centaur-tabs-icons)
+;; 移除之前可能有问题的延迟加载代码
+;; (run-with-idle-timer 3 nil #'henri/enable-centaur-tabs-icons)
 
 (provide 'init-styling)
 
