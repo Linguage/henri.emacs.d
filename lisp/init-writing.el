@@ -53,13 +53,13 @@
   :bind (:map markdown-mode-map
          ("C-c C-g" . grip-mode)))
 
-;; 增强预览支持
+;; 增强预览支持 - 禁用自动预览
 (use-package markdown-preview-eww
   :ensure t
   :after markdown-mode
   :config
-  (setq markdown-preview-eww-open-on-start t)   ; 打开文件时自动预览
-  (setq markdown-preview-eww-relative-images t)) ; 支持相对路径图片
+  (setq markdown-preview-eww-open-on-start nil)   ; 禁用打开文件时自动预览
+  (setq markdown-preview-eww-relative-images t))  ; 支持相对路径图片
 
 ;; =============================================================================
 ;; Org Mode 配置

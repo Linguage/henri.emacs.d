@@ -23,6 +23,7 @@
 ;;    - Fortran        -- 现代 Fortran 支持
 ;;    - Julia          -- 科学计算语言支持
 ;;    - Python         -- Python 开发环境
+;;    - Octave         -- Octave/MATLAB 开发环境
 
 ;; 3. 开发工具
 ;;    - imenu          -- 代码导航和大纲
@@ -33,7 +34,7 @@
 
 ;; 使用说明：
 ;; 1. 确保 Emacs 版本 >= 29.1
-;; 2. 安装必要的外部依赖（clangd, pylsp, fortls 等）
+;; 2. 安装必要的外部依赖（clangd, pylsp, fortls, octave 等）
 ;; 3. 按需配置各语言的 LSP 服务器
 
 ;;; Code:
@@ -219,6 +220,11 @@
 (load-file (expand-file-name "lisp/programming_languages/init-python.el" user-emacs-directory))
 
 ;; =============================================================================
+;; Octave 开发环境配置
+;; 从单独的配置文件加载 Octave 相关设置
+(load-file (expand-file-name "lisp/programming_languages/init-octave.el" user-emacs-directory))
+
+;; =============================================================================
 ;; 代码导航与调试工具配置
 
 ;; 代码大纲：imenu
@@ -278,7 +284,13 @@
       (:exec . ("%c %o -o %e %s"
                 "%e %a"))
       (:remove . ("%e")))
-    :default "fortran"))
+    :default "fortran")
+  ;; Octave 运行配置
+  (quickrun-add-command "octave"
+    '((:command . "octave")
+      (:exec . ("%c --no-gui --eval \"run('%s')\""))
+      (:tempfile . nil))
+    :default "octave"))
 
 ;; =============================================================================
 ;; LeetCode 刷题配置

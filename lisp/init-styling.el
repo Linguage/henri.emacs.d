@@ -312,12 +312,12 @@
       (t
        "General"))))
   
-  ;; 隐藏特定缓冲区的标签页
+  ;; 隐藏特定缓冲区的标签页 - 扩展过滤规则
   (defun centaur-tabs-hide-tab (x)
     "隐藏不需要显示标签页的缓冲区"
     (let ((name (format "%s" x)))
       (or
-       ;; 当前缓冲区不是文件缓冲区
+       ;; 系统和临时缓冲区
        (string-prefix-p "*epc" name)
        (string-prefix-p "*helm" name)
        (string-prefix-p "*Helm" name)
@@ -332,9 +332,21 @@
        (string-prefix-p " *temp" name)
        (string-prefix-p "*Help" name)
        (string-prefix-p "*mybuf" name)
-       ;; 不是普通文件或者目录
+       ;; 增加更多需要隐藏的buffer
+       (string-prefix-p "*Warnings*" name)
+       (string-prefix-p "*Messages*" name)
+       (string-prefix-p "*scratch*" name)
+       (string-prefix-p "*Completions*" name)
+       (string-prefix-p "*Async-native-compile-log*" name)
+       (string-prefix-p "*eshell*" name)  ; 隐藏eshell标签页
+       (string-prefix-p "*shell*" name)   ; 隐藏shell标签页
+       (string-prefix-p "*terminal*" name) ; 隐藏terminal标签页
+       ;; Magit相关buffer
        (and (string-prefix-p "magit" name)
-            (not (file-name-extension name))))))
+            (not (file-name-extension name)))
+       ;; 隐藏预览相关buffer
+       (string-prefix-p "*markdown-preview*" name)
+       (string-prefix-p "*grip-*" name))))
     ;; 键盘快捷键
   :bind
   ("C-<prior>" . centaur-tabs-backward)        ; Ctrl+PageUp: 前一个标签
