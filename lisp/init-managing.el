@@ -157,25 +157,24 @@
   (setq eshell-history-size 1000)
   (setq eshell-save-history-on-exit t))
 
-;; 延迟窗口布局设置 - 进一步延迟
+;; 延迟窗口布局设置 - 改为手动触发
 (defun henri/setup-window-layout ()
-  "延迟设置窗口布局。"
-  (run-with-idle-timer
-   5 nil  ; 延迟5秒，给启动更多时间
-   (lambda ()
-     (when (and (display-graphic-p)
-                (not (member (buffer-name) '("*scratch*" "*Messages*"))))
-       (split-window-right)
-       (other-window 1)
-       ;; 延迟加载 eshell
-       (if (featurep 'eshell)
-           (eshell)
-         (require 'eshell)
-         (eshell))))))
+  "手动设置窗口布局：分割窗口并启动eshell。
+现在通过快捷键 C-c w l 手动触发，不再自动执行。"
+  (interactive)  ; 添加 interactive 使其可以通过快捷键调用
+  (when (display-graphic-p)
+    (split-window-right)
+    (other-window 1)
+    ;; 启动 eshell
+    (if (featurep 'eshell)
+        (eshell)
+      (require 'eshell)
+      (eshell))))
 
 ;; 仅在图形界面且空闲时设置窗口布局
-(when (display-graphic-p)
-  (run-with-idle-timer 3 nil #'henri/setup-window-layout))
+;; 注释掉自动窗口布局，改为手动触发
+;; (when (display-graphic-p)
+;;   (run-with-idle-timer 3 nil #'henri/setup-window-layout))
 
 ;; 全局设置延迟到空闲时加载
 (run-with-idle-timer
@@ -189,6 +188,11 @@
   :ensure t
   :config
   (which-key-mode))
+
+;; =============================================================================
+;; 手动控制选项快捷键
+(global-set-key (kbd "C-c w l") #'henri/setup-window-layout)  ; 手动触发窗口布局
+(global-set-key (kbd "C-c w e") #'eshell)                     ; 手动启动eshell
 
 ;; =============================================================================
 ;; 版本控制 (Magit)
