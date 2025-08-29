@@ -28,6 +28,10 @@
   "Performance & large file behavior."
   :group 'henri-core :prefix "henri-")
 
+(defgroup henri-experiments nil
+  "Experimental features (can be unstable)."
+  :group 'henri-core :prefix "henri-")
+
 ;; Theme strategy -------------------------------------------------------------
 (defcustom henri-theme-mode 'time
   "Theme selection strategy.
@@ -97,6 +101,19 @@
 (defcustom henri-large-file-threshold 5000000
   "Threshold (bytes) above which large-file optimizations apply."
   :type 'integer :group 'henri-performance)
+
+(defcustom henri-large-file-disable-modes '(flycheck font-lock tree-sitter eglot)
+  "List of subsystems to disable for large files.
+Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(set (const flycheck) (const font-lock) (const tree-sitter) (const eglot) (const line-numbers)) :group 'henri-performance)
+
+(defcustom henri-large-file-minor-highlighting-level 1
+  "Value for `font-lock-maximum-decoration' in large buffers." :type 'integer :group 'henri-performance)
+
+(defcustom henri-experimental-completion-backend 'ivy
+  "Completion stack selection (experimental)." :type '(choice (const ivy) (const vertico) (const corfu)) :group 'henri-experiments)
+
+(defcustom henri-enable-byte-compile-check t
+  "Whether to run batch byte-compile in CI helper scripts." :type 'boolean :group 'henri-performance)
 
 (defcustom henri-backup-enable t
   "Whether to enable centralized backups (future phase)."
