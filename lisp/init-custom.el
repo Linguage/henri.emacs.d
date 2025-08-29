@@ -158,5 +158,12 @@
 
 (run-at-time "1 hour" 3600 #'henri/refresh-theme-if-needed)
 
+(defun henri/select-theme (theme)
+  "Interactively pick THEME (symbol) from `henri-available-themes' and apply it as fixed mode."
+  (interactive (list (intern (completing-read "Theme: " (mapcar #'symbol-name henri-available-themes)))))
+  (setq henri-theme-mode 'fixed
+    henri-theme-fixed-theme theme)
+  (henri/apply-current-theme t))
+
 (provide 'init-custom)
 ;;; init-custom.el ends here

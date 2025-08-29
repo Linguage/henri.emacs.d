@@ -194,6 +194,13 @@
 
 (add-hook 'find-file-hook #'henri/large-file-optimizations)
 
+(defun henri/restore-from-large-file ()
+  "Manually restore common minor modes after large file optimizations."
+  (interactive)
+  (display-line-numbers-mode 1)
+  (when (fboundp 'flycheck-mode) (flycheck-mode 1))
+  (message "[henri] Restored modes for current buffer."))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 编程语言支持配置                 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

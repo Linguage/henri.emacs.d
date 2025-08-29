@@ -46,7 +46,12 @@
                      gcs-done)
             ;; 降低 GC 阈值
             (setq gc-cons-threshold (* 16 1024 1024)
-                  gc-cons-percentage 0.15)))
+      gc-cons-percentage 0.15)
+    ;; 条件健康报告
+    (when (and (boundp 'henri-health-report-on-startup)
+           henri-health-report-on-startup
+           (fboundp 'henri/report-health))
+      (henri/report-health))) )
 
 ;; =============================================================================
 ;; 快速启动模式
@@ -133,6 +138,10 @@
 (load-file (expand-file-name "lisp/init-styling.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/init-programming.el" user-emacs-directory))
 (load-file (expand-file-name "lisp/init-writing.el" user-emacs-directory))
+
+;; 诊断/状态工具
+(load-file (expand-file-name "lisp/ops/status.el" user-emacs-directory))
+(load-file (expand-file-name "lisp/ops/backup.el" user-emacs-directory))
 
 
 ;; =============================================================================
