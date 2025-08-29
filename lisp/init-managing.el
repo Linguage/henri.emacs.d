@@ -196,29 +196,12 @@
 
 ;; =============================================================================
 ;; 版本控制 (Magit)
-(use-package magit
-  :ensure t
-  :defer t ; 或者 :defer 0.5 如果你经常使用它并希望它更快加载
-  :bind (("C-x g" . magit-status))
-  :config
-  ;; Magit 的其他配置可以放在这里
-  ;; 例如，如果你想在 magit-status 缓冲区中默认展开所有 diff：
-  ;; (setq magit-section-initial-visibility-alist '((diff . show)))
-  )
+(when (boundp 'henri-enable-magit)
+  (use-package magit
+    :ensure t
+    :if henri-enable-magit
+    :commands (magit-status)
+    :bind (("C-x g" . magit-status))))
 
 ;; ================================
-;; Evil Mode 
-
-(use-package evil
-  :ensure t
-  :init
-  (setq evil-want-integration t)
-  (setq evil-want-keybinding nil) ; 如果需要与其他插件集成
-  :config
-  (evil-mode 1))
-
-
-
-(provide 'init-managing)
-
-;;; init-managing.el ends here
+;; centaur-tabs 迁移到 styling，保持此处不重复定义（保留函数引用）。

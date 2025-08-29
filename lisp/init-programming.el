@@ -78,6 +78,14 @@
   (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
   (add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
   (add-to-list 'eglot-server-programs '(fortran-mode . ("fortls")))
+  ;; 受管 buffer 保存前格式化（尊重 size 与开关）
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              (when (and (boundp 'henri-lsp-auto-format)
+                         henri-lsp-auto-format
+                         (or (not (boundp 'henri-lsp-format-size-threshold))
+                             (< (buffer-size) henri-lsp-format-size-threshold)))
+                (add-hook 'before-save-hook #'eglot-format-buffer nil t))))
   ;; 为特定模式启用 eglot
   (dolist (hook '(c-mode-hook
                   c++-mode-hook
@@ -164,6 +172,27 @@
 (use-package flycheck
   :ensure t
   :hook (after-init . global-flycheck-mode))
+
+;; 大文件优化逻辑 -----------------------------------------------------------
+(defun henri/large-file-optimizations ()
+  "Apply performance tweaks for large files based on `henri-large-file-threshold'."
+  (when (and (boundp 'henri-large-file-threshold)
+             buffer-file-name
+             (> (buffer-size) henri-large-file-threshold))
+    (when (bound-and-true-p display-line-numbers-mode)
+      (display-line-numbers-mode -1))
+    (when (bound-and-true-p flycheck-mode)
+      (flycheck-mode -1))
+    (when (boundp 'eglot--managed-mode)
+      (when eglot--managed-mode
+        (message "[henri] Skipping eglot for large file: %s" (buffer-name))))
+    (setq-local eglot--managed-mode nil)
+    (setq-local bidi-display-reordering nil)
+    (setq-local bidi-paragraph-direction 'left-to-right)
+    (setq-local font-lock-maximum-decoration 1)
+    (message "[henri] Large file optimizations applied (size=%d)." (buffer-size))))
+
+(add-hook 'find-file-hook #'henri/large-file-optimizations)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 编程语言支持配置                 ;;
@@ -296,11 +325,13 @@
 ;; LeetCode 刷题配置
 (use-package leetcode
   :ensure t
+  :if (and (boundp 'henri-enable-leetcode) henri-enable-leetcode)
+  :commands (leetcode)
   :config
-  (setq leetcode-prefer-language "python") ; 设置默认编程语言
-  (setq leetcode-save-solutions t)         ; 启用解决方案自动保存
-  (setq leetcode-directory "~/leetcode/")  ; 设置保存目录
-  (setq leetcode-coding-preference 'contest)) ; 设置编码偏好
+  (setq leetcode-prefer-language "python")
+  (setq leetcode-save-solutions t)
+  (setq leetcode-directory "~/leetcode/")
+  (setq leetcode-coding-preference 'contest))
 
 
 (provide 'init-programming)

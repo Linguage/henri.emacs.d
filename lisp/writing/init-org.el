@@ -28,24 +28,36 @@
 ;; 加载所有 Org Mode 子模块
 
 ;; 1. 基础配置 - 必需
-(require 'org-base)
+;; 条件加载基础模块
+(when (and (boundp 'henri-org-enable-base) henri-org-enable-base)
+	(require 'org-base))
 
 ;; 2. LaTeX/PDF 导出 - 必需（合并了 PDF 工具）
-(require 'org-latex)
+;; LaTeX / PDF
+(when (and (boundp 'henri-org-enable-latex) henri-org-enable-latex)
+	(require 'org-latex))
 
 ;; 3. 日志系统 - 推荐  
-(require 'org-journal)
+;; Journal
+(when (and (boundp 'henri-org-enable-journal) henri-org-enable-journal)
+	(require 'org-journal))
 
 ;; 4. HTML 导出 - 推荐
-(require 'org-html)
+;; HTML
+(when (and (boundp 'henri-org-enable-html) henri-org-enable-html)
+	(require 'org-html))
 
 ;; 5. 学术写作 - 新增
-(require 'org-academic)
+;; Academic
+(when (and (boundp 'henri-org-enable-academic) henri-org-enable-academic)
+	(require 'org-academic))
 
 ;; =============================================================================
 ;; 初始化学术写作环境
 
-(add-hook 'after-init-hook 'org-academic-init)
+(when (and (boundp 'henri-org-enable-academic) henri-org-enable-academic
+		   (fboundp 'org-academic-init))
+  (add-hook 'after-init-hook 'org-academic-init))
 
 (provide 'init-org)
 

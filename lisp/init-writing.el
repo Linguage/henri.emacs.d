@@ -50,6 +50,7 @@
 (use-package grip-mode
   :ensure t
   :after markdown-mode
+  :if (and (boundp 'henri-enable-grip) henri-enable-grip)
   :bind (:map markdown-mode-map
          ("C-c C-g" . grip-mode)))
 

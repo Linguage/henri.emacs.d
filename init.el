@@ -27,9 +27,15 @@
 ;; =============================================================================
 ;; 启动性能优化
 
-;; 禁用文件名处理程序
-(defvar default-file-name-handler-alist file-name-handler-alist)
-(setq file-name-handler-alist nil)
+;; （已移至 early-init）启动后恢复 file-name-handler-alist
+(defvar default-file-name-handler-alist (or (bound-and-true-p henri--saved-file-name-handler-alist)
+                                           file-name-handler-alist)
+  "Original file-name-handler-alist saved for restoration after startup.")
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (when (boundp 'henri--saved-file-name-handler-alist)
+              (setq file-name-handler-alist henri--saved-file-name-handler-alist))
+            (message "[henri] file-name-handler-alist restored.")))
 
 ;; 启动时间统计
 (defvar henri/startup-time-init (current-time))
@@ -37,7 +43,10 @@
           (lambda ()
             (message "Emacs 启动耗时 %.2f 秒，共进行 %d 次 GC"
                      (float-time (time-subtract (current-time) henri/startup-time-init))
-                     gcs-done)))
+                     gcs-done)
+            ;; 降低 GC 阈值
+            (setq gc-cons-threshold (* 16 1024 1024)
+                  gc-cons-percentage 0.15)))
 
 ;; =============================================================================
 ;; 快速启动模式
@@ -114,6 +123,9 @@
 ;; 在加载其他模块之前先加载警告修复
 (load-file (expand-file-name "lisp/fix-warnings.el" user-emacs-directory))
 
+;; 自定义项与分组（需最早加载）
+(load-file (expand-file-name "lisp/init-custom.el" user-emacs-directory))
+
 ;; =============================================================================
 ;; 加载核心配置模块
 ;; 功能增强配置
@@ -129,16 +141,8 @@
 ;; =============================================================================
 ;; 性能优化配置
 
-;; 垃圾回收优化
-(setq gc-cons-threshold (* 100 1024 1024))    ; 设置为 100MB
-(setq gc-cons-percentage 0.6)                  ; 触发阈值设为 0.6
+;; 垃圾回收 / 进程 IO 优化
 (setq read-process-output-max (* 1024 1024))   ; 增加进程读取量为 1MB
-
-;; 启动后恢复正常的 GC
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (setq gc-cons-threshold (* 16 1024 1024))  ; 16MB
-            (setq gc-cons-percentage 0.1)))
 
 ;; 大文件优化
 (setq large-file-warning-threshold (* 100 1024 1024)) ; 设置大文件警告阈值为 100MB
@@ -167,5 +171,33 @@
   (load custom-file))
 
 (provide 'init)
+
+;;; ---------------------------------------------------------------------------
+;;; 健康报告（初始骨架，可扩展）
+
+(defun henri/report-health (&optional verbose)
+  "打印当前配置健康状态。
+VERBOSE 非空时输出更多细节。"
+  (interactive "P")
+  (let* ((uptime (float-time (time-subtract (current-time) henri/startup-time-init)))
+         (pkg-count (length package-activated-list))
+         (gc-thresh gc-cons-threshold)
+         (lsp-bufs (cl-loop for b in (buffer-list)
+                            when (buffer-local-value 'eglot--managed-mode b)
+                            collect (buffer-name b)))
+         (msg (format "[health] uptime=%.2fs packages=%d gc-threshold=%s lsp-buffers=%d"
+                      uptime pkg-count gc-thresh (length lsp-bufs))))
+    (message "%s" msg)
+    (when verbose
+      (message "[health] lsp buffers: %s" lsp-bufs))
+    msg))
+
+;;; eglot before-save hook 本地化修正（若 eglot 已加载）
+(with-eval-after-load 'eglot
+  (add-hook 'eglot-managed-mode-hook
+            (lambda ()
+              (when (and (boundp 'eglot-managed-mode) eglot-managed-mode)
+                (add-hook 'before-save-hook #'eglot-format-buffer nil t)))))
+
 
 ;;; init.el ends here
