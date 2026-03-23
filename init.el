@@ -209,4 +209,5 @@ VERBOSE 非空时输出更多细节。"
                 (add-hook 'before-save-hook #'eglot-format-buffer nil t)))))
 
 
-;;; init.el ends here
+; (expand-file-name "lisp/init-rime.el" user-emacs-directory))
+(load-file (expand-file-name "lisp/init-rime.el" user-emacs-directory))
