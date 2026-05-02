@@ -86,11 +86,9 @@
 ;; 初始化包管理
 (package-initialize)
 
-(unless package-archive-contents
-  (package-refresh-contents))
-
-;; 安装并加载 use-package
+;; 安装并加载 use-package（仅此路径刷新 ELPA；避免日常启动时空索引即联网）
 (unless (package-installed-p 'use-package)
+  (package-refresh-contents)
   (package-install 'use-package))
 (eval-when-compile
   (require 'use-package))

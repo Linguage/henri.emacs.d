@@ -62,6 +62,17 @@
   (setq company-idle-delay 0.2)            ; 设置延迟显示建议的时间
   (setq company-minimum-prefix-length 2))   ; 设置触发补全的最小前缀长度
 
+;; -----------------------------------------------------------------------------
+;; 为新语言接 LSP 时：在 `:config' 里加 `eglot-server-programs'，并把对应
+;; `major-mode' 记入 `henri-eglot-auto-major-modes'（见 `init-custom.el'）。
+
+(defun henri--eglot-ensure-if-whitelisted ()
+  "Call `eglot-ensure' when `major-mode' is in `henri-eglot-auto-major-modes'."
+  (when (and (boundp 'henri-eglot-auto-major-modes)
+             henri-eglot-auto-major-modes
+             (memq major-mode henri-eglot-auto-major-modes))
+    (eglot-ensure)))
+
 ;; =============================================================================
 ;; 语言服务器协议(LSP)支持：eglot
 ;; Emacs 29+ 内置的轻量级 LSP 客户端
@@ -70,15 +81,12 @@
   :bind ("C-c e f" . eglot-format)         ; 绑定格式化快捷键
   :init
   (advice-add 'eglot-code-action-organize-imports :before #'eglot-format-buffer)
-  ;; Auto-enable eglot（除 elisp-mode 外）
-  (add-hook 'prog-mode-hook
-            (lambda ()
-              (unless (member major-mode '(emacs-lisp-mode))
-                (eglot-ensure))))
+  (add-hook 'prog-mode-hook #'henri--eglot-ensure-if-whitelisted)
   :config
-  ;; 配置语言服务器
-  (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+  ;; 配置语言服务器（含 tree-sitter 主模式，与 `henri-eglot-auto-major-modes' 一致）
+  (add-to-list 'eglot-server-programs '((c++-mode c-mode c++-ts-mode c-ts-mode) . ("clangd")))
   (add-to-list 'eglot-server-programs '(python-mode . ("pylsp")))
+  (add-to-list 'eglot-server-programs '(python-ts-mode . ("pylsp")))
   (add-to-list 'eglot-server-programs '(fortran-mode . ("fortls")))
   ;; 受管 buffer 保存前格式化（尊重 size 与开关）
   (add-hook 'eglot-managed-mode-hook
@@ -180,9 +188,18 @@
 (require 'init-python)
 (require 'init-octave)
 
+(defun henri--julia-mode-or-ts ()
+  "Prefer `julia-ts-mode' when the Julia grammar is available."
+  (require 'julia-mode)
+  (if (and (fboundp 'julia-ts-mode)
+           (fboundp 'treesit-language-available-p)
+           (treesit-language-available-p 'julia))
+      (julia-ts-mode)
+    (julia-mode)))
+
 (use-package julia-mode
   :ensure t
-  :mode ("\\.jl\\'" . julia-ts-mode))
+  :mode ("\\.jl\\'" . henri--julia-mode-or-ts))
 
 ;; =============================================================================
 ;; 代码导航与调试工具配置

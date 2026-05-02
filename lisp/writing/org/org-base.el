@@ -439,9 +439,6 @@
   (define-key org-mode-map (kbd "C-c v o") 'henri/org-overview)
   (define-key org-mode-map (kbd "C-c v c") 'henri/org-content))
 
-(with-eval-after-load 'org
-  (henri/apply-org-faces))
-
 (advice-add 'load-theme
             :after
             (lambda (&rest _)

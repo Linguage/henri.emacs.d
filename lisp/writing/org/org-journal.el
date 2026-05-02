@@ -83,7 +83,11 @@
 (defun henri-journal-goto-month-day ()
   "Move point to this capture's month/day subtree, creating it if needed.
 The journal file itself is already monthly, so the first heading is the
-month and the second heading is the day."
+month and the second heading is the day.
+
+Leaves point ON the day heading line, so that `org-capture' detects
+`target-entry-p' and inserts the captured entry as a child of the day
+(i.e. at level 3) rather than falling back to a top-level entry."
   (let* ((time (henri-journal-capture-time))
          (month (henri-journal-month-heading time))
          (day (henri-journal-day-heading time)))
@@ -94,9 +98,7 @@ month and the second heading is the day."
       (let ((month-end (point)))
         (goto-char month-start)
         (forward-line 1)
-        (henri-journal--goto-or-create-heading 2 day month-end)
-        (org-end-of-subtree t t)
-        (unless (bolp) (insert "\n"))))))
+        (henri-journal--goto-or-create-heading 2 day month-end)))))
 
 (defun henri-journal-flatten-year-headings ()
   "Remove top-level year headings from the current monthly journal buffer.
@@ -129,31 +131,24 @@ Existing Org datetree entries like year/month/day become month/day/entry."
                      "No top-level year headings found.")))))))
 
 (defun henri-journal-kind-label (kind)
-  "Return display label for journal KIND."
+  "Return display label for diary monthly KIND (`diary)."
   (pcase kind
     ('diary "个人日记")
-    ('work "工作日志")
-    ('study "学习日志")
-    (_ "日志")))
-
-(defun henri-journal-kind-prefix (kind)
-  "Return file prefix for journal KIND."
-  (pcase kind
-    ('diary "journal")
-    ('work "worklog")
-    ('study "studylog")
-    (_ "journal")))
+    (_ "个人日记")))
 
 (defun henri-journal-monthly-file (kind &optional time)
-  "Return monthly journal file for KIND and TIME.
-KIND is one of `diary', `work', or `study'."
+  "Return monthly `journal-YYYY-MM.org' path for TIME.
+Symbol KIND must be `diary; diary/work/study captures all write here."
+  (unless (eq kind 'diary)
+    (error "henri-journal-monthly-file: only diary is supported (%S)" kind))
   (henri-journal-file
-   (format "%s-%s.org"
-           (henri-journal-kind-prefix kind)
-           (henri-journal-month-string time))))
+   (format "journal-%s.org" (henri-journal-month-string time))))
 
 (defun henri-journal-ensure-monthly-file (kind &optional time)
-  "Ensure and return monthly journal file for KIND and TIME."
+  "Create if missing and return the monthly `journal-*.org' path.
+KIND must be `diary' (shared file for all journal capture types)."
+  (unless (eq kind 'diary)
+    (error "henri-journal-ensure-monthly-file: only diary is supported (%S)" kind))
   (let ((file (henri-journal-monthly-file kind time)))
     (unless (file-exists-p file)
       (make-directory (file-name-directory file) t)
@@ -168,45 +163,38 @@ KIND is one of `diary', `work', or `study'."
     file))
 
 (defun henri-journal-current-diary-file ()
-  "Return current month's personal journal file."
+  "Return current month's unified journal file (diary / work / study)."
   (henri-journal-ensure-monthly-file 'diary))
 
-(defun henri-journal-current-worklog-file ()
-  "Return current month's work journal file."
-  (henri-journal-ensure-monthly-file 'work))
-
-(defun henri-journal-current-studylog-file ()
-  "Return current month's study journal file."
-  (henri-journal-ensure-monthly-file 'study))
-
 (defun henri-journal-agenda-files ()
-  "Return monthly Journal files suitable for `org-agenda-files'."
-  (append
-   (mapcar (lambda (kind) (henri-journal-ensure-monthly-file kind))
-           '(diary work study))
-   (directory-files henri-journal-directory t
-                    "\\`\\(journal\\|worklog\\|studylog\\)-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'")))
+  "Monthly `journal-YYYY-MM.org' files under `henri-journal-directory'."
+  (delete-dups
+   (cons
+    (henri-journal-ensure-monthly-file 'diary)
+    (directory-files
+     henri-journal-directory t
+     "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))))
 
 (defun henri-journal-refresh-agenda-files ()
-  "Refresh `org-agenda-files' from monthly Journal files."
+  "Refresh `org-agenda-files' from Journal monthlies."
   (interactive)
   (setq org-agenda-files (delete-dups (henri-journal-agenda-files))))
 
 (setq org-directory henri-journal-directory)
 (setq org-default-notes-file (henri-journal-file "notes.org"))
 
-;; 统一日志模板 - 三种类型：日记(diary)、工作(work)和学习(study)
+;; 统一日志模板 - diary / work / study 写入同一月度 journal；模板与 tag 区分
 (setq org-capture-templates
       '(("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
          "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
          :empty-lines 1)
-        
-        ("w" "工作日志" entry (file+function henri-journal-current-worklog-file henri-journal-goto-month-day)
-         "*** %U %? :journal:work:\n%i\n**** 完成任务\n\n**** 问题和解决方案\n\n**** 明日计划\n"
+
+        ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+         "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** TODO 列表\n- [ ] \n"
          :empty-lines 1)
-        
-        ("s" "学习日志" entry (file+function henri-journal-current-studylog-file henri-journal-goto-month-day)
-         "*** %U %? :journal:study:\n%i\n**** 主题与工作\n\n**** 要点笔记\n\n**** 资源链接\n"
+
+        ("s" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+         "*** %U %? :journal:study:\n%i\n**** 主题\n\n**** 概念\n\n**** 解读\n\n**** 类别\n\n"
          :empty-lines 1)))
 
 ;; 设置 Org-mode 的 Agenda 文件 - 统一路径命名
@@ -268,33 +256,29 @@ KIND is one of `diary', `work', or `study'."
 
 ;; 通用日志查看函数 - 支持多种日志类型
 (defun my/view-journal-by-date (&optional journal-type date)
-  "通过选择日期查看特定日期的日志。
-JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(学习日志)。"
+  "在同一月度 journal 文件中打开 DATE 当天的 subtree。
+JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型选择）。"
   (interactive
-   (list (completing-read "选择日志类型: " '("diary" "work" "study") nil t)
+   (list (completing-read "视角 (均打开同一天 journal): "
+                          '("diary" "work" "study") nil t)
          (org-read-date nil nil nil "选择日期: ")))
+  (ignore journal-type)
   (let* ((time (org-time-string-to-time date))
-         (journal-file (cond ((string= journal-type "work")
-                              (henri-journal-monthly-file 'work time))
-                             ((string= journal-type "study")
-                              (henri-journal-monthly-file 'study time))
-                             (t
-                              (henri-journal-monthly-file 'diary time))))
-         (date-prefix (format-time-string "%Y-%m-%d" time))
-         (journal-label (cond ((string= journal-type "work") "工作日志")
-                              ((string= journal-type "study") "学习日志")
-                              (t "日记"))))
+         (journal-file (henri-journal-monthly-file 'diary time))
+         (date-prefix (format-time-string "%Y-%m-%d" time)))
     (if (not (file-exists-p journal-file))
-        (message "未找到月份日志文件: %s" journal-file)
+        (message "未找到月份 journal 文件: %s" journal-file)
       (find-file journal-file)
       (widen)
       (goto-char (point-min))
-      (if (re-search-forward (format "^\\*+[ \t]+%s\\b" (regexp-quote date-prefix)) nil t)
+      (if (re-search-forward (format "^\\*+[ \t]+%s\\b"
+                                     (regexp-quote date-prefix))
+                             nil t)
           (progn
             (org-reveal)
             (org-show-subtree)
             (recenter))
-        (message "未找到 %s 的%s条目" date-prefix journal-label)))))
+        (message "未找到 %s 的 journal day" date-prefix)))))
 
 ;; 便捷函数 - 直接查看个人日记
 (defun my/view-diary-by-date (&optional date)
@@ -326,11 +310,11 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
           (tags "work"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
                  (org-agenda-prefix-format "  %i %?-12t% s")
-                 (org-agenda-overriding-header "💼 工作日志:")))
+                 (org-agenda-overriding-header "💼 工作记录:")))
           (tags "study"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
                  (org-agenda-prefix-format "  %i %?-12t% s")
-                 (org-agenda-overriding-header "📚 学习日志:")))
+                 (org-agenda-overriding-header "📚 学习卡片:")))
           (todo ""
                 ((org-agenda-files org-agenda-files)
                  (org-agenda-overriding-header "📝 所有待办事项:"))))
@@ -342,16 +326,16 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
                  (org-agenda-overriding-header "📔 个人日记条目:"))))
          ((org-agenda-compact-blocks t)))
         
-        ("w" "工作日志"
+        ("w" "工作记录"
          ((tags "work"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
-                 (org-agenda-overriding-header "💼 工作日志条目:"))))
+                 (org-agenda-overriding-header "💼 工作记录:"))))
          ((org-agenda-compact-blocks t)))
         
-        ("s" "学习日志"
+        ("s" "学习卡片"
          ((tags "study"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
-                 (org-agenda-overriding-header "📚 学习日志条目:"))))
+                 (org-agenda-overriding-header "📚 学习卡片:"))))
          ((org-agenda-compact-blocks t)))))
 
 ;; =============================================================================
@@ -366,15 +350,15 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
          (month (nth 0 date))
          (year (nth 2 date))
          (date-str (format "%04d-%02d-%02d" year month day))
-         (journal-type (completing-read "选择日志类型: " 
+         (journal-type (completing-read "视角 (均打开同一天 journal): "
                                         '(("个人日记" . "diary")
-                                          ("工作日志" . "work") 
-                                          ("学习日志" . "study")) 
+                                          ("工作记录" . "work")
+                                          ("学习卡片" . "study"))
                                         nil t)))
-    (my/view-journal-by-date 
+    (my/view-journal-by-date
      (cond ((string= journal-type "个人日记") "diary")
-           ((string= journal-type "工作日志") "work")
-           ((string= journal-type "学习日志") "study")
+           ((string= journal-type "工作记录") "work")
+           ((string= journal-type "学习卡片") "study")
            (t journal-type))
      date-str)))
 
@@ -431,8 +415,7 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
                    (goto-char (point-min))
                    (re-search-forward ":journal:" nil t))
                  (and buffer-file-name
-                      (string-match-p "journal\\|diary\\|worklog\\|studylog"
-                                      buffer-file-name))))
+                      (string-match-p "journal\\|diary" buffer-file-name))))
     (org-journal-setup-pdf-export)))
 
 ;; 自动为期刊文件设置正确的LaTeX类

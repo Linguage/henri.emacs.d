@@ -25,7 +25,8 @@
   "Generate a structured status report for key components."
   (let* ((org (henri/list-active-org-modules))
          (lsp (cl-loop for b in (buffer-list)
-                       when (buffer-local-value 'eglot--managed-mode b)
+                       when (and (buffer-local-boundp 'eglot--managed-mode b)
+                                 (buffer-local-value 'eglot--managed-mode b))
                        collect (buffer-name b)))
          (themes custom-enabled-themes)
          (large (and (boundp 'henri-large-file-threshold) henri-large-file-threshold))

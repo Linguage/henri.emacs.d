@@ -115,6 +115,14 @@
   "Maximum buffer size (bytes) to still auto format with LSP."
   :type 'integer :group 'henri-programming)
 
+(defcustom henri-eglot-auto-major-modes
+  '(c-mode c++-mode c-ts-mode c++-ts-mode python-mode python-ts-mode fortran-mode)
+  "Major modes in which `prog-mode-hook' runs `eglot-ensure'.
+Extend this list when you add `eglot-server-programs' entries in
+`init-programming.el'.  `emacs-lisp-mode' is intentionally excluded."
+  :type '(repeat symbol)
+  :group 'henri-programming)
+
 (defcustom henri-large-file-threshold 5000000
   "Threshold (bytes) above which large-file optimizations apply."
   :type 'integer :group 'henri-performance)
