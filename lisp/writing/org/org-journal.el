@@ -53,6 +53,81 @@
   "Return YYYY-MM month string for TIME, or current time when nil."
   (format-time-string "%Y-%m" (or time (current-time))))
 
+(defun henri-journal-month-heading (&optional time)
+  "Return the monthly heading used inside a monthly journal file."
+  (format-time-string "%Y-%m %B" (or time (current-time))))
+
+(defun henri-journal-day-heading (&optional time)
+  "Return the daily heading used inside a monthly journal file."
+  (format-time-string "%Y-%m-%d %A" (or time (current-time))))
+
+(defun henri-journal-capture-time ()
+  "Return the time Org capture should use for journal placement."
+  (or (and (boundp 'org-overriding-default-time)
+           org-overriding-default-time)
+      (current-time)))
+
+(defun henri-journal--goto-or-create-heading (level title &optional limit)
+  "Go to heading TITLE at LEVEL before LIMIT, creating it when absent."
+  (let ((regexp (format "^\\*\\{%d\\}[ \t]+%s[ \t]*$"
+                        level
+                        (regexp-quote title))))
+    (if (re-search-forward regexp limit t)
+        (goto-char (match-beginning 0))
+      (goto-char (or limit (point-max)))
+      (unless (bolp) (insert "\n"))
+      (let ((pos (point)))
+        (insert (make-string level ?*) " " title "\n")
+        (goto-char pos)))))
+
+(defun henri-journal-goto-month-day ()
+  "Move point to this capture's month/day subtree, creating it if needed.
+The journal file itself is already monthly, so the first heading is the
+month and the second heading is the day."
+  (let* ((time (henri-journal-capture-time))
+         (month (henri-journal-month-heading time))
+         (day (henri-journal-day-heading time)))
+    (goto-char (point-min))
+    (henri-journal--goto-or-create-heading 1 month)
+    (let ((month-start (point)))
+      (org-end-of-subtree t t)
+      (let ((month-end (point)))
+        (goto-char month-start)
+        (forward-line 1)
+        (henri-journal--goto-or-create-heading 2 day month-end)
+        (org-end-of-subtree t t)
+        (unless (bolp) (insert "\n"))))))
+
+(defun henri-journal-flatten-year-headings ()
+  "Remove top-level year headings from the current monthly journal buffer.
+Existing Org datetree entries like year/month/day become month/day/entry."
+  (interactive)
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char (point-min))
+      (let ((changed nil))
+        (while (re-search-forward "^\\* [0-9]\\{4\\}[ \t]*$" nil t)
+          (let* ((year-start (line-beginning-position))
+                 (content-start (line-beginning-position 2))
+                 (year-end (save-excursion
+                             (org-end-of-subtree t t)
+                             (point))))
+            (save-restriction
+              (narrow-to-region content-start year-end)
+              (goto-char (point-min))
+              (while (re-search-forward "^\\(\\*\\{2,\\}\\)" nil t)
+                (replace-match
+                 (substring (match-string 1) 1)
+                 t t nil 1)))
+            (delete-region year-start content-start)
+            (setq changed t)
+            (goto-char year-start)))
+        (when (called-interactively-p 'interactive)
+          (message (if changed
+                       "Journal year headings flattened."
+                     "No top-level year headings found.")))))))
+
 (defun henri-journal-kind-label (kind)
   "Return display label for journal KIND."
   (pcase kind
@@ -122,16 +197,16 @@ KIND is one of `diary', `work', or `study'."
 
 ;; 统一日志模板 - 三种类型：日记(diary)、工作(work)和学习(study)
 (setq org-capture-templates
-      '(("d" "个人日记" entry (file+olp+datetree henri-journal-current-diary-file)
-         "* %U %? :journal:diary:\n%i\n** 今日要点\n\n** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
+      '(("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+         "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
          :empty-lines 1)
         
-        ("w" "工作日志" entry (file+olp+datetree henri-journal-current-worklog-file)
-         "* %U %? :journal:work:\n%i\n** 完成任务\n\n** 问题和解决方案\n\n** 明日计划\n"
+        ("w" "工作日志" entry (file+function henri-journal-current-worklog-file henri-journal-goto-month-day)
+         "*** %U %? :journal:work:\n%i\n**** 完成任务\n\n**** 问题和解决方案\n\n**** 明日计划\n"
          :empty-lines 1)
         
-        ("s" "学习日志" entry (file+olp+datetree henri-journal-current-studylog-file)
-         "* %U %? :journal:study:\n%i\n** 主题与工作\n\n** 要点笔记\n\n** 资源链接\n"
+        ("s" "学习日志" entry (file+function henri-journal-current-studylog-file henri-journal-goto-month-day)
+         "*** %U %? :journal:study:\n%i\n**** 主题与工作\n\n**** 要点笔记\n\n**** 资源链接\n"
          :empty-lines 1)))
 
 ;; 设置 Org-mode 的 Agenda 文件 - 统一路径命名
@@ -355,8 +430,9 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
              (or (save-excursion
                    (goto-char (point-min))
                    (re-search-forward ":journal:" nil t))
-                 (string-match-p "journal\\|diary\\|worklog\\|studylog" 
-                               (buffer-file-name))))
+                 (and buffer-file-name
+                      (string-match-p "journal\\|diary\\|worklog\\|studylog"
+                                      buffer-file-name))))
     (org-journal-setup-pdf-export)))
 
 ;; 自动为期刊文件设置正确的LaTeX类
