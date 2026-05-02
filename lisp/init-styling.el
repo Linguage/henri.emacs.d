@@ -41,25 +41,14 @@
 (add-to-list 'default-frame-alist '(left . 0.5))   ; 窗口水平居中
 (add-to-list 'default-frame-alist '(alpha . (95 . 95))) ; 设置透明度
 
-;; 界面元素配置
-(when (fboundp 'menu-bar-mode)
-  (menu-bar-mode -1))                       ; 关闭菜单栏
-(when (fboundp 'tool-bar-mode)
-  (tool-bar-mode -1))                       ; 关闭工具栏
-(when (fboundp 'scroll-bar-mode)
-  (scroll-bar-mode -1))                     ; 关闭滚动条
-(when (fboundp 'blink-cursor-mode)
-  (blink-cursor-mode 0))                    ; 关闭光标闪烁
-
-;; 显示增强
+;; 界面元素配置（菜单栏等在 early-init.el 的 GUI 分支已处理）
 (global-display-line-numbers-mode)         ; 显示行号
 (column-number-mode)                       ; 显示列号
 (global-hl-line-mode t)                    ; 高亮当前行
 
-;; =============================================================================
-;; 性能优化配置
+;; 性能：GC 由 early-init.el 提高启动阈值，init.el 启动钩子恢复。
+;; 此处不再重复设置 `gc-cons-threshold'。
 
-(setq gc-cons-threshold 100000000)         ; 提升GC阈值
 (setq inhibit-startup-screen t)            ; 禁用启动屏幕
 (setq auto-save-default nil)               ; 禁用自动保存
 (setq backup-inhibited t)                  ; 禁用备份文件
@@ -88,54 +77,7 @@
     (doom-themes-org-config))
   (henri/apply-current-theme))
 
-;; 可选：centaur-tabs（依赖用户开关）
-(when (boundp 'henri-enable-centaur-tabs)
-  (use-package centaur-tabs
-    :ensure t
-    :if (and henri-enable-centaur-tabs (display-graphic-p))
-    :hook (doom-load-theme . centaur-tabs-mode)
-    :init
-    (add-hook 'after-init-hook
-              (lambda ()
-                (when (and henri-enable-centaur-tabs (display-graphic-p))
-                  (centaur-tabs-mode 1))))
-    :config
-    (setq centaur-tabs-style "bar"
-          centaur-tabs-height 32
-          centaur-tabs-set-icons nil
-          centaur-tabs-set-close-button t
-          centaur-tabs-set-modified-marker t
-          centaur-tabs-modified-marker "●")
-    (defun centaur-tabs-buffer-groups ()
-      (list
-       (cond
-        ((derived-mode-p 'org-mode) "Org")
-        ((derived-mode-p 'prog-mode) "Programming")
-        ((derived-mode-p 'text-mode) "Text")
-        ((derived-mode-p 'dired-mode) "Dired")
-        ((string-prefix-p "*" (buffer-name)) "System")
-        (t "General"))))
-    (defun centaur-tabs-hide-tab (x)
-      (let ((n (format "%s" x)))
-        (or (string-prefix-p "*epc" n)
-            (string-prefix-p "*Compile-Log" n)
-            (string-prefix-p "*lsp" n)
-            (string-prefix-p "*company" n)
-            (string-prefix-p "*Flycheck" n)
-            (string-prefix-p "*tramp" n)
-            (string-prefix-p " *Mini" n)
-            (string-prefix-p "*Warnings*" n)
-            (string-prefix-p "*Messages*" n)
-            (string-prefix-p "*scratch*" n)
-            (string-prefix-p "*Completions*" n)
-            (string-prefix-p "*Async-native-compile-log*" n)
-            (string-prefix-p "*markdown-preview*" n)
-            (string-prefix-p "*grip-" n))))
-    :bind ("C-<prior>" . centaur-tabs-backward)
-          ("C-<next>" . centaur-tabs-forward)))
-
-
-;; 彩虹括号
+;; 彩虹括号（仅此一处；lisp 语言模块不再重复）
 (use-package rainbow-delimiters
   :ensure t
   :hook (prog-mode . rainbow-delimiters-mode))
@@ -261,105 +203,78 @@
 ;; =============================================================================
 ;; 标签页配置 (Centaur Tabs) - 延迟加载避免崩溃
 
-(use-package centaur-tabs
-  :ensure t
-  :defer t  ; 延迟加载，而不是立即加载
-  :init
-  ;; 在图形环境下延迟启动 centaur-tabs
-  (when (display-graphic-p)
-    (add-hook 'emacs-startup-hook 'henri/setup-centaur-tabs))
-  
-  :config
-  ;; 基础设置
-  (setq centaur-tabs-style "bar")              ; 标签页样式
-  (setq centaur-tabs-height 32)                ; 标签页高度
-  (setq centaur-tabs-set-icons nil)            ; 初始禁用图标，后续安全启用
-  (setq centaur-tabs-show-new-tab-button t)    ; 显示新建标签按钮
-  (setq centaur-tabs-set-close-button t)       ; 显示关闭按钮
-  (setq centaur-tabs-close-button "×")         ; 关闭按钮样式
-  (setq centaur-tabs-new-tab-button "+")       ; 新建按钮样式
-  (setq centaur-tabs-set-modified-marker t)    ; 显示修改标记
-  (setq centaur-tabs-modified-marker "●")      ; 修改标记样式
-  
-  ;; 标签页分组
-  (setq centaur-tabs-adjust-buffer-order t)    ; 自动调整标签页顺序
-  (setq centaur-tabs-enable-buffer-alphabetical-reordering t) ; 按字母顺序排序
-  
-  ;; 鼠标操作
-  (setq centaur-tabs-enable-ido-completion nil) ; 禁用 ido 补全
-  
-  ;; 定制标签页分组规则
-  (defun centaur-tabs-buffer-groups ()
-    "自定义缓冲区分组规则"
-    (list
-     (cond
-      ;; Org 模式文件
-      ((derived-mode-p 'org-mode)
-       "Org")
-      ;; 编程语言文件
-      ((or (derived-mode-p 'prog-mode)
-           (derived-mode-p 'python-mode)
-           (derived-mode-p 'emacs-lisp-mode)
-           (derived-mode-p 'js-mode)
-           (derived-mode-p 'c-mode)
-           (derived-mode-p 'java-mode))
-       "Programming")
-      ;; 文本文件
-      ((or (derived-mode-p 'text-mode)
-           (derived-mode-p 'markdown-mode)
-           (derived-mode-p 'latex-mode))
-       "Text")
-      ;; Dired 目录浏览
-      ((derived-mode-p 'dired-mode)
-       "Dired")
-      ;; 系统缓冲区
-      ((string-equal "*" (substring (buffer-name) 0 1))
-       "System")
-      ;; 默认分组
-      (t
-       "General"))))
-  
-  ;; 隐藏特定缓冲区的标签页 - 扩展过滤规则
-  (defun centaur-tabs-hide-tab (x)
-    "隐藏不需要显示标签页的缓冲区"
-    (let ((name (format "%s" x)))
-      (or
-       ;; 系统和临时缓冲区
-       (string-prefix-p "*epc" name)
-       (string-prefix-p "*helm" name)
-       (string-prefix-p "*Helm" name)
-       (string-prefix-p "*Compile-Log*" name)
-       (string-prefix-p "*lsp" name)
-       (string-prefix-p "*company" name)
-       (string-prefix-p "*Flycheck" name)
-       (string-prefix-p "*tramp" name)
-       (string-prefix-p " *Mini" name)
-       (string-prefix-p "*help" name)
-       (string-prefix-p "*straight" name)
-       (string-prefix-p " *temp" name)
-       (string-prefix-p "*Help" name)
-       (string-prefix-p "*mybuf" name)
-       ;; 增加更多需要隐藏的buffer
-       (string-prefix-p "*Warnings*" name)
-       (string-prefix-p "*Messages*" name)
-       (string-prefix-p "*scratch*" name)
-       (string-prefix-p "*Completions*" name)
-       (string-prefix-p "*Async-native-compile-log*" name)
-       (string-prefix-p "*eshell*" name)  ; 隐藏eshell标签页
-       (string-prefix-p "*shell*" name)   ; 隐藏shell标签页
-       (string-prefix-p "*terminal*" name) ; 隐藏terminal标签页
-       ;; Magit相关buffer
-       (and (string-prefix-p "magit" name)
-            (not (file-name-extension name)))
-       ;; 隐藏预览相关buffer
-       (string-prefix-p "*markdown-preview*" name)
-       (string-prefix-p "*grip-*" name))))
-    ;; 键盘快捷键
-  :bind
-  ("C-<prior>" . centaur-tabs-backward)        ; Ctrl+PageUp: 前一个标签
-  ("C-<next>" . centaur-tabs-forward)          ; Ctrl+PageDown: 后一个标签
-  ;; 移除可能有问题的函数绑定
-  )
+(when (and (boundp 'henri-enable-centaur-tabs) henri-enable-centaur-tabs)
+  (use-package centaur-tabs
+    :ensure t
+    :defer t
+    :if (display-graphic-p)
+    :bind (("C-<prior>" . centaur-tabs-backward)
+           ("C-<next>" . centaur-tabs-forward))
+    :init
+    (when (display-graphic-p)
+      (add-hook 'emacs-startup-hook #'henri/setup-centaur-tabs))
+    :config
+    (setq centaur-tabs-style "bar"
+          centaur-tabs-height 32
+          centaur-tabs-set-icons nil
+          centaur-tabs-show-new-tab-button t
+          centaur-tabs-set-close-button t
+          centaur-tabs-close-button "×"
+          centaur-tabs-new-tab-button "+"
+          centaur-tabs-set-modified-marker t
+          centaur-tabs-modified-marker "●"
+          centaur-tabs-adjust-buffer-order t
+          centaur-tabs-enable-buffer-alphabetical-reordering t
+          centaur-tabs-enable-ido-completion nil)
+    (defun centaur-tabs-buffer-groups ()
+      "自定义缓冲区分组规则。"
+      (list
+       (cond
+        ((derived-mode-p 'org-mode) "Org")
+        ((or (derived-mode-p 'prog-mode)
+             (derived-mode-p 'python-mode)
+             (derived-mode-p 'emacs-lisp-mode)
+             (derived-mode-p 'js-mode)
+             (derived-mode-p 'c-mode)
+             (derived-mode-p 'java-mode))
+         "Programming")
+        ((or (derived-mode-p 'text-mode)
+             (derived-mode-p 'markdown-mode)
+             (derived-mode-p 'latex-mode))
+         "Text")
+        ((derived-mode-p 'dired-mode) "Dired")
+        ((string-equal "*" (substring (buffer-name) 0 1)) "System")
+        (t "General"))))
+    (defun centaur-tabs-hide-tab (x)
+      "隐藏不需要显示标签页的缓冲区。"
+      (let ((name (format "%s" x)))
+        (or
+         (string-prefix-p "*epc" name)
+         (string-prefix-p "*helm" name)
+         (string-prefix-p "*Helm" name)
+         (string-prefix-p "*Compile-Log*" name)
+         (string-prefix-p "*lsp" name)
+         (string-prefix-p "*company" name)
+         (string-prefix-p "*Flycheck" name)
+         (string-prefix-p "*tramp" name)
+         (string-prefix-p " *Mini" name)
+         (string-prefix-p "*help" name)
+         (string-prefix-p "*straight" name)
+         (string-prefix-p " *temp" name)
+         (string-prefix-p "*Help" name)
+         (string-prefix-p "*mybuf" name)
+         (string-prefix-p "*Warnings*" name)
+         (string-prefix-p "*Messages*" name)
+         (string-prefix-p "*scratch*" name)
+         (string-prefix-p "*Completions*" name)
+         (string-prefix-p "*Async-native-compile-log*" name)
+         (string-prefix-p "*eshell*" name)
+         (string-prefix-p "*shell*" name)
+         (string-prefix-p "*terminal*" name)
+         (and (string-prefix-p "magit" name)
+              (not (file-name-extension name)))
+         (string-prefix-p "*markdown-preview*" name)
+         (string-prefix-p "*grip-*" name))))))
 
 ;; 延迟设置函数，确保安全启动
 (defun henri/setup-centaur-tabs ()
@@ -368,7 +283,9 @@
   (run-with-idle-timer 
    2 nil
    (lambda ()
-     (when (and (display-graphic-p)
+     (when (and (boundp 'henri-enable-centaur-tabs)
+                henri-enable-centaur-tabs
+                (display-graphic-p)
                 (not (bound-and-true-p centaur-tabs-mode)))
        ;; 先确保包已加载
        (require 'centaur-tabs nil t)

@@ -46,10 +46,7 @@
   :ensure t
   :after ivy
   :bind (("M-x" . counsel-M-x)
-         ("C-x C-f" . henri/find-file-in-notes)))
-
-(global-set-key (kbd "C-x C-f") #'henri/find-file-in-notes)
-(global-set-key [remap find-file] #'henri/find-file-in-notes)
+         ("C-c f n" . henri/find-file-in-notes)))
 
 ;; Swiper - 交互式搜索工具
 (use-package swiper
@@ -59,13 +56,7 @@
 
 ;; =============================================================================
 ;; 文件管理配置
-
-;; 安装并配置 all-the-icons
-(use-package all-the-icons
-  :ensure t
-  :config
-  (unless (member "all-the-icons" (font-family-list))
-    (message "[henri] all-the-icons fonts not found; run M-x all-the-icons-install-fonts if icons look wrong.")))
+;; all-the-icons: configured in init-styling.el only.
 
 ;; NeoTree - 文件树侧边栏
 (use-package neotree
@@ -99,7 +90,8 @@
   :defer t
   :config
   (projectile-mode +1)
-  (setq projectile-project-search-path '("~/projects/"))
+  (setq projectile-project-search-path
+        (list (directory-file-name (expand-file-name henri-projects-directory))))
   (setq projectile-switch-project-action 'neotree-projectile-action))
 
 
@@ -207,3 +199,6 @@
 
 ;; ================================
 ;; centaur-tabs 迁移到 styling，保持此处不重复定义（保留函数引用）。
+
+(provide 'init-managing)
+;;; init-managing.el ends here

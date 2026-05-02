@@ -32,6 +32,11 @@
 (add-to-list 'default-frame-alist '(left . 0.5))
 (add-to-list 'default-frame-alist '(alpha . (95 . 95)))
 
+;; 图形界面下不显示工具栏（`tool-bar-lines' 在首帧创建前即生效；不依赖
+;; `display-graphic-p'，因部分 macOS 构建下 early-init 阶段该谓词仍为 nil）。
+(add-to-list 'initial-frame-alist '(tool-bar-lines . 0))
+(add-to-list 'default-frame-alist '(tool-bar-lines . 0))
+
 ;; On macOS, opening files/directories from the app should reuse the initial
 ;; frame instead of popping an extra one during startup.
 (when (eq system-type 'darwin)
@@ -43,6 +48,15 @@
   (tool-bar-mode -1)
   (scroll-bar-mode -1)
   (blink-cursor-mode 0))
+
+;; 若 early-init 阶段未关掉工具栏/菜单栏（`display-graphic-p' 为 nil），在首帧就绪后再关一次。
+(add-hook 'window-setup-hook
+          (lambda ()
+            (when (display-graphic-p)
+              (menu-bar-mode -1)
+              (tool-bar-mode -1)
+              (scroll-bar-mode -1)
+              (blink-cursor-mode 0))))
 
 ;; Silence native-comp warnings during early phase (optional)
 (when (boundp 'native-comp-async-report-warnings-errors)

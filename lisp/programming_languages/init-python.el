@@ -36,8 +36,8 @@
   :defer t  ; 延迟加载
   :commands (conda-env-activate conda-env-deactivate conda-env-list)
   :init
-  (setq conda-anaconda-home (expand-file-name "~/miniconda3/"))
-  (setq conda-env-home-directory (expand-file-name "~/miniconda3/"))
+  (setq conda-anaconda-home (directory-file-name (expand-file-name henri-conda-home)))
+  (setq conda-env-home-directory conda-anaconda-home)
   :config
   (conda-env-initialize-interactive-shells)
   (conda-env-initialize-eshell)
@@ -49,18 +49,8 @@
   :defer t  ; 延迟加载
   :commands (pyvenv-activate pyvenv-deactivate pyvenv-workon)
   :config
-  (setenv "WORKON_HOME" "~/.conda/envs")
+  (setenv "WORKON_HOME" (directory-file-name (expand-file-name henri-conda-envs-directory)))
   (pyvenv-mode 1))
-
-; ;; tree-siter
-;     (use-package tree-sitter
-;     :ensure t
-;     :hook (python-mode . tree-sitter-mode)
-;           (python-mode . tree-sitter-hl-mode))
-  
-;   (use-package tree-sitter-langs
-;     :ensure t
-;     :after tree-sitter)
 
 ;; =============================================================================
 ;; IDE 功能配置 (延迟加载)
@@ -73,14 +63,7 @@
   :config
   (setq elpy-rpc-python-command "python3"))
 
-;; 代码补全 - 全局但延迟加载
-(use-package company
-  :ensure t
-  :defer 2  ; 延迟 2 秒加载
-  :hook (after-init . global-company-mode)
-  :config
-  (setq company-idle-delay 0.1
-        company-minimum-prefix-length 2))
+;; company-mode 全局配置见 init-programming.el
 
 ;; Python 专用补全 - 仅在 Python 模式下加载
 (use-package company-jedi
@@ -92,16 +75,6 @@
 ;; =============================================================================
 ;; Jupyter 支持
 
-; (use-package ein
-;   :ensure t
-;   :config
-;   (setq ein:output-area-inlined-images t))  ; 支持显示内嵌图片
-
-; (use-package jupyter
-;   :ensure t
-;   :config
-;   (setq jupyter-repl-echo-eval-p t))        ; 显示执行的代码
-
 ;; =============================================================================
 ;; 调试配置 (延迟加载)
 
@@ -110,7 +83,7 @@
   :ensure t
   :defer t  ; 延迟加载
   :commands (dap-debug dap-hydra)
-  :after lsp-mode
+  :after python
   :config
   (dap-auto-configure-mode)
   (require 'dap-python)
@@ -124,8 +97,9 @@
   ;; 延迟激活 conda 环境，避免启动时阻塞
   (run-with-idle-timer 1 nil
                        (lambda ()
-                         (when (and (featurep 'conda) (conda-env-list))
-                           (conda-env-activate "Henri_env"))))
+                         (when (and (featurep 'conda) (conda-env-list)
+                                    (boundp 'henri-conda-default-env))
+                           (conda-env-activate henri-conda-default-env))))
   (font-lock-mode 1)
   (flycheck-mode 1))
 

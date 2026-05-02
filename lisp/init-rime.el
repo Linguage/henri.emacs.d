@@ -17,7 +17,8 @@
   :after (popup posframe)
   :custom
   (default-input-method "rime")
-  (rime-user-data-dir (expand-file-name "rime" user-emacs-directory))
+  (rime-user-data-dir (directory-file-name (expand-file-name
+                                            henri-rime-directory)))
   ;; Show candidates using a popup frame, follows cursor natively
   (rime-show-candidate 'posframe)
   ;; Prevent rime candidates from grabbing absolute focus

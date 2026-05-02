@@ -1,5 +1,11 @@
 # Ignore all the files
 *
+#
+# Machine-local / generated (under this repo as `user-emacs-directory'):
+#   custom.el, elpa/, rime/, var/, .local/, tree-sitter/, transient/, auto-save-list/
+# are NOT whitelisted below → stay untracked by default.
+# Managed source lives under !lisp/ etc.; org-html-themes download dir stays ignored
+# at the bottom.
 
 # Excludes - only control these files
 !.gitignore

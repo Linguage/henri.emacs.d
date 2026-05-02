@@ -39,10 +39,10 @@
 
 ;; 主题配置变量
 ;; 获取本地主题目录路径
-(defvar my/org-html-themes-dir 
-  (file-name-as-directory 
-   (expand-file-name "~/Documents/EmacsNotes/org-html-themes"))
-  "本地 org-html-themes 目录路径。")
+(defvar my/org-html-themes-dir
+  (file-name-as-directory
+   (expand-file-name henri-org-html-themes-directory))
+  "本地 org-html-themes 目录路径（默认在配置仓库内）。")
 
 (defvar my/org-html-themes-list
   `(("Henri Bearblog" . ,(expand-file-name "org/theme-henri-bearblog.setup" my/org-html-themes-dir))

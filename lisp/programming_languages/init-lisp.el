@@ -23,10 +23,7 @@
   (show-paren-mode 1)                      ; 显示匹配的括号
   (setq show-paren-style 'parenthesis))    ; 高亮整个括号表达式
 
-(use-package rainbow-delimiters
-  :ensure t
-  :defer t  ; 延迟加载
-  :hook ((emacs-lisp-mode lisp-mode scheme-mode slime-repl-mode) . rainbow-delimiters-mode))
+;; rainbow-delimiters: 见 init-styling.el（全局 prog-mode）
 
 ;; =============================================================================
 ;; Common Lisp 开发环境 (延迟加载)

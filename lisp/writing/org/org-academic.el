@@ -18,7 +18,10 @@
 ;; =============================================================================
 ;; 学术写作目录设置
 
-(defcustom org-academic-directory "~/Documents/EmacsNotes/Academic"
+(defcustom org-academic-directory
+  (if (boundp 'henri-notes-directory)
+      (expand-file-name "Academic" (expand-file-name henri-notes-directory))
+    (expand-file-name "~/Academic"))
   "学术写作文档的根目录"
   :type 'directory
   :group 'org-academic)

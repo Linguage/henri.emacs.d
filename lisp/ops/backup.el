@@ -6,8 +6,12 @@
 
 ;;; Code:
 
-(defvar henri-backup-directory (expand-file-name "var/backups/" user-emacs-directory))
-(defvar henri-autosave-directory (expand-file-name "var/autosave/" user-emacs-directory))
+(require 'paths)
+
+(defvar henri-backup-directory
+  (expand-file-name "backups/" henri-var-directory))
+(defvar henri-autosave-directory
+  (expand-file-name "autosave/" henri-var-directory))
 
 (defun henri/setup-backup-system ()
   "Configure centralized backups & auto-saves if enabled."

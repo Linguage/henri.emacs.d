@@ -4,6 +4,33 @@
 
 > 本配置已引入分层架构（early-init / core / programming / writing / ops），并通过 `defcustom` 提供可配置主题策略、模块开关、LSP 自动格式化与大文件优化等功能。详见下文“架构 & 配置开关”。
 
+## 文档导航
+
+| 文档 | 说明 |
+|------|------|
+| [操作清单](c.md) | 常用命令与路径索引 |
+| [蓝图](docs/specs/BLUEPRINT.md) | 宏观规划与文档边界 |
+| [架构](docs/specs/ARCHITECTURE.md) | 模块与目录语义 |
+| [路线图](docs/specs/ROADMAP.md) | 阶段任务 |
+| [审查整改归档](docs/legacy/2026-05-02-emacs-config-review-fixes.md) | 可移植性整改记录（已结案） |
+
+个人路径（笔记根、项目目录、Conda、LeetCode、Org HTML 主题等）集中在 [`lisp/init-custom.el`](lisp/init-custom.el) 的 `henri-*` `defcustom`，切换机器时优先改此处或通过 `M-x customize-group RET henri-paths`.
+
+### 运行时目录与本机文件（Git 策略）
+
+本仓库常用作 `user-emacs-directory`，根目录会出现 **仅本机需要** 的内容，默认 **不纳入版本控制**（见根目录 [`.gitignore`](.gitignore) 顶部的说明）：
+
+| 路径/文件 | 说明 |
+|-----------|------|
+| `custom.el` | `custom-file` 目标；由 Emacs 写入，`init.el` 在存在时 `load`。 |
+| `elpa/` | 已安装包 |
+| `var/`、`var/backups/`、`var/autosave/` | 备份与自动保存（`henri-var-directory` 等见 [`lisp/ops/paths.el`](lisp/ops/paths.el)） |
+| `.local/cache/`、`.local/etc/` | 预留命名空间（目录会由 `paths.el` 创建） |
+| `rime/` | Rime 用户数据（`henri-rime-directory`） |
+| `tree-sitter/`、`transient/` 等 | 常见运行时目录 |
+
+未引入 **`no-littering`**：第三方包仍可能把状态写在默认位置；需要时可在后续单独评估。
+
 ## 1. 核心特性
 
 - 优化的启动速度和性能表现
@@ -22,7 +49,7 @@
 - 外部依赖:
   - git
   - clangd (C/C++)
-  - pylsp (Python)
+- pylsp（Python，随 Eglot 使用；另有 elpy + company-jedi 见 `init-python.el`）
   - fortls (Fortran)
   - pandoc (Markdown)
   - texlive (LaTeX)
@@ -63,7 +90,7 @@
 #### 3.4.1 Python 环境 (init_python.el)
 
 - **环境管理**
-  - conda - Conda 环境管理（默认激活 Henri_env）
+  - conda - Conda 环境管理（默认环境名由 `henri-conda-default-env` 控制，默认 `Henri_env`）
   - pyvenv - 虚拟环境支持
   
 - **开发工具**
@@ -318,7 +345,7 @@ mv ~/.emacs.d ~/.emacs.d.bak
 1. 克隆仓库:
 
 ```bash
-git clone https://github.com/PeakHan618/henri.emacs.d.git ~/.emacs.d
+git clone https://github.com/Linguage/henri.emacs.d.git ~/.emacs.d
 ```
 
 1. 启动 Emacs，系统将自动安装所需包。

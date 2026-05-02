@@ -23,7 +23,7 @@
 
 ;; 设置日志存放目录
 (defvar henri-journal-directory
-  (expand-file-name "~/Documents/EmacsNotes/Journal/")
+  (expand-file-name "Journal/" (expand-file-name henri-notes-directory))
   "Directory for Henri's Org journal files.")
 
 (defcustom henri-journal-auto-save-delay 10
@@ -37,10 +37,17 @@
 
 (defun henri-journal-html-setupfile ()
   "Return default HTML setupfile for Journal exports."
-  (let ((setup-file (expand-file-name
-                     "~/Documents/EmacsNotes/org-html-themes/org/theme-henri-bearblog.setup")))
-    (when (file-exists-p setup-file)
-      setup-file)))
+  (let ((setup-file
+         (expand-file-name
+          "org/theme-henri-bearblog.setup"
+          (file-name-as-directory
+           (expand-file-name henri-org-html-themes-directory)))))
+    (if (file-exists-p setup-file)
+        setup-file
+      (progn
+        (message "[henri] Journal HTML theme missing: %s — run lisp/writing/org/install-themes.sh"
+                 setup-file)
+        nil))))
 
 (defun henri-journal-month-string (&optional time)
   "Return YYYY-MM month string for TIME, or current time when nil."

@@ -103,43 +103,37 @@
 
 ;; =============================================================================
 ;; Octave 代码补全配置
-;; 为 octave-mode 配置智能补全
-(use-package company
-  :ensure t
-  :hook (octave-mode . company-mode)
-  :config
-  ;; 为 Octave 添加特定的补全后端
-  (defun octave-company-setup ()
-    "设置 Octave 的 company 补全"
-    (set (make-local-variable 'company-backends)
-         '((company-octave company-dabbrev-code company-keywords)
-           company-files company-dabbrev)))
-  
-  (add-hook 'octave-mode-hook #'octave-company-setup)
-  
-  ;; 定义 Octave 关键字补全后端
-  (defvar company-octave-keywords
-    '("break" "case" "catch" "continue" "do" "else" "elseif" "end" "end_try_catch"
-      "end_unwind_protect" "endfor" "endfunction" "endif" "endswitch" "endwhile"
-      "for" "function" "global" "if" "otherwise" "persistent" "return" "switch"
-      "try" "until" "unwind_protect" "unwind_protect_cleanup" "while"
-      ;; 内置函数
-      "abs" "acos" "asin" "atan" "atan2" "ceil" "cos" "exp" "fix" "floor"
-      "log" "log10" "max" "min" "mod" "rand" "randn" "round" "sign" "sin"
-      "sqrt" "tan" "zeros" "ones" "eye" "diag" "length" "size" "find"
-      "sort" "sum" "mean" "std" "var" "plot" "figure" "hold" "title"
-      "xlabel" "ylabel" "legend" "grid" "axis" "clf" "close" "subplot")
-    "Octave 关键字和常用函数列表")
-  
-  (defun company-octave (command &optional arg &rest ignored)
-    "Octave 补全后端"
-    (interactive (list 'interactive))
-    (case command
-      (interactive (company-begin-backend 'company-octave))
-      (prefix (and (eq major-mode 'octave-mode)
-                   (company-grab-symbol)))
-      (candidates (all-completions arg company-octave-keywords))
-      (sorted t))))
+;; 依赖 init-programming 中的全局 `company'
+(defun octave-company-setup ()
+  "设置 Octave 的 company 补全"
+  (set (make-local-variable 'company-backends)
+       '((company-octave company-dabbrev-code company-keywords)
+         company-files company-dabbrev)))
+
+(add-hook 'octave-mode-hook #'octave-company-setup)
+
+(defvar company-octave-keywords
+  '("break" "case" "catch" "continue" "do" "else" "elseif" "end" "end_try_catch"
+    "end_unwind_protect" "endfor" "endfunction" "endif" "endswitch" "endwhile"
+    "for" "function" "global" "if" "otherwise" "persistent" "return" "switch"
+    "try" "until" "unwind_protect" "unwind_protect_cleanup" "while"
+    ;; 内置函数
+    "abs" "acos" "asin" "atan" "atan2" "ceil" "cos" "exp" "fix" "floor"
+    "log" "log10" "max" "min" "mod" "rand" "randn" "round" "sign" "sin"
+    "sqrt" "tan" "zeros" "ones" "eye" "diag" "length" "size" "find"
+    "sort" "sum" "mean" "std" "var" "plot" "figure" "hold" "title"
+    "xlabel" "ylabel" "legend" "grid" "axis" "clf" "close" "subplot")
+  "Octave 关键字和常用函数列表")
+
+(defun company-octave (command &optional arg &rest ignored)
+  "Octave 补全后端"
+  (interactive (list 'interactive))
+(pcase command
+      ('interactive (company-begin-backend 'company-octave))
+      ('prefix (and (eq major-mode 'octave-mode)
+                    (company-grab-symbol)))
+      ('candidates (all-completions arg company-octave-keywords))
+      ('sorted t)))
 
 ;; =============================================================================
 ;; Octave 语法检查配置

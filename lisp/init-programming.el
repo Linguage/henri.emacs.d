@@ -62,15 +62,10 @@
   :ensure t
   :bind ("C-c e f" . eglot-format)         ; 绑定格式化快捷键
   :init
-  ;; 导入前自动格式化
   (advice-add 'eglot-code-action-organize-imports :before #'eglot-format-buffer)
-  ;; 保存前自动格式化
-  (add-hook 'eglot-managed-mode-hook 
-            (lambda () 
-              (add-hook 'before-save-hook #'eglot-format-buffer)))
-  ;; 自动启用 eglot（除 elisp-mode 外）
+  ;; Auto-enable eglot（除 elisp-mode 外）
   (add-hook 'prog-mode-hook
-            (lambda () 
+            (lambda ()
               (unless (member major-mode '(emacs-lisp-mode))
                 (eglot-ensure))))
   :config
@@ -85,13 +80,7 @@
                          henri-lsp-auto-format
                          (or (not (boundp 'henri-lsp-format-size-threshold))
                              (< (buffer-size) henri-lsp-format-size-threshold)))
-                (add-hook 'before-save-hook #'eglot-format-buffer nil t))))
-  ;; 为特定模式启用 eglot
-  (dolist (hook '(c-mode-hook
-                  c++-mode-hook
-                  python-mode-hook
-                  fortran-mode-hook))
-    (add-hook hook #'eglot-ensure)))
+                (add-hook 'before-save-hook #'eglot-format-buffer nil t)))))
 
 ;; =============================================================================
 ;; 语法树分析：tree-sitter
@@ -223,60 +212,14 @@
 ;; 编程语言支持配置                 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; =============================================================================
-;; Lisp 开发环境配置
-;; 从单独的配置文件加载 Python 相关设置
-(load-file (expand-file-name "lisp/programming_languages/init-lisp.el" user-emacs-directory))
+;; Lisp / Python / Octave：独立模块
+(require 'init-lisp)
+(require 'init-python)
+(require 'init-octave)
 
-
-;; =============================================================================
-;; C/C++ 开发环境配置
-;; 使用内置的 c-mode 和 c++-mode，配合 tree-sitter 提供现代化的开发体验
-
-;; C 语言配置
-(use-package c-mode
-  :ensure nil
-  :hook ((c-mode . eglot-ensure)
-         (c-mode . company-mode))
-  :mode (("\\.c\\'" . c-ts-mode)))
-
-;; C++ 语言配置
-(use-package c++-mode
-  :ensure nil
-  :hook ((c++-mode . eglot-ensure)
-         (c++-mode . company-mode))
-  :mode (("\\.cpp\\'" . c++-ts-mode)
-         ("\\.hpp\\'" . c++-ts-mode)
-         ("\\.h\\'" . c++-ts-mode)))
-
-;; =============================================================================
-;; 科学计算相关语言配置
-
-;; Fortran 语言配置
-(use-package fortran-mode
-  :ensure nil
-  :hook ((fortran-mode . eglot-ensure)
-         (fortran-mode . company-mode))
-  :mode (("\\.f\\'" . fortran-ts-mode)
-         ("\\.f90\\'" . fortran-ts-mode)
-         ("\\.f95\\'" . fortran-ts-mode)))
-
-;; Julia 语言配置
 (use-package julia-mode
   :ensure t
-  :hook ((julia-mode . eglot-ensure)
-         (julia-mode . company-mode))
-  :mode (("\\.jl\\'" . julia-ts-mode)))
-
-;; =============================================================================
-;; Python 开发环境配置
-;; 从单独的配置文件加载 Python 相关设置
-(load-file (expand-file-name "lisp/programming_languages/init-python.el" user-emacs-directory))
-
-;; =============================================================================
-;; Octave 开发环境配置
-;; 从单独的配置文件加载 Octave 相关设置
-(load-file (expand-file-name "lisp/programming_languages/init-octave.el" user-emacs-directory))
+  :mode ("\\.jl\\'" . julia-ts-mode))
 
 ;; =============================================================================
 ;; 代码导航与调试工具配置
@@ -355,7 +298,7 @@
   :config
   (setq leetcode-prefer-language "python")
   (setq leetcode-save-solutions t)
-  (setq leetcode-directory "~/leetcode/")
+  (setq leetcode-directory (directory-file-name (expand-file-name henri-leetcode-directory)))
   (setq leetcode-coding-preference 'contest))
 
 

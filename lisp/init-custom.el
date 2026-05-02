@@ -94,6 +94,19 @@
   "Enable Org academic writing module."
   :type 'boolean :group 'henri-writing)
 
+(defcustom henri-org-cjk-serif-family nil
+  "Org 模式中文正文使用的衬线字体族名，须与 `font-family-list' 中某项完全一致。
+为 nil 时按 `henri--org-cjk-serif-candidates'（见 org-base.el）顺序自动探测，
+例如已安装的「思源宋体」「Noto Serif CJK」或系统「宋体-简」等。"
+  :type '(choice (const :tag "自动探测" nil) string)
+  :group 'henri-writing)
+
+(defcustom henri-org-cjk-sans-family nil
+  "Org 模式标题、文档标题等使用的无衬线中文字体族名，须与 `font-family-list' 中某项完全一致。
+为 nil 时按 `henri--org-cjk-sans-candidates'（见 org-base.el）自动探测。"
+  :type '(choice (const :tag "自动探测" nil) string)
+  :group 'henri-writing)
+
 (defcustom henri-lsp-auto-format t
   "Auto format buffer on save in eglot managed buffers."
   :type 'boolean :group 'henri-programming)
@@ -178,7 +191,11 @@ Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(
   (when (eq henri-theme-mode 'time)
     (henri/apply-current-theme)))
 
-(run-at-time "1 hour" 3600 #'henri/refresh-theme-if-needed)
+;; Only once even if `init-custom' is reloaded.
+(defvar henri--theme-refresh-timer nil)
+(unless henri--theme-refresh-timer
+  (setq henri--theme-refresh-timer
+        (run-at-time "1 hour" 3600 #'henri/refresh-theme-if-needed)))
 
 (defun henri/select-theme (theme)
   "Interactively pick THEME (symbol) from `henri-available-themes' and apply it as fixed mode."
@@ -186,6 +203,48 @@ Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(
   (setq henri-theme-mode 'fixed
     henri-theme-fixed-theme theme)
   (henri/apply-current-theme t))
+
+;; Portable paths -------------------------------------------------------------
+
+(defgroup henri-paths nil
+  "Filesystem locations (tune per machine)."
+  :group 'henri-core :prefix "henri-")
+
+(defcustom henri-notes-directory "~/Documents/EmacsNotes/"
+  "Root directory for notes, journal, and other personal writing trees."
+  :type 'directory
+  :group 'henri-paths)
+
+(defcustom henri-projects-directory "~/projects/"
+  "Root searched by `projectile-project-search-path'."
+  :type 'directory
+  :group 'henri-paths)
+
+(defcustom henri-leetcode-directory "~/leetcode/"
+  "Directory used by `leetcode' package for solutions."
+  :type 'directory
+  :group 'henri-paths)
+
+(defcustom henri-conda-home "~/miniconda3/"
+  "Conda installation prefix (same as CONDA_ROOT for many installs)."
+  :type 'directory
+  :group 'henri-paths)
+
+(defcustom henri-conda-envs-directory "~/.conda/envs"
+  "Environment directory for pyvenv WORKON_HOME-style layouts."
+  :type 'directory
+  :group 'henri-paths)
+
+(defcustom henri-conda-default-env "Henri_env"
+  "Default conda env name activated from Python hook when available."
+  :type 'string
+  :group 'henri-paths)
+
+(defcustom henri-org-html-themes-directory
+  (expand-file-name "lisp/writing/org/org-html-themes" user-emacs-directory)
+  "Local checkout of org-html-themes (see `lisp/writing/org/install-themes.sh')."
+  :type 'directory
+  :group 'henri-paths)
 
 (provide 'init-custom)
 ;;; init-custom.el ends here

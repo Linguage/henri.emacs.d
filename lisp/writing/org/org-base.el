@@ -15,6 +15,44 @@
 
 ;;; Code:
 
+(require 'seq)
+
+;; 中文正文衬线字体：优先思源宋体 / Noto Serif CJK，其次系统宋体、楷体等。
+;; 在图形界面下用 `font-family-list' 探测；安装字体后重启 Emacs 即可生效。
+(defconst henri--org-cjk-serif-candidates
+  '("Source Han Serif SC"
+    "Source Han Serif TC"
+    "Source Han Serif"
+    "Noto Serif CJK SC"
+    "Noto Serif CJK TC"
+    "Noto Serif CJK JP"
+    "Noto Serif CJK HK"
+    "Songti SC"
+    "Songti TC"
+    "Kaiti SC"
+    "Kaiti TC"
+    "STSong"
+    "STKaiti"
+    "苍耳今楷 02"
+    "TsangerJinKai02")
+  "Org 正文候选（越靠前越优先）。未安装则自动跳过。")
+
+(defconst henri--org-cjk-sans-candidates
+  '("PingFang SC"
+    "SF Pro Text"
+    "Helvetica Neue"
+    "Heiti SC"
+    "Noto Sans CJK SC"
+    "Noto Sans CJK TC"
+    "Microsoft YaHei"
+    "Microsoft YaHei UI"
+    "Arial Unicode MS")
+  "Org 标题等用的无衬线中文（越靠前越优先）。未安装则自动跳过。")
+
+(defun henri--org-first-available-font (candidates font-families)
+  "在 FONT-FAMILIES 中返回 CANDIDATES 里第一个已安装的字族名。"
+  (seq-find (lambda (name) (member name font-families)) candidates))
+
 ;; =============================================================================
 ;; Org Mode 基础配置
 
@@ -159,22 +197,49 @@
             (set-face-attribute 'org-code nil :background "#f0f0f0" :foreground "#d73502")
             (set-face-attribute 'org-verbatim nil :background "#f0f0f0" :foreground "#006400")))
 
-;; Org Mode 正文字体：恢复旧 Doom 配置中的笔记正文楷体效果
+(defvar-local henri--org-face-remap-cookies nil
+  "本缓冲区 `face-remap-add-relative' 的 cookie，用于重复进入 org-mode 时收回。")
+
+(defun henri/org-clear-cjk-face-remaps ()
+  "Remove face remaps installed by `henri/org-setup-body-font'."
+  (dolist (cookie henri--org-face-remap-cookies)
+    (when cookie
+      (face-remap-remove-relative cookie)))
+  (setq henri--org-face-remap-cookies nil))
+
+;; Org：正文衬线 + 各级标题无衬线（`buffer-face-mode' 与 Doom/variable-pitch 易打架，故用 remap）。
 (defun henri/org-setup-body-font ()
-  "Use a dedicated prose font in Org buffers when available."
+  "Apply serif to body (`default'/`variable-pitch') and sans to Org headings in this buffer."
+  (henri/org-clear-cjk-face-remaps)
   (when (display-graphic-p)
     (let* ((families (font-family-list))
-           (family (cond
-                    ((member "Kaiti TC" families) "Kaiti TC")
-                    ((member "苍耳今楷 02" families) "苍耳今楷 02")
-                    ((member "TsangerJinKai02" families) "TsangerJinKai02")
-                    ((member "Songti SC" families) "Songti SC")
-                    (t nil))))
-      (when family
-        (setq buffer-face-mode-face `(:family ,family :height 1.08))
-        (buffer-face-mode 1)))))
+           (serif
+            (or (and (stringp henri-org-cjk-serif-family)
+                     (member henri-org-cjk-serif-family families)
+                     henri-org-cjk-serif-family)
+                (henri--org-first-available-font henri--org-cjk-serif-candidates families)))
+           (sans
+            (or (and (stringp henri-org-cjk-sans-family)
+                     (member henri-org-cjk-sans-family families)
+                     henri-org-cjk-sans-family)
+                (henri--org-first-available-font henri--org-cjk-sans-candidates families))))
+      (when serif
+        (push (face-remap-add-relative 'default :family serif :height 1.08)
+              henri--org-face-remap-cookies)
+        (push (face-remap-add-relative 'variable-pitch :family serif :height 1.08)
+              henri--org-face-remap-cookies))
+      (when sans
+        (dolist (sym '(org-document-title
+                        org-level-1 org-level-2 org-level-3 org-level-4
+                        org-level-5 org-level-6 org-level-7 org-level-8))
+          (when (facep sym)
+            (push (face-remap-add-relative sym :family sans)
+                  henri--org-face-remap-cookies)))))))
 
-(add-hook 'org-mode-hook #'henri/org-setup-body-font)
+;; 略延迟，避免早于本文件其它 hook 或主题对 Org face 的改写。
+(add-hook 'org-mode-hook
+          (lambda ()
+            (run-with-timer 0 nil #'henri/org-setup-body-font)))
 
 (defun henri/apply-org-faces ()
   "Apply Henri's preferred Org faces after themes and Org are loaded."
@@ -233,18 +298,13 @@
 ;; =============================================================================
 ;; 图标和字体美化
 
-;; 确保 all-the-icons 已安装并配置
-(use-package all-the-icons
-  :ensure t
-  :if (display-graphic-p)
-  :config
-  (unless (member "all-the-icons" (font-family-list))
-    (message "[henri] all-the-icons fonts not found; run M-x all-the-icons-install-fonts if icons look wrong.")))
+;; 图标（由 init-styling 中的 all-the-icons 提供）
+(require 'all-the-icons nil t)
 
 ;; Org Mode 中的图标支持
 (add-hook 'org-mode-hook
           (lambda ()
-            (when (display-graphic-p)
+            (when (and (display-graphic-p) (featurep 'all-the-icons))
               ;; 为不同的文件类型添加图标
               (setq org-agenda-category-icon-alist
                     `(("TODO" ,(list (all-the-icons-faicon "tasks")) nil nil :ascent center)
@@ -342,7 +402,7 @@
   (interactive)
   (when (eq major-mode 'org-mode)
     ;; 重新加载 org-base
-    (load-file (expand-file-name "lisp/writing/org/org-base.el" user-emacs-directory))
+    (require 'org-base)
     ;; 重启 org-mode
     (org-mode)
     ;; 刷新显示
