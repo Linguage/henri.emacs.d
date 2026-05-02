@@ -96,14 +96,14 @@
 
 (defcustom henri-org-cjk-serif-family "TsangerJinKai02"
   "Org 模式中文正文使用的衬线字体族名，须与 `font-family-list' 中某项完全一致。
-为 nil 时按 `henri--org-cjk-serif-candidates'（见 org-base.el）顺序自动探测，
+为 nil 时按 `henri--org-cjk-serif-candidates'（见 `visual-fonts.el'）顺序自动探测，
 例如已安装的「思源宋体」「Noto Serif CJK」或系统「宋体-简」等。"
   :type '(choice (const :tag "自动探测" nil) string)
   :group 'henri-writing)
 
 (defcustom henri-org-cjk-sans-family nil
   "Org 模式标题、文档标题等使用的无衬线中文字体族名，须与 `font-family-list' 中某项完全一致。
-为 nil 时按 `henri--org-cjk-sans-candidates'（见 org-base.el）自动探测。"
+为 nil 时按 `henri--org-cjk-sans-candidates'（见 `visual-fonts.el'）自动探测。"
   :type '(choice (const :tag "自动探测" nil) string)
   :group 'henri-writing)
 

@@ -96,7 +96,7 @@
   (require 'use-package))
 
 ;; Local configuration modules
-(dolist (dir '("lisp" "lisp/ops" "lisp/programming_languages"
+(dolist (dir '("lisp" "lisp/visual" "lisp/ops" "lisp/programming_languages"
                "lisp/writing" "lisp/writing/org" "lisp/writing/LaTeX"))
   (add-to-list 'load-path (expand-file-name dir user-emacs-directory)))
 

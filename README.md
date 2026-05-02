@@ -74,12 +74,19 @@
 - which-key - 快捷键提示
 - **Git（本地）**：Magit（`C-x g` / `C-c g …`）、`diff-hl` 行内/边距显示改动、`smerge-mode` 检测冲突文件并辅以 `C-c ^ …` 快速取舍片段
 
-### 3.3 界面美化 (init-styling.el)
+### 3.3 界面与视觉层 (`lisp/visual/` + `init-styling.el`)
 
-- doom-themes - 主题方案
-- doom-modeline - 状态栏美化
-- rainbow-delimiters - 彩虹括号
-- JetBrains Mono - 编程字体
+视觉相关配置拆为 `lisp/visual/` 三层，由 [`lisp/visual/init-visual.el`](lisp/visual/init-visual.el) 统一加载；[`lisp/init-styling.el`](lisp/init-styling.el) **仅作为兼容入口**（`require 'init-visual`），`init.el` 仍可 `(require 'init-styling)`。
+
+| 模块 | 职责 |
+|------|------|
+| `visual-fonts.el` | 全局字号/字体、`henri-big-font-mode`；Org CJK 候选、`henri/org-setup-body-font`、`M-x henri/org-font-diagnose`。 |
+| `visual-themes.el` | `doom-themes`；`henri-theme-changed-hook` 触发 `henri/apply-fonts`（主题策略函数仍在 [`lisp/init-custom.el`](lisp/init-custom.el)）。 |
+| `visual-components.el` | 默认 frame、行号/高亮、`doom-modeline`、`nerd-icons` / `all-the-icons`、可选 `centaur-tabs`；GUI 初次 `henri/apply-fonts`；`C-=` / `C--` / `C-c F r` / `C-c F b`。 |
+
+- **`lisp/ops/lib-fonts.el`**：薄兼容层，内部 `(require 'visual-fonts)`，供 [`lisp/ops/doctor.el`](lisp/ops/doctor.el) 等保持原有 `require`。
+- **彩虹括号** `rainbow-delimiters`：已迁至 [`lisp/init-programming.el`](lisp/init-programming.el)（`prog-mode` hook）。
+- 编程字体（如 JetBrains Mono 等候选）仍在 `visual-fonts` 的 `henri/set-font` 中按 OS 选择。
 
 ### 3.4 编程环境 (init-programming.el)
 

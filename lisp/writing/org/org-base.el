@@ -16,108 +16,9 @@
 ;;; Code:
 
 (require 'seq)
+(require 'visual-fonts)
 
-;; 中文正文衬线字体：优先思源宋体 / Noto Serif CJK，其次系统宋体、楷体等。
-;; 在图形界面下用 `font-family-list' 探测；安装字体后重启 Emacs 即可生效。
-(defconst henri--org-cjk-serif-candidates
-  '("TsangerJinKai02"
-    "仓耳今楷02"
-    "TsangerJinKai02 W03"
-    "仓耳今楷02 W03"
-    "仓耳今楷"
-    "苍耳今楷 02"
-    "Source Han Serif SC"
-    "Source Han Serif TC"
-    "Source Han Serif"
-    "Noto Serif CJK SC"
-    "Noto Serif CJK TC"
-    "Noto Serif CJK JP"
-    "Noto Serif CJK HK"
-    "Songti SC"
-    "Songti TC"
-    "Kaiti SC"
-    "Kaiti TC"
-    "STSong"
-    "STKaiti")
-  "Org 正文候选（越靠前越优先）。未安装则自动跳过。")
-
-(defconst henri--org-cjk-sans-candidates
-  '("PingFang SC"
-    "SF Pro Text"
-    "Helvetica Neue"
-    "Heiti SC"
-    "Noto Sans CJK SC"
-    "Noto Sans CJK TC"
-    "Microsoft YaHei"
-    "Microsoft YaHei UI"
-    "Arial Unicode MS")
-  "Org 标题等用的无衬线中文（越靠前越优先）。未安装则自动跳过。")
-
-(defun henri--org-first-available-font (candidates font-families)
-  "在 FONT-FAMILIES 中返回 CANDIDATES 里第一个已安装的字族名。"
-  (seq-find (lambda (name) (member name font-families)) candidates))
-
-(defun henri/org--cjk-char-p (char)
-  "Return non-nil when CHAR is likely to be a CJK character."
-  (and (characterp char)
-       (or (memq (get-char-code-property char 'script)
-                 '(han cjk-misc kana bopomofo))
-           (and (>= char #x3000) (<= char #x9fff))
-           (and (>= char #x3400) (<= char #x4dbf))
-           (and (>= char #x20000) (<= char #x2fa1f)))))
-
-(defun henri/org--sample-cjk-position ()
-  "Return a nearby CJK character position for font diagnostics."
-  (or (and (henri/org--cjk-char-p (char-after)) (point))
-      (save-excursion
-        (catch 'pos
-          (while (re-search-forward "[^[:ascii:]]" nil t)
-            (when (henri/org--cjk-char-p (char-before))
-              (throw 'pos (1- (point)))))))))
-
-(defun henri/org-apply-cjk-fontset (family)
-  "Prefer FAMILY for CJK characters in the selected frame fontset."
-  (when (and (display-graphic-p)
-             (stringp family)
-             (fboundp 'set-fontset-font))
-    (let ((font (font-spec :family family)))
-      (dolist (target '(han cjk-misc kana bopomofo))
-        (set-fontset-font nil target font nil 'prepend))
-      (dolist (range '((#x3000 . #x303f)   ; CJK symbols and punctuation
-                       (#x3400 . #x4dbf)   ; CJK Extension A
-                       (#x4e00 . #x9fff)   ; CJK Unified Ideographs
-                       (#xf900 . #xfaff)   ; CJK Compatibility Ideographs
-                       (#x20000 . #x2fa1f))) ; CJK extensions
-        (set-fontset-font nil range font nil 'prepend)))))
-
-(defun henri/org-font-diagnose ()
-  "Report the Org body font preference and the current buffer remap."
-  (interactive)
-  (let* ((families (and (display-graphic-p) (font-family-list)))
-         (serif (or (and (stringp henri-org-cjk-serif-family)
-                         (member henri-org-cjk-serif-family families)
-                         henri-org-cjk-serif-family)
-                    (henri--org-first-available-font henri--org-cjk-serif-candidates families)))
-         (default-remap (alist-get 'default face-remapping-alist))
-         (variable-remap (alist-get 'variable-pitch face-remapping-alist))
-         (sample-pos (henri/org--sample-cjk-position))
-         (sample-char (and sample-pos (char-after sample-pos)))
-         (face-at-point (and sample-pos (get-char-property sample-pos 'face)))
-         (actual-font (and (display-graphic-p)
-                           (fboundp 'font-at)
-                           sample-pos
-                           (ignore-errors (font-at sample-pos))))
-         (actual-family (and actual-font (font-get actual-font :family))))
-    (message "Org body font: selected=%S custom=%S sample=%S actual=%S face=%S default-remap=%S variable-remap=%S candidates-found=%S"
-             serif
-             henri-org-cjk-serif-family
-             sample-char
-             actual-family
-             face-at-point
-             default-remap
-             variable-remap
-             (seq-filter (lambda (name) (member name families))
-                         henri--org-cjk-serif-candidates))))
+;; Org CJK 字体候选、`henri/org-setup-body-font'、诊断等见 `visual-fonts'.
 
 ;; =============================================================================
 ;; Org Mode 基础配置
@@ -263,56 +164,7 @@
             (set-face-attribute 'org-code nil :background "#f0f0f0" :foreground "#d73502")
             (set-face-attribute 'org-verbatim nil :background "#f0f0f0" :foreground "#006400")))
 
-(defvar-local henri--org-face-remap-cookies nil
-  "本缓冲区 `face-remap-add-relative' 的 cookie，用于重复进入 org-mode 时收回。")
-
-(defun henri/org-clear-cjk-face-remaps ()
-  "Remove face remaps installed by `henri/org-setup-body-font'."
-  (dolist (cookie henri--org-face-remap-cookies)
-    (when cookie
-      (face-remap-remove-relative cookie)))
-  (setq henri--org-face-remap-cookies nil))
-
-;; Org：正文衬线 + 各级标题无衬线（`buffer-face-mode' 与 Doom/variable-pitch 易打架，故用 remap）。
-(defun henri/org-setup-body-font (&optional buffer)
-  "Apply serif to body and sans to Org headings in BUFFER or the current buffer."
-  (let ((target (or buffer (current-buffer))))
-    (when (buffer-live-p target)
-      (with-current-buffer target
-        (when (derived-mode-p 'org-mode)
-          (henri/org-clear-cjk-face-remaps)
-          (when (display-graphic-p)
-            (let* ((families (font-family-list))
-                   (serif
-                    (or (and (stringp henri-org-cjk-serif-family)
-                             (member henri-org-cjk-serif-family families)
-                             henri-org-cjk-serif-family)
-                        (henri--org-first-available-font henri--org-cjk-serif-candidates families)))
-                   (sans
-                    (or (and (stringp henri-org-cjk-sans-family)
-                             (member henri-org-cjk-sans-family families)
-                             henri-org-cjk-sans-family)
-                        (henri--org-first-available-font henri--org-cjk-sans-candidates families))))
-              (when serif
-                (henri/org-apply-cjk-fontset serif)
-                (push (face-remap-add-relative 'default :family serif :height 1.08)
-                      henri--org-face-remap-cookies)
-                (push (face-remap-add-relative 'variable-pitch :family serif :height 1.08)
-                      henri--org-face-remap-cookies))
-              (when sans
-                (dolist (sym '(org-document-title
-                                org-level-1 org-level-2 org-level-3 org-level-4
-                                org-level-5 org-level-6 org-level-7 org-level-8))
-                  (when (facep sym)
-                    (push (face-remap-add-relative sym :family sans)
-                          henri--org-face-remap-cookies)))))))))))
-
-;; 略延迟，避免早于本文件其它 hook 或主题对 Org face 的改写。
-(add-hook 'org-mode-hook
-          (lambda ()
-            (henri/org-setup-body-font)
-            (let ((buffer (current-buffer)))
-              (run-with-timer 0.05 nil #'henri/org-setup-body-font buffer))))
+;; `henri/org-setup-body-font' 与 Org 正文字体 hook 由 `visual-fonts' 注册。
 
 (defun henri/apply-org-faces ()
   "Apply Henri's preferred Org faces after themes and Org are loaded."
@@ -341,7 +193,6 @@
 (add-hook 'org-mode-hook
           (lambda ()
             (henri/apply-org-faces)
-            (henri/org-setup-body-font)
             (font-lock-flush)
             (font-lock-ensure)))
 
