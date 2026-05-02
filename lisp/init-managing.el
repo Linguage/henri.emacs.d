@@ -23,8 +23,15 @@
 ;;    - which-key      -- 快捷键提示
 ;;    - exec-path-from-shell -- 环境变量同步
 ;;    - eshell        -- Shell 环境配置
-
-;; 4. 布局管理
+;;
+;; 4. Git（本地）
+;;    - magit       -- 状态、blame、log 等
+;;    - diff-hl    -- 改动高亮；Magit 刷新后同步
+;;    - smerge-mode -- 合并冲突辅助
+;;
+;; 5. 布局管理
+;;    - 窗口分割      -- 自定义窗口布局
+;;    - 启动布局      -- 自动设置初始布局
 ;;    - 窗口分割      -- 自定义窗口布局
 ;;    - 启动布局      -- 自动设置初始布局
 
@@ -189,13 +196,60 @@
 (global-set-key (kbd "C-c w e") #'eshell)                     ; 手动启动eshell
 
 ;; =============================================================================
-;; 版本控制 (Magit)
+;; Git：Magit + 边距/ fringe 变更提示（diff-hl）+ 合并冲突（smerge）
 (when (boundp 'henri-enable-magit)
   (use-package magit
     :ensure t
     :if henri-enable-magit
-    :commands (magit-status)
-    :bind (("C-x g" . magit-status))))
+    :commands (magit-status magit-dispatch magit-file-dispatch
+                            magit-blame magit-log-buffer-file)
+    :bind (("C-x g" . magit-status)
+           ("C-c g g" . magit-status)
+           ("C-c g d" . magit-dispatch)
+           ("C-c g f" . magit-file-dispatch)
+           ("C-c g b" . magit-blame)
+           ("C-c g l" . magit-log-buffer-file))
+    :config
+    (setq magit-define-global-key-bindings nil))
+  (with-eval-after-load 'magit
+    (when (fboundp 'diff-hl-magit-post-refresh)
+      (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh))))
+
+(use-package diff-hl
+  :ensure t
+  :defer 0.2
+  :bind (:map diff-hl-mode-map
+         ("C-c v p" . diff-hl-previous-hunk)
+         ("C-c v n" . diff-hl-next-hunk)
+         ("C-c v r" . diff-hl-revert-hunk))
+  :config
+  (global-diff-hl-mode 1)
+  ;; 终端无 fringe 时用 margin 显示
+  (unless (display-graphic-p)
+    (when (fboundp 'diff-hl-margin-mode)
+      (diff-hl-margin-mode 1)))
+  (add-hook 'dired-mode-hook #'diff-hl-dired-mode))
+
+(defun henri/maybe-enable-smerge ()
+  "若缓冲区含 Git 冲突标记，自动开启 `smerge-mode'."
+  (when (and buffer-file-name
+             (not (derived-mode-p 'dired-mode))
+             (not (string-match-p "\\.org_archive\\'" buffer-file-name)))
+    (save-excursion
+      (goto-char (point-min))
+      (when (re-search-forward "^<<<<<<< " nil t)
+        (smerge-mode 1)
+        (message "已启用 smerge-mode（检测到合并冲突）")))))
+
+(add-hook 'find-file-hook #'henri/maybe-enable-smerge)
+
+(with-eval-after-load 'smerge-mode
+  (define-key smerge-mode-map (kbd "C-c ^ n") #'smerge-next)
+  (define-key smerge-mode-map (kbd "C-c ^ p") #'smerge-prev)
+  (define-key smerge-mode-map (kbd "C-c ^ u") #'smerge-keep-upper)
+  (define-key smerge-mode-map (kbd "C-c ^ l") #'smerge-keep-lower)
+  (define-key smerge-mode-map (kbd "C-c ^ b") #'smerge-keep-base)
+  (define-key smerge-mode-map (kbd "C-c ^ a") #'smerge-keep-all))
 
 ;; ================================
 ;; centaur-tabs 迁移到 styling，保持此处不重复定义（保留函数引用）。

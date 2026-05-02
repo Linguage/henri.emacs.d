@@ -28,6 +28,49 @@
 ;; =============================================================================
 ;; Markdown 配置
 
+(defun henri/markdown-executable-p (program)
+  "非 nil 时表示 PROGRAM 在 `exec-path' 中可执行。"
+  (and (stringp program)
+       (executable-find program)))
+
+(defun henri/markdown-check-preview-deps ()
+  "报告 pandoc / grip 是否在 PATH 中（用于 Markdown 预览）。"
+  (interactive)
+  (let ((p (henri/markdown-executable-p "pandoc"))
+        (g (henri/markdown-executable-p "grip")))
+    (message "[Markdown 预览依赖] pandoc: %s | grip: %s | henri-enable-grip: %S"
+             (if p "OK" "缺失（brew install pandoc）")
+             (if g "OK" "缺失（pip install grip 等）")
+             (if (boundp 'henri-enable-grip) henri-enable-grip 'unbound))))
+
+(defun henri/markdown-preview-offline ()
+  "使用 pandoc 的离线预览：优先 EWW，其次 `markdown-mode' 的 `markdown-preview'."
+  (interactive)
+  (unless (eq major-mode 'markdown-mode)
+    (user-error "当前不是 markdown-mode"))
+  (unless (henri/markdown-executable-p "pandoc")
+    (user-error "未找到 pandoc：请先安装并保证在 PATH 中（如 brew install pandoc）"))
+  (cond
+   ((fboundp 'markdown-preview-eww)
+    (call-interactively #'markdown-preview-eww))
+   ((fboundp 'markdown-preview)
+    (call-interactively #'markdown-preview))
+   (t
+    (user-error "未加载 markdown 预览命令（检查 markdown-preview-eww / markdown-mode）"))))
+
+(defun henri/markdown-preview-github-style ()
+  "使用 grip 的 GitHub 风格预览（需 `henri-enable-grip' 非 nil 且已安装 grip）。"
+  (interactive)
+  (unless (eq major-mode 'markdown-mode)
+    (user-error "当前不是 markdown-mode"))
+  (unless (bound-and-true-p henri-enable-grip)
+    (user-error "grip 已在配置中关闭：将 `henri-enable-grip' 设为 t 并重启 Emacs"))
+  (unless (henri/markdown-executable-p "grip")
+    (user-error "未找到 grip：请先安装（如 pip install grip）并保证在 PATH 中"))
+  (unless (fboundp 'grip-mode)
+    (user-error "grip-mode 未加载：请检查 `use-package grip-mode' 是否启用"))
+  (call-interactively #'grip-mode))
+
 ;; Markdown 基础配置
 (use-package markdown-mode
   :ensure t
@@ -44,7 +87,10 @@
   (setq markdown-display-remote-images t)         ; 显示远程图片
   :bind (:map markdown-mode-map
          ("C-c C-v" . markdown-preview)          ; 使用内置预览
-         ("C-c C-c p" . markdown-preview-mode))) ; 备选预览模式
+         ("C-c C-c p" . markdown-preview-mode)   ; 备选预览模式
+         ("C-c m p" . henri/markdown-preview-offline)
+         ("C-c m g" . henri/markdown-preview-github-style)
+         ("C-c m c" . henri/markdown-check-preview-deps)))
 
 ;; GitHub 风格预览支持
 (use-package grip-mode

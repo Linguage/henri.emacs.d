@@ -49,9 +49,10 @@
 - 外部依赖:
   - git
   - clangd (C/C++)
-- pylsp（Python，随 Eglot 使用；另有 elpy + company-jedi 见 `init-python.el`）
+  - pylsp（Python，随 Eglot 使用；另有 elpy + company-jedi 见 `init-python.el`）
   - fortls (Fortran)
-  - pandoc (Markdown)
+  - pandoc（Markdown 离线预览 / `markdown-mode` 转换）
+  - grip（可选，GitHub 风格 Markdown 预览；`henri-enable-grip` 为 t 时使用）
   - texlive (LaTeX)
 
 ## 3. 主要模块
@@ -66,6 +67,7 @@
 - ivy + counsel + swiper - 搜索与补全框架
 - neotree - 文件树侧边栏
 - which-key - 快捷键提示
+- **Git（本地）**：Magit（`C-x g` / `C-c g …`）、`diff-hl` 行内/边距显示改动、`smerge-mode` 检测冲突文件并辅以 `C-c ^ …` 快速取舍片段
 
 ### 3.3 界面美化 (init-styling.el)
 
@@ -132,7 +134,7 @@
 
 ### 3.5 写作环境 (init-writing.el)
 
-- Markdown
+- **Markdown**：`markdown-mode`；离线预览（`pandoc` + 优先 EWW，见 `C-c m p`）；GitHub 风格预览（`grip` + `C-c m g` / 原 `C-c C-g`）；`C-c m c` 检查依赖是否就绪
 - Org Mode
 - LaTeX
 
@@ -207,6 +209,20 @@
 | `<f8>` | neotree-toggle | 切换文件树 |
 | `<f5>` | quickrun | 快速运行代码 |
 
+#### Git（Magit / diff-hl）
+
+| 快捷键 | 功能 | 说明 |
+|--------|------|------|
+| `C-x g` / `C-c g g` | magit-status | 仓库状态 |
+| `C-c g d` | magit-dispatch | 命令面板 |
+| `C-c g f` | magit-file-dispatch | 当前文件相关 Git 操作 |
+| `C-c g b` | magit-blame | 逐行追溯 |
+| `C-c g l` | magit-log-buffer-file | 当前文件历史 |
+| `C-c v n` / `C-c v p` | diff-hl-next/previous-hunk | 跳转下/上一处改动 |
+| `C-c v r` | diff-hl-revert-hunk | 还原当前 hunk（慎用） |
+
+合并冲突缓冲区内（`smerge-mode`）：`C-c ^ n` / `C-c ^ p` 下一处冲突；`C-c ^ u` / `C-c ^ l` 保留上/下版本；`C-c ^ b` 保留基线；`C-c ^ a` 保留全部。
+
 ### 5.2 编程相关快捷键
 
 #### 通用编程
@@ -240,9 +256,12 @@
 
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
-| `C-c C-v` | markdown-preview | 内置预览 |
+| `C-c C-v` | markdown-preview | 内置预览（pandoc） |
 | `C-c C-c p` | markdown-preview-mode | 预览模式 |
-| `C-c C-g` | grip-mode | GitHub 风格预览 |
+| `C-c m p` | henri/markdown-preview-offline | 离线：优先 EWW，需 pandoc |
+| `C-c m g` | henri/markdown-preview-github-style | GitHub 风格：需 grip 且 `henri-enable-grip` |
+| `C-c m c` | henri/markdown-check-preview-deps | 检查 pandoc / grip 是否在 PATH |
+| `C-c C-g` | grip-mode | 直接开关 grip（与 `C-c m g` 等价入口之一） |
 
 #### Org Mode - 基础操作
 
