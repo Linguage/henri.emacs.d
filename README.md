@@ -9,6 +9,7 @@
 | 文档 | 说明 |
 |------|------|
 | [操作清单](c.md) | 常用命令与路径索引 |
+| [使用指南（tutorials）](docs/tutorials/README.md) | 基于本配置的专题指南，首篇为快捷键速查 |
 | [蓝图](docs/specs/BLUEPRINT.md) | 宏观规划与文档边界 |
 | [架构](docs/specs/ARCHITECTURE.md) | 模块与目录语义 |
 | [路线图](docs/specs/ROADMAP.md) | 阶段任务 |
@@ -135,6 +136,7 @@
 ### 3.5 写作环境 (init-writing.el)
 
 - **Markdown**：`markdown-mode`；离线预览（`pandoc` + 优先 EWW，见 `C-c m p`）；GitHub 风格预览（`grip` + `C-c m g` / 原 `C-c C-g`）；`C-c m c` 检查依赖是否就绪
+- **Org → HTML**：主题树在 [`lisp/writing/org/org-html-themes`](lisp/writing/org/org-html-themes)（含 fniessen 上游 `src/` 与自定义 `henri-bearblog/`），由 `henri-org-html-themes-directory` 指向；本地 setup 使用占位符 `@@henri-org-html-themes-root@@`，在 HTML 导出时替换为实际路径。旧路径 `~/Documents/EmacsNotes/org-html-themes` 可弃用。无主题目录时可用 [`lisp/writing/org/install-themes.sh`](lisp/writing/org/install-themes.sh) 仅克隆上游（不含 Bearblog，需以仓库内版本为准）。
 - Org Mode
 - LaTeX
 

@@ -21,6 +21,24 @@
 
 (require 'ox-html)
 
+(defconst my/org-html-themes-root-placeholder "@@henri-org-html-themes-root@@"
+  "In local theme #+HTML_HEAD lines; replaced in final HTML output (see
+`my/org-html--substitute-themes-root-in-output').")
+
+(defun my/org-html--substitute-themes-root-in-output (output backend _channel)
+  "Replace `my/org-html-themes-root-placeholder' with `henri-org-html-themes-directory'.
+SETUPFILE is merged after `org-export-before-processing-hook', so replacement
+runs on the final HTML string via `org-export-filter-final-output-functions'."
+  (if (org-export-derived-backend-p backend 'html)
+      (replace-regexp-in-string
+       (regexp-quote my/org-html-themes-root-placeholder)
+       (directory-file-name (expand-file-name henri-org-html-themes-directory))
+       output t t)
+    output))
+
+(add-hook 'org-export-filter-final-output-functions
+          #'my/org-html--substitute-themes-root-in-output)
+
 ;; 设置默认的 HTML 导出选项
 (setq org-html-doctype "html5")
 (setq org-html-html5-fancy t)
