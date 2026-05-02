@@ -50,6 +50,7 @@
 ;; 提供智能的代码补全功能，支持多种后端补全源
 (use-package company
   :ensure t
+  :defer 1
   :hook (after-init . global-company-mode)
   :config
   (setq company-idle-delay 0.2)            ; 设置延迟显示建议的时间
@@ -162,51 +163,7 @@
   :ensure t
   :hook (after-init . global-flycheck-mode))
 
-;; 大文件优化逻辑 -----------------------------------------------------------
-(defun henri/large-file-optimizations ()
-  "Apply performance tweaks for large files based on `henri-large-file-threshold'."
-  (when (and (boundp 'henri-large-file-threshold)
-             buffer-file-name
-             (> (buffer-size) henri-large-file-threshold))
-    (when (and (boundp 'henri-large-file-disable-modes)
-               (memq 'line-numbers henri-large-file-disable-modes)
-               (bound-and-true-p display-line-numbers-mode))
-      (display-line-numbers-mode -1))
-    (when (and (memq 'flycheck henri-large-file-disable-modes)
-               (bound-and-true-p flycheck-mode))
-      (flycheck-mode -1))
-    (when (and (memq 'eglot henri-large-file-disable-modes)
-               (boundp 'eglot--managed-mode)
-               eglot--managed-mode)
-      (setq-local eglot--managed-mode nil)
-      (message "[henri] Disabled eglot for large file: %s" (buffer-name)))
-    (when (memq 'tree-sitter henri-large-file-disable-modes)
-      (when (boundp 'treesit-font-lock-feature-list)
-        (setq-local treesit-font-lock-feature-list '((comment) (string) (keyword))))
-      (when (boundp 'treesit-font-lock-level)
-        (setq-local treesit-font-lock-level 1)))
-    (when (and (memq 'font-lock henri-large-file-disable-modes)
-               (boundp 'font-lock-maximum-decoration))
-      (setq-local font-lock-maximum-decoration henri-large-file-minor-highlighting-level))
-    (setq-local bidi-display-reordering nil
-                bidi-paragraph-direction 'left-to-right)
-    (message "[henri] Large file optimizations applied (size=%d)." (buffer-size))))
-
-(add-hook 'find-file-hook #'henri/large-file-optimizations)
-
-(defun henri/restore-from-large-file ()
-  "Manually restore common minor modes after large file optimizations."
-  (interactive)
-  (when (not display-line-numbers-mode) (display-line-numbers-mode 1))
-  (when (fboundp 'flycheck-mode) (flycheck-mode 1))
-  (when (and (fboundp 'eglot-ensure) (not (bound-and-true-p eglot--managed-mode)))
-    (eglot-ensure))
-  (when (boundp 'treesit-font-lock-feature-list)
-    (kill-local-variable 'treesit-font-lock-feature-list))
-  (when (boundp 'treesit-font-lock-level)
-    (kill-local-variable 'treesit-font-lock-level))
-  (kill-local-variable 'font-lock-maximum-decoration)
-  (message "[henri] Restored modes for current buffer."))
+;; 大文件优化：`lib-files' 中的 `henri/large-file-optimizations'/`henri--prepare-for-large-files-a'.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; 编程语言支持配置                 ;;
@@ -259,7 +216,7 @@
   :commands (quickrun)
   :bind ("<f5>" . quickrun)
   :init
-  (setq quickrun-shell "/bin/zsh")         ; 使用 zsh 作为默认 shell
+  (setq quickrun-shell henri-shell)
   :config
   ;; C++ 运行配置
   (quickrun-add-command "c++/c1z"

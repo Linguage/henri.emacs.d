@@ -28,16 +28,13 @@
 ;; =============================================================================
 ;; Markdown 配置
 
-(defun henri/markdown-executable-p (program)
-  "非 nil 时表示 PROGRAM 在 `exec-path' 中可执行。"
-  (and (stringp program)
-       (executable-find program)))
+(require 'lib-system)
 
 (defun henri/markdown-check-preview-deps ()
   "报告 pandoc / grip 是否在 PATH 中（用于 Markdown 预览）。"
   (interactive)
-  (let ((p (henri/markdown-executable-p "pandoc"))
-        (g (henri/markdown-executable-p "grip")))
+  (let ((p (henri/executable-p "pandoc"))
+        (g (henri/executable-p "grip")))
     (message "[Markdown 预览依赖] pandoc: %s | grip: %s | henri-enable-grip: %S"
              (if p "OK" "缺失（brew install pandoc）")
              (if g "OK" "缺失（pip install grip 等）")
@@ -48,7 +45,7 @@
   (interactive)
   (unless (eq major-mode 'markdown-mode)
     (user-error "当前不是 markdown-mode"))
-  (unless (henri/markdown-executable-p "pandoc")
+  (unless (henri/executable-p "pandoc")
     (user-error "未找到 pandoc：请先安装并保证在 PATH 中（如 brew install pandoc）"))
   (cond
    ((fboundp 'markdown-preview-eww)
@@ -65,7 +62,7 @@
     (user-error "当前不是 markdown-mode"))
   (unless (bound-and-true-p henri-enable-grip)
     (user-error "grip 已在配置中关闭：将 `henri-enable-grip' 设为 t 并重启 Emacs"))
-  (unless (henri/markdown-executable-p "grip")
+  (unless (henri/executable-p "grip")
     (user-error "未找到 grip：请先安装（如 pip install grip）并保证在 PATH 中"))
   (unless (fboundp 'grip-mode)
     (user-error "grip-mode 未加载：请检查 `use-package grip-mode' 是否启用"))
@@ -115,9 +112,7 @@
 
 ;; =============================================================================
 ;; LaTeX 支持 - 最小化配置
-
-;; 添加 LaTeX 配置目录到 load-path
-(add-to-list 'load-path (expand-file-name "lisp/writing/LaTeX/" user-emacs-directory))
+;; load-path 已在 `init.el' 中统一加入 `lisp/writing/LaTeX/'。
 
 ;; 加载最小化 LaTeX 配置（仅服务于 Org 导出）
 (require 'latex-minimal)

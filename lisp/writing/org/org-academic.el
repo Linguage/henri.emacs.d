@@ -26,17 +26,20 @@
   :type 'directory
   :group 'org-academic)
 
-(defcustom org-academic-papers-dir (concat org-academic-directory "/Papers")
+(defcustom org-academic-papers-dir
+  (expand-file-name "Papers" org-academic-directory)
   "学术论文存放目录"
   :type 'directory
   :group 'org-academic)
 
-(defcustom org-academic-notes-dir (concat org-academic-directory "/Research-Notes")
+(defcustom org-academic-notes-dir
+  (expand-file-name "Research-Notes" org-academic-directory)
   "研究笔记存放目录"
   :type 'directory
   :group 'org-academic)
 
-(defcustom org-academic-bibliography-file (concat org-academic-directory "/bibliography.bib")
+(defcustom org-academic-bibliography-file
+  (expand-file-name "bibliography.bib" org-academic-directory)
   "参考文献数据库文件"
   :type 'file
   :group 'org-academic)

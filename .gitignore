@@ -15,5 +15,12 @@
 !lisp/**
 !lisp/**/**
 
+# Emacs byte-compiled artifacts are machine/version-local generated files.
+*.elc
+**/*.elc
+
 .DS_Store
 **/.DS_Store
+
+# Machine-local profile overlay (optional):
+profile-*.el

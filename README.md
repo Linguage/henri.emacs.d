@@ -15,7 +15,10 @@
 | [路线图](docs/specs/ROADMAP.md) | 阶段任务 |
 | [审查整改归档](docs/legacy/2026-05-02-emacs-config-review-fixes.md) | 可移植性整改记录（已结案） |
 
-个人路径（笔记根、项目目录、Conda、LeetCode、Org HTML 主题等）集中在 [`lisp/init-custom.el`](lisp/init-custom.el) 的 `henri-*` `defcustom`，切换机器时优先改此处或通过 `M-x customize-group RET henri-paths`.
+个人路径（笔记根、项目目录、Conda、LeetCode、Org HTML 主题等）集中在 [`lisp/init-custom.el`](lisp/init-custom.el) 的 `henri-*` `defcustom`，切换机器时优先改此处或通过 `M-x customize-group RET henri-paths`。
+
+- **`henri-paths`**：`henri-notes-directory`、`henri-org-html-themes-directory`、`henri-shell`（子进程 / quickrun / `exec-path-from-shell` 使用的 shell，默认优先 `zsh` 否则 `/bin/sh`）等机器相关路径。
+- **`henri-runtime`**（[`lisp/ops/paths.el`](lisp/ops/paths.el)）：`henri-var-directory`、备份/自动保存子目录、`tree-sitter`、`rime`、`transient` 等；目录在 **`after-init-hook`** 中按需创建，避免纯 `--batch` 加载配置时在仓库里 mkdir。
 
 ### 运行时目录与本机文件（Git 策略）
 
@@ -25,8 +28,8 @@
 |-----------|------|
 | `custom.el` | `custom-file` 目标；由 Emacs 写入，`init.el` 在存在时 `load`。 |
 | `elpa/` | 已安装包 |
-| `var/`、`var/backups/`、`var/autosave/` | 备份与自动保存（`henri-var-directory` 等见 [`lisp/ops/paths.el`](lisp/ops/paths.el)） |
-| `.local/cache/`、`.local/etc/` | 预留命名空间（目录会由 `paths.el` 创建） |
+| `var/`、`var/backups/`、`var/autosave/` | 备份与自动保存（`henri-var-directory` 等见 [`lisp/ops/paths.el`](lisp/ops/paths.el)；首次创建发生在 `after-init-hook`） |
+| `.local/cache/`、`.local/etc/` | 预留命名空间（同上，启动完成后创建） |
 | `rime/` | Rime 用户数据（`henri-rime-directory`） |
 | `tree-sitter/`、`transient/` 等 | 常见运行时目录 |
 
@@ -154,6 +157,7 @@
 | early-init | 启动前 GC / UI / file-name-handler 优化 | `early-init.el` |
 | core | 包初始化 + 基础模块加载 | `init.el` |
 | customization | 所有 defgroup/defcustom | `lisp/init-custom.el` |
+| startup dashboard | 启动页、`initial-buffer-choice`、笔记快捷命令 | `lisp/init-dashboard.el` |
 | managing/styling | 导航/补全/界面主题/标签 | `lisp/init-managing.el` / `lisp/init-styling.el` |
 | programming | LSP / 运行 / 调试 / 语言桥接 | `lisp/init-programming.el` |
 | writing | Markdown / Org / LaTeX | `lisp/init-writing.el` |
@@ -205,7 +209,8 @@
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
 | `M-x` | counsel-M-x | 增强的命令执行 |
-| `C-x C-f` | counsel-find-file | 智能文件查找 |
+| `C-x C-f` | find-file | Emacs 默认；未在全局 remap |
+| `C-c f n` | henri/find-file-in-notes | 自笔记根起的 counsel-find-file（若已安装 counsel） |
 | `C-s` | swiper | 交互式搜索 |
 | `C-x g` | magit-status | Git 状态管理 |
 | `<f8>` | neotree-toggle | 切换文件树 |
@@ -325,10 +330,8 @@
 
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
-| `C-c t n` | centaur-tabs-forward | 下一个标签页 |
-| `C-c t p` | centaur-tabs-backward | 上一个标签页 |
-| `C-c t c` | centaur-tabs-local-mode | 切换标签页模式 |
-| `鼠标滚轮` | 标签页切换 | 在标签栏上滚动切换 |
+| `C-<prior>` / `C-<next>` | centaur-tabs-backward / forward | 上一/下一标签（`init-styling.el`） |
+| `鼠标滚轮` | 标签页切换 | 在启用 centaur-tabs 后由配置绑定 |
 
 #### 文件树操作
 

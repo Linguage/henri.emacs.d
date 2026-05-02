@@ -48,9 +48,9 @@
   :ensure t
   :defer t  ; 延迟加载
   :commands (pyvenv-activate pyvenv-deactivate pyvenv-workon)
+  :hook (python-mode . pyvenv-mode)
   :config
-  (setenv "WORKON_HOME" (directory-file-name (expand-file-name henri-conda-envs-directory)))
-  (pyvenv-mode 1))
+  (setenv "WORKON_HOME" (directory-file-name (expand-file-name henri-conda-envs-directory))))
 
 ;; =============================================================================
 ;; IDE 功能配置 (延迟加载)

@@ -2,7 +2,7 @@
 
 ;;; Commentary:
 ;; Conservative layout under `user-emacs-directory' (no no-littering).
-;; Creates missing dirs once at load time; see README / c.md for git policy.
+;; Creates missing directories once from `after-init-hook'; see README / c.md.
 
 ;;; Code:
 
@@ -53,7 +53,7 @@
     (unless (file-directory-p dir)
       (ignore-errors (make-directory dir t)))))
 
-(henri/ensure-runtime-directories)
+(add-hook 'after-init-hook #'henri/ensure-runtime-directories)
 
 (provide 'paths)
 ;;; paths.el ends here

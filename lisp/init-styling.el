@@ -30,8 +30,6 @@
 
 ;;; Code:
 
-(require 'seq)
-
 ;; =============================================================================
 ;; 基础界面设置
 
@@ -60,15 +58,8 @@
 (global-subword-mode 1)                    ; 驼峰语法支持
 
 ;; =============================================================================
-;; 主题美化配置
+;; 主题美化配置（`henri-theme-mode` 等见 init-custom.el）
 
-;; =============================================================================
-;; 主题配置
-
-
-
-
-;; 主题策略由 init-custom.el 中的 defcustom 控制
 (use-package doom-themes
   :ensure t
   :demand t
@@ -130,89 +121,75 @@
       (message "[henri] all-the-icons fonts not found; run M-x all-the-icons-install-fonts if icons look wrong."))))
 
 
-(defun henri/get-os-type ()
-  "获取当前操作系统类型。"
-  (cond
-   ((eq system-type 'darwin) 'macos)
-   ((eq system-type 'gnu/linux)
-    (if (string-match "Microsoft" (shell-command-to-string "uname -r"))
-        'wsl
-      'linux))
-   ((eq system-type 'windows-nt) 'windows)
-   (t 'unknown)))
-
-(defun henri/font-family-available-p (family)
-  "Return non-nil when font FAMILY is available."
-  (member family (font-family-list)))
-
-(defun henri/first-available-font (&rest families)
-  "Return the first available font from FAMILIES."
-  (seq-find #'henri/font-family-available-p families))
-
-(defun henri/set-font ()
-  "根据操作系统设置字体。"
-  (let ((os-type (henri/get-os-type)))
-    (cond
-     ;; macOS 字体设置
-     ((eq os-type 'macos)
-      (let ((latin-font (henri/first-available-font
-                         "Cascadia Code NF"
-                         "CaskaydiaCove Nerd Font Mono"
-                         "CaskaydiaCove Nerd Font"
-                         "JetBrains Mono")))
-        (when latin-font
-          (set-face-attribute 'default nil :family latin-font :height 140)
-          (set-face-attribute 'fixed-pitch nil :family latin-font :height 1.0)))
-      (when (henri/font-family-available-p "SF Pro Text")
-        (set-face-attribute 'variable-pitch nil :family "SF Pro Text" :height 1.0))
-      (dolist (charset '(kana han symbol cjk-misc bopomofo))
-        (set-fontset-font t charset
-                         (font-spec :family "PingFang SC"))))
-     
-     ;; Windows 字体设置
-     ((eq os-type 'windows)
-      (set-face-attribute 'default nil
-                         :family "Fira Code"
-                         :height 120)
-      (dolist (charset '(kana han symbol cjk-misc bopomofo))
-        (set-fontset-font t charset
-                         (font-spec :family "Microsoft YaHei"))))
-     
-     ;; WSL 字体设置
-     ((eq os-type 'wsl)
-      (set-face-attribute 'default nil
-                         :family "Cascadia Code PL"
-                         :height 120)
-      (dolist (charset '(kana han symbol cjk-misc bopomofo))
-        (set-fontset-font t charset
-                         (font-spec :family "Microsoft YaHei"))))
-     
-     ;; Linux 字体设置
-     ((eq os-type 'linux)
-      (set-face-attribute 'default nil
-                         :family "Cascadia Code PL"
-                         :height 120)
-      (dolist (charset '(kana han symbol cjk-misc bopomofo))
-        (set-fontset-font t charset
-                         (font-spec :family "Noto Sans CJK SC")))))))
-
+;; 字体与缩放：参见 `lib-fonts'（`henri/set-font`、`henri/font-size-adjust'）。
 ;; 应用字体设置
 (when window-system
   (henri/set-font))
 
+;; 字体缩放（运行时）
+(global-set-key (kbd "C-=") (lambda () (interactive) (henri/font-size-adjust 1)))
+(global-set-key (kbd "C--") (lambda () (interactive) (henri/font-size-adjust -1)))
+(global-set-key (kbd "C-c F r") #'henri/font-size-reset)
+(global-set-key (kbd "C-c F b") #'henri-big-font-mode)
+
 ;; =============================================================================
-;; 标签页配置 (Centaur Tabs) - 延迟加载避免崩溃
+;; 标签页 (Centaur Tabs) — 辅助函数与 `use-package' 同块，避免声明耦合
 
 (when (and (boundp 'henri-enable-centaur-tabs) henri-enable-centaur-tabs)
   (use-package centaur-tabs
     :ensure t
     :defer t
     :if (display-graphic-p)
+    :preface
+    (defun henri/setup-centaur-tabs ()
+      "安全地设置和启动 centaur-tabs。"
+      (interactive)
+      (run-with-idle-timer
+       2 nil
+       (lambda ()
+         (when (and (boundp 'henri-enable-centaur-tabs)
+                    henri-enable-centaur-tabs
+                    (display-graphic-p)
+                    (not (bound-and-true-p centaur-tabs-mode)))
+           (require 'centaur-tabs nil t)
+           (centaur-tabs-mode 1)
+           (message "Centaur-tabs 已启用")
+           (henri/setup-tabs-mouse-support)
+           (henri/maybe-enable-tabs-icons)))))
+
+    (defun henri/setup-tabs-mouse-support ()
+      "设置标签页的鼠标滚轮切换。"
+      (global-set-key [mouse-4] 'centaur-tabs-backward)
+      (global-set-key [mouse-5] 'centaur-tabs-forward))
+
+    (defun henri/maybe-enable-tabs-icons ()
+      "在图标字体可用时启用 centaur-tabs 图标。"
+      (when (and (featurep 'all-the-icons)
+                 (display-graphic-p))
+        (condition-case err
+            (when (and (> (length (font-family-list)) 0)
+                       (or (member "all-the-icons" (font-family-list))
+                           (member "All The Icons" (font-family-list))))
+              (setq centaur-tabs-set-icons t)
+              (when (bound-and-true-p centaur-tabs-mode)
+                (centaur-tabs-mode -1)
+                (centaur-tabs-mode 1))
+              (message "Centaur-tabs 图标已启用"))
+          (error
+           (message "图标启用失败: %s" err)))))
+
+    (defun henri/centaur-tabs-theme ()
+      "使 centaur-tabs 与当前 doom 主题对齐。"
+      (when (and (display-graphic-p)
+                 (bound-and-true-p centaur-tabs-mode))
+        (condition-case nil
+            (centaur-tabs-headline-match)
+          (error nil))))
     :bind (("C-<prior>" . centaur-tabs-backward)
            ("C-<next>" . centaur-tabs-forward))
     :init
     (when (display-graphic-p)
-      (add-hook 'emacs-startup-hook #'henri/setup-centaur-tabs))
+      (add-hook 'henri-first-buffer-hook #'henri/setup-centaur-tabs))
     :config
     (setq centaur-tabs-style "bar"
           centaur-tabs-height 32
@@ -246,97 +223,9 @@
         ((string-equal "*" (substring (buffer-name) 0 1)) "System")
         (t "General"))))
     (defun centaur-tabs-hide-tab (x)
-      "隐藏不需要显示标签页的缓冲区。"
-      (let ((name (format "%s" x)))
-        (or
-         (string-prefix-p "*epc" name)
-         (string-prefix-p "*helm" name)
-         (string-prefix-p "*Helm" name)
-         (string-prefix-p "*Compile-Log*" name)
-         (string-prefix-p "*lsp" name)
-         (string-prefix-p "*company" name)
-         (string-prefix-p "*Flycheck" name)
-         (string-prefix-p "*tramp" name)
-         (string-prefix-p " *Mini" name)
-         (string-prefix-p "*help" name)
-         (string-prefix-p "*straight" name)
-         (string-prefix-p " *temp" name)
-         (string-prefix-p "*Help" name)
-         (string-prefix-p "*mybuf" name)
-         (string-prefix-p "*Warnings*" name)
-         (string-prefix-p "*Messages*" name)
-         (string-prefix-p "*scratch*" name)
-         (string-prefix-p "*Completions*" name)
-         (string-prefix-p "*Async-native-compile-log*" name)
-         (string-prefix-p "*eshell*" name)
-         (string-prefix-p "*shell*" name)
-         (string-prefix-p "*terminal*" name)
-         (and (string-prefix-p "magit" name)
-              (not (file-name-extension name)))
-         (string-prefix-p "*markdown-preview*" name)
-         (string-prefix-p "*grip-*" name))))))
-
-;; 延迟设置函数，确保安全启动
-(defun henri/setup-centaur-tabs ()
-  "安全地设置和启动 centaur-tabs"
-  (interactive)
-  (run-with-idle-timer 
-   2 nil
-   (lambda ()
-     (when (and (boundp 'henri-enable-centaur-tabs)
-                henri-enable-centaur-tabs
-                (display-graphic-p)
-                (not (bound-and-true-p centaur-tabs-mode)))
-       ;; 先确保包已加载
-       (require 'centaur-tabs nil t)
-       ;; 启用 tabs 模式
-       (centaur-tabs-mode 1)
-       (message "Centaur-tabs 已启用")
-       ;; 设置鼠标滚轮支持
-       (henri/setup-tabs-mouse-support)
-       ;; 尝试启用图标（如果字体可用）
-       (henri/maybe-enable-tabs-icons)))))
-
-;; 鼠标支持设置
-(defun henri/setup-tabs-mouse-support ()
-  "设置标签页的鼠标支持"
-  (global-set-key [mouse-4] 'centaur-tabs-backward) ; 鼠标滚轮向上
-  (global-set-key [mouse-5] 'centaur-tabs-forward)) ; 鼠标滚轮向下
-
-;; 安全的图标启用函数
-(defun henri/maybe-enable-tabs-icons ()
-  "尝试安全地启用 centaur-tabs 图标"
-  (when (and (featurep 'all-the-icons)
-             (display-graphic-p))
-    ;; 在图形环境下检查字体
-    (condition-case err
-        (when (and (> (length (font-family-list)) 0)
-                   (or (member "all-the-icons" (font-family-list))
-                       (member "All The Icons" (font-family-list))))
-          (setq centaur-tabs-set-icons t)
-          ;; 重新应用设置
-          (when (bound-and-true-p centaur-tabs-mode)
-            (centaur-tabs-mode -1)
-            (centaur-tabs-mode 1))
-          (message "Centaur-tabs 图标已启用"))
-      (error 
-       (message "图标启用失败: %s" err)))))
-
-;; 可选：标签页主题美化 (与当前主题集成)
-(defun henri/centaur-tabs-theme ()
-  "为 centaur-tabs 设置主题颜色"
-  (when (and (display-graphic-p)
-             (bound-and-true-p centaur-tabs-mode))
-    ;; 根据当前主题调整标签页颜色
-    (condition-case nil
-        (centaur-tabs-headline-match)
-      (error nil))))
-
-;; 在主题加载后应用标签页主题
-(add-hook 'doom-themes-after-load-theme-hook #'henri/centaur-tabs-theme)
-
-;; 移除之前可能有问题的延迟加载代码
-;; (run-with-idle-timer 3 nil #'henri/enable-centaur-tabs-icons)
+      "隐藏不需要显示标签页的缓冲区（共用 `henri-buffer-real-p'）。"
+      (not (henri-buffer-real-p x)))
+    (add-hook 'doom-themes-after-load-theme-hook #'henri/centaur-tabs-theme)))
 
 (provide 'init-styling)
 

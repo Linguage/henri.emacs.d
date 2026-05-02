@@ -104,8 +104,8 @@
 
 ;; =============================================================================
 ;; Shell 环境配置 (延迟加载)
-(setq shell-file-name "/bin/zsh"
-      explicit-shell-file-name "/bin/zsh")
+(setq shell-file-name henri-shell
+      explicit-shell-file-name henri-shell)
 
 ;; 环境变量同步优化 - 更激进的延迟加载
 (use-package exec-path-from-shell
@@ -116,16 +116,10 @@
   ;; 更激进的性能优化设置
   (setq exec-path-from-shell-check-startup-files nil)    ; 禁用启动文件检查
   (setq exec-path-from-shell-debug nil)                  ; 禁用调试输出
-  (setq exec-path-from-shell-shell-name "zsh")           ; 明确指定shell
+  (setq exec-path-from-shell-shell-name
+        (file-name-nondirectory henri-shell))             ; 与 `henri-shell' 一致
   (setq exec-path-from-shell-arguments '("-l"))          ; 减少参数
-  (setq exec-path-from-shell-variables '("PATH" "SHELL")) ; 仅同步必要变量
-  :config
-  (when (memq window-system '(mac ns))
-    ;; 使用静默模式初始化
-    (let ((inhibit-message t))
-      (exec-path-from-shell-initialize))))
-
-;; 延迟初始化 shell 环境变量 - 仅在需要时加载
+  (setq exec-path-from-shell-variables '("PATH" "SHELL"))) ; use-package 收尾，仅同步必要变量
 (defun henri/initialize-shell-env ()
   "延迟初始化 shell 环境变量。"
   (interactive)
@@ -141,9 +135,15 @@
   (exec-path-from-shell-copy-env "CONDA_PREFIX")
   (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV"))
 
-;; 在空闲时或首次使用编程模式时初始化 shell 环境
-(run-with-idle-timer 10 nil #'henri/initialize-shell-env)  ; 延迟10秒
-(add-hook 'prog-mode-hook #'henri/initialize-shell-env)
+(defun henri/initialize-shell-env-once-from-prog-mode ()
+  "Run `henri/initialize-shell-env', then drop this hook."
+  (henri/initialize-shell-env)
+  (remove-hook 'prog-mode-hook #'henri/initialize-shell-env-once-from-prog-mode))
+
+(add-hook 'prog-mode-hook #'henri/initialize-shell-env-once-from-prog-mode)
+
+;; 首次用户输入前初始化 exec-path-from-shell（与 idle-timer 相比语义更清晰）
+(add-hook 'henri-first-input-hook #'henri/initialize-shell-env)
 
 ;; =============================================================================
 ;; 窗口布局配置 (延迟加载)
@@ -172,23 +172,28 @@
       (require 'eshell)
       (eshell))))
 
-;; 仅在图形界面且空闲时设置窗口布局
-;; 注释掉自动窗口布局，改为手动触发
-;; (when (display-graphic-p)
-;;   (run-with-idle-timer 3 nil #'henri/setup-window-layout))
-
-;; 全局设置延迟到空闲时加载
-(run-with-idle-timer
- 2 nil  ; 延迟2秒
- (lambda ()
-   (global-visual-line-mode 1)))
+;; 全局 visual-line：首次按键前启用（与 `henri-first-input-hook' 一致）
+(add-hook 'henri-first-input-hook (lambda () (global-visual-line-mode 1)))
 
 ;; =============================================================================
 ;; 快捷键提示
 (use-package which-key
   :ensure t
   :config
-  (which-key-mode))
+  (which-key-mode)
+  (which-key-add-key-based-replacements
+    "C-c f" "henri/find"
+    "C-c g" "henri/git"
+    "C-c h" "henri/html-themes"
+    "C-c j" "henri/journal"
+    "C-c m" "henri/markdown"
+    "C-c o" "henri/org"
+    "C-c v" "henri/vc-diff"
+    "C-c w" "henri/window"
+    "C-c F" "henri/font"
+    "C-c ^" "henri/smerge"
+    "C-c e" "henri/eglot"
+    "C-c n" "henri/neotree"))
 
 ;; =============================================================================
 ;; 手动控制选项快捷键
@@ -217,18 +222,20 @@
 
 (use-package diff-hl
   :ensure t
-  :defer 0.2
   :bind (:map diff-hl-mode-map
          ("C-c v p" . diff-hl-previous-hunk)
          ("C-c v n" . diff-hl-next-hunk)
          ("C-c v r" . diff-hl-revert-hunk))
-  :config
-  (global-diff-hl-mode 1)
-  ;; 终端无 fringe 时用 margin 显示
-  (unless (display-graphic-p)
-    (when (fboundp 'diff-hl-margin-mode)
-      (diff-hl-margin-mode 1)))
-  (add-hook 'dired-mode-hook #'diff-hl-dired-mode))
+  :init
+  (add-hook
+   'henri-first-file-hook
+   (lambda ()
+     (require 'diff-hl nil t)
+     (global-diff-hl-mode 1)
+     (unless (display-graphic-p)
+       (when (fboundp 'diff-hl-margin-mode)
+         (diff-hl-margin-mode 1)))
+     (add-hook 'dired-mode-hook #'diff-hl-dired-mode))))
 
 (defun henri/maybe-enable-smerge ()
   "若缓冲区含 Git 冲突标记，自动开启 `smerge-mode'."

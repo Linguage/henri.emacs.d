@@ -94,7 +94,7 @@
   "Enable Org academic writing module."
   :type 'boolean :group 'henri-writing)
 
-(defcustom henri-org-cjk-serif-family nil
+(defcustom henri-org-cjk-serif-family "TsangerJinKai02"
   "Org 模式中文正文使用的衬线字体族名，须与 `font-family-list' 中某项完全一致。
 为 nil 时按 `henri--org-cjk-serif-candidates'（见 org-base.el）顺序自动探测，
 例如已安装的「思源宋体」「Noto Serif CJK」或系统「宋体-简」等。"
@@ -118,6 +118,34 @@
 (defcustom henri-large-file-threshold 5000000
   "Threshold (bytes) above which large-file optimizations apply."
   :type 'integer :group 'henri-performance)
+
+(defcustom henri-large-file-hard-threshold (* 10 1024 1024)
+  "File size (bytes) above which pre-read mitigation runs (see `lib-files').
+This pairs with `henri-large-file-detected-bytes' and `so-long-minor-mode'."
+  :type 'integer :group 'henri-performance)
+
+(defcustom henri-active-profile
+  (or (getenv "HENRI_PROFILE") (system-name))
+  "Profile name loaded from \"profile-<name>.el\" in `user-emacs-directory'.
+Override with environment variable HENRI_PROFILE."
+  :type 'string :group 'henri-core)
+
+(defcustom henri-font-default-size 140
+  "Default `:height' for face `default' (1/10 pt) via `lib-fonts'."
+  :type 'integer :group 'henri-theme)
+
+(defcustom henri-font-big-size 220
+  "Presentation height used by `henri-big-font-mode'."
+  :type 'integer :group 'henri-theme)
+
+(defcustom henri-buffer-blacklist-prefixes
+  '("*epc" "*helm" "*Helm" "*Compile-Log*" "*lsp" "*company"
+    "*Flycheck" "*tramp" " *Mini" "*help" "*straight" " *temp" "*Help"
+    "*mybuf" "*Warnings*" "*Messages*" "*scratch*" "*Completions*"
+    "*Async-native-compile-log*" "*eshell*" "*shell*" "*terminal*"
+    "*markdown-preview*" "*grip-")
+  "Prefix matches for buffer names considered hidden (tabs, see `henri-buffer-real-p')."
+  :type '(repeat string) :group 'henri-core)
 
 (defcustom henri-large-file-disable-modes '(flycheck font-lock tree-sitter eglot)
   "List of subsystems to disable for large files.
@@ -209,6 +237,13 @@ Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(
 (defgroup henri-paths nil
   "Filesystem locations (tune per machine)."
   :group 'henri-core :prefix "henri-")
+
+(defcustom henri-shell
+  (or (executable-find "zsh") "/bin/sh")
+  "Shell for subprocesses, `quickrun-shell', and `exec-path-from-shell'.
+Prefers zsh when found; else /bin/sh (portable on NixOS, servers, Termux)."
+  :type 'file
+  :group 'henri-paths)
 
 (defcustom henri-notes-directory "~/Documents/EmacsNotes/"
   "Root directory for notes, journal, and other personal writing trees."
