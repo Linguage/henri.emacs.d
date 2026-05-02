@@ -4,8 +4,17 @@
 
 ;;; Code:
 
+(use-package popup
+  :ensure t
+  :defer t)
+
+(use-package posframe
+  :ensure t
+  :defer t)
+
 (use-package rime
   :ensure t
+  :after (popup posframe)
   :custom
   (default-input-method "rime")
   (rime-user-data-dir (expand-file-name "rime" user-emacs-directory))

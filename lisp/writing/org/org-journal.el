@@ -22,27 +22,164 @@
 (require 'org)
 
 ;; 设置日志存放目录
-(setq org-directory "~/Documents/EmacsNotes/Journal")
-(setq org-default-notes-file (concat org-directory "/notes.org"))
+(defvar henri-journal-directory
+  (expand-file-name "~/Documents/EmacsNotes/Journal/")
+  "Directory for Henri's Org journal files.")
+
+(defcustom henri-journal-auto-save-delay 10
+  "Seconds to wait after Journal edits before saving the visited file."
+  :type 'integer
+  :group 'henri-writing)
+
+(defun henri-journal-file (name)
+  "Return absolute path for journal file NAME."
+  (expand-file-name name henri-journal-directory))
+
+(defun henri-journal-html-setupfile ()
+  "Return default HTML setupfile for Journal exports."
+  (let ((setup-file (expand-file-name
+                     "~/Documents/EmacsNotes/org-html-themes/org/theme-henri-bearblog.setup")))
+    (when (file-exists-p setup-file)
+      setup-file)))
+
+(defun henri-journal-month-string (&optional time)
+  "Return YYYY-MM month string for TIME, or current time when nil."
+  (format-time-string "%Y-%m" (or time (current-time))))
+
+(defun henri-journal-kind-label (kind)
+  "Return display label for journal KIND."
+  (pcase kind
+    ('diary "个人日记")
+    ('work "工作日志")
+    ('study "学习日志")
+    (_ "日志")))
+
+(defun henri-journal-kind-prefix (kind)
+  "Return file prefix for journal KIND."
+  (pcase kind
+    ('diary "journal")
+    ('work "worklog")
+    ('study "studylog")
+    (_ "journal")))
+
+(defun henri-journal-monthly-file (kind &optional time)
+  "Return monthly journal file for KIND and TIME.
+KIND is one of `diary', `work', or `study'."
+  (henri-journal-file
+   (format "%s-%s.org"
+           (henri-journal-kind-prefix kind)
+           (henri-journal-month-string time))))
+
+(defun henri-journal-ensure-monthly-file (kind &optional time)
+  "Ensure and return monthly journal file for KIND and TIME."
+  (let ((file (henri-journal-monthly-file kind time)))
+    (unless (file-exists-p file)
+      (make-directory (file-name-directory file) t)
+      (write-region
+       (format "#+TITLE: %s %s\n#+LATEX_CLASS: journal\n#+STARTUP: content\n%s\n"
+               (henri-journal-kind-label kind)
+               (henri-journal-month-string time)
+               (if-let ((setup-file (henri-journal-html-setupfile)))
+                   (format "#+SETUPFILE: %s\n" setup-file)
+                 ""))
+       nil file nil 'silent))
+    file))
+
+(defun henri-journal-current-diary-file ()
+  "Return current month's personal journal file."
+  (henri-journal-ensure-monthly-file 'diary))
+
+(defun henri-journal-current-worklog-file ()
+  "Return current month's work journal file."
+  (henri-journal-ensure-monthly-file 'work))
+
+(defun henri-journal-current-studylog-file ()
+  "Return current month's study journal file."
+  (henri-journal-ensure-monthly-file 'study))
+
+(defun henri-journal-agenda-files ()
+  "Return monthly Journal files suitable for `org-agenda-files'."
+  (append
+   (mapcar (lambda (kind) (henri-journal-ensure-monthly-file kind))
+           '(diary work study))
+   (directory-files henri-journal-directory t
+                    "\\`\\(journal\\|worklog\\|studylog\\)-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'")))
+
+(defun henri-journal-refresh-agenda-files ()
+  "Refresh `org-agenda-files' from monthly Journal files."
+  (interactive)
+  (setq org-agenda-files (delete-dups (henri-journal-agenda-files))))
+
+(setq org-directory henri-journal-directory)
+(setq org-default-notes-file (henri-journal-file "notes.org"))
 
 ;; 统一日志模板 - 三种类型：日记(diary)、工作(work)和学习(study)
 (setq org-capture-templates
-      '(("d" "个人日记" entry (file+olp+datetree "~/Documents/EmacsNotes/Journal/diary.org")
+      '(("d" "个人日记" entry (file+olp+datetree henri-journal-current-diary-file)
          "* %U %? :journal:diary:\n%i\n** 今日要点\n\n** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
          :empty-lines 1)
         
-        ("w" "工作日志" entry (file+olp+datetree "~/Documents/EmacsNotes/Journal/worklog.org")
+        ("w" "工作日志" entry (file+olp+datetree henri-journal-current-worklog-file)
          "* %U %? :journal:work:\n%i\n** 完成任务\n\n** 问题和解决方案\n\n** 明日计划\n"
          :empty-lines 1)
         
-        ("s" "学习日志" entry (file+olp+datetree "~/Documents/EmacsNotes/Journal/studylog.org")
+        ("s" "学习日志" entry (file+olp+datetree henri-journal-current-studylog-file)
          "* %U %? :journal:study:\n%i\n** 主题与工作\n\n** 要点笔记\n\n** 资源链接\n"
          :empty-lines 1)))
 
 ;; 设置 Org-mode 的 Agenda 文件 - 统一路径命名
-(setq org-agenda-files '("/Users/henri/Documents/EmacsNotes/Journal/diary.org"
-                         "/Users/henri/Documents/EmacsNotes/Journal/worklog.org"
-                         "/Users/henri/Documents/EmacsNotes/Journal/studylog.org"))
+(henri-journal-refresh-agenda-files)
+
+;; Journal 自动保存 -----------------------------------------------------------
+(defvar-local henri-journal--auto-save-timer nil
+  "Idle timer used to save the current Journal buffer.")
+
+(defun henri-journal-buffer-p (&optional buffer)
+  "Return non-nil when BUFFER visits a file under `henri-journal-directory'."
+  (with-current-buffer (or buffer (current-buffer))
+    (and buffer-file-name
+         (file-in-directory-p (file-truename buffer-file-name)
+                              (file-truename henri-journal-directory)))))
+
+(defun henri-journal-save-buffer (&optional buffer)
+  "Save BUFFER when it is a modified Journal file."
+  (with-current-buffer (or buffer (current-buffer))
+    (when (and (henri-journal-buffer-p)
+               (buffer-modified-p)
+               buffer-file-name)
+      (save-buffer))))
+
+(defun henri-journal-save-all-buffers ()
+  "Save all modified Journal buffers."
+  (dolist (buffer (buffer-list))
+    (when (buffer-live-p buffer)
+      (henri-journal-save-buffer buffer))))
+
+(defun henri-journal-schedule-auto-save (&rest _)
+  "Schedule a delayed save for the current Journal buffer."
+  (when (henri-journal-buffer-p)
+    (when (timerp henri-journal--auto-save-timer)
+      (cancel-timer henri-journal--auto-save-timer))
+    (setq henri-journal--auto-save-timer
+          (run-with-timer
+           henri-journal-auto-save-delay nil
+           (lambda (buffer)
+             (when (buffer-live-p buffer)
+               (henri-journal-save-buffer buffer)))
+           (current-buffer)))))
+
+(defun henri-journal-enable-auto-save ()
+  "Enable delayed visited-file auto-save for Journal org buffers."
+  (when (henri-journal-buffer-p)
+    (setq-local auto-save-default t)
+    (auto-save-mode 1)
+    (add-hook 'after-change-functions #'henri-journal-schedule-auto-save nil t)))
+
+(add-hook 'org-mode-hook #'henri-journal-enable-auto-save)
+(add-hook 'org-capture-after-finalize-hook
+          (lambda ()
+            (henri-journal-refresh-agenda-files)
+            (henri-journal-save-all-buffers)))
 
 ;; =============================================================================
 ;; 日志查看和搜索功能
@@ -54,52 +191,28 @@ JOURNAL-TYPE 可以是 'diary'(个人日记), 'work'(工作日志) 或 'study'(�
   (interactive
    (list (completing-read "选择日志类型: " '("diary" "work" "study") nil t)
          (org-read-date nil nil nil "选择日期: ")))
-  
-  (let* ((journal-file (cond ((string= journal-type "work") "/Users/henri/Documents/EmacsNotes/Journal/worklog.org")
-                              ((string= journal-type "study") "/Users/henri/Documents/EmacsNotes/Journal/studylog.org")
-                              (t "/Users/henri/Documents/EmacsNotes/Journal/diary.org")))
-         (time (org-time-string-to-time date))
-         (day (string-to-number (format-time-string "%d" time)))
-         (month (string-to-number (format-time-string "%m" time)))
-         (year (string-to-number (format-time-string "%Y" time))))
-    
-    (find-file journal-file)
-    (widen)
-    (goto-char (point-min))
-    ;; 先查找年份标题
-    (if (re-search-forward (format "^\\*+[ \t]+%d$" year) nil t)
-        (progn
-          (org-narrow-to-subtree)
-          ;; 然后查找月份
-          (if (re-search-forward (format "^\\*+[ \t]+%s$" 
-                                        (format-time-string "%B" time)) nil t)
-              (progn
-                (org-narrow-to-subtree)
-                ;; 最后查找日期
-                (if (re-search-forward (format "^\\*+[ \t]+%d" day) nil t)
-                    (progn
-                      (org-reveal)
-                      (org-show-subtree)
-                      (recenter)
-                      (widen))
-                  (widen)
-                  (message "未找到 %d 日的%s条目" 
-                           day 
-                           (cond ((string= journal-type "work") "工作日志")
-                                 ((string= journal-type "study") "学习日志")
-                                 (t "日记"))))
-              (widen)
-              (message "未找到 %s 月的%s条目" 
-                       (format-time-string "%B" time)
-                       (cond ((string= journal-type "work") "工作日志")
-                             ((string= journal-type "study") "学习日志")
-                             (t "日记"))))
-          (widen))
-      (message "未找到 %d 年的%s条目" 
-               year
-               (cond ((string= journal-type "work") "工作日志")
-                     ((string= journal-type "study") "学习日志")
-                     (t "日记")))))))
+  (let* ((time (org-time-string-to-time date))
+         (journal-file (cond ((string= journal-type "work")
+                              (henri-journal-monthly-file 'work time))
+                             ((string= journal-type "study")
+                              (henri-journal-monthly-file 'study time))
+                             (t
+                              (henri-journal-monthly-file 'diary time))))
+         (date-prefix (format-time-string "%Y-%m-%d" time))
+         (journal-label (cond ((string= journal-type "work") "工作日志")
+                              ((string= journal-type "study") "学习日志")
+                              (t "日记"))))
+    (if (not (file-exists-p journal-file))
+        (message "未找到月份日志文件: %s" journal-file)
+      (find-file journal-file)
+      (widen)
+      (goto-char (point-min))
+      (if (re-search-forward (format "^\\*+[ \t]+%s\\b" (regexp-quote date-prefix)) nil t)
+          (progn
+            (org-reveal)
+            (org-show-subtree)
+            (recenter))
+        (message "未找到 %s 的%s条目" date-prefix journal-label)))))
 
 ;; 便捷函数 - 直接查看个人日记
 (defun my/view-diary-by-date (&optional date)

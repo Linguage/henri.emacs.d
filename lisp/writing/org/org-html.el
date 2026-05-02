@@ -41,31 +41,69 @@
 ;; 获取本地主题目录路径
 (defvar my/org-html-themes-dir 
   (file-name-as-directory 
-   (expand-file-name "org-html-themes" 
-                     (file-name-directory (or load-file-name buffer-file-name))))
+   (expand-file-name "~/Documents/EmacsNotes/org-html-themes"))
   "本地 org-html-themes 目录路径。")
 
 (defvar my/org-html-themes-list
-  `(("ReadTheOrg" . ,(expand-file-name "org/theme-readtheorg.setup" my/org-html-themes-dir))
+  `(("Henri Bearblog" . ,(expand-file-name "org/theme-henri-bearblog.setup" my/org-html-themes-dir))
+    ("Henri" . ,(expand-file-name "org/theme-henri.setup" my/org-html-themes-dir))
+    ("ReadTheOrg" . ,(expand-file-name "org/theme-readtheorg.setup" my/org-html-themes-dir))
+    ("ReadTheOrg Local" . ,(expand-file-name "org/theme-readtheorg-local.setup" my/org-html-themes-dir))
     ("Bigblow" . ,(expand-file-name "org/theme-bigblow.setup" my/org-html-themes-dir))
+    ("Bigblow Local" . ,(expand-file-name "org/theme-bigblow-local.setup" my/org-html-themes-dir))
     ("ReadTheOrg (在线)" . "https://fniessen.github.io/org-html-themes/org/theme-readtheorg.setup")
     ("Bigblow (在线)" . "https://fniessen.github.io/org-html-themes/org/theme-bigblow.setup"))
   "可用的 org-html-themes 主题列表。
 每个元素是一个 cons cell，格式为 (主题名称 . setup文件路径)。
 默认使用本地主题，如果本地主题不存在，可以使用在线版本。")
 
-(defvar my/org-html-default-theme "ReadTheOrg"
+(defvar my/org-html-default-theme "Henri Bearblog"
   "默认使用的 HTML 主题名称。")
+
+(defun my/org-html-default-setupfile ()
+  "Return the setup file for the default HTML theme."
+  (my/org-html-get-theme-setup-file my/org-html-default-theme))
+
+(defun my/org-html-theme-present-p ()
+  "Return non-nil if the current Org buffer already declares an HTML theme."
+  (save-excursion
+    (goto-char (point-min))
+    (re-search-forward "^#\\+SETUPFILE:.*org-html-themes.*$" nil t)))
+
+(defun my/org-html-insert-setupfile (setup-file)
+  "Insert SETUP-FILE into current Org buffer metadata."
+  (save-excursion
+    (goto-char (point-min))
+    (if (looking-at "^#\\+TITLE:")
+        (forward-line 1)
+      (goto-char (point-min)))
+    (while (looking-at "^#\\+\\(AUTHOR\\|DATE\\|EMAIL\\|LANGUAGE\\|LATEX_CLASS\\|OPTIONS\\|STARTUP\\):")
+      (forward-line 1))
+    (insert (format "#+SETUPFILE: %s\n" setup-file))))
+
+(defun my/org-html-ensure-default-theme ()
+  "Ensure the current Org buffer has the default HTML theme setupfile."
+  (let ((setup-file (my/org-html-default-setupfile)))
+    (when (and setup-file (not (my/org-html-theme-present-p)))
+      (my/org-html-insert-setupfile setup-file))))
 
 ;; =============================================================================
 ;; 简化主题映射系统
 
 ;; 主题编号映射表
 (defvar my/org-html-theme-shortcuts
-  '(("default" . "ReadTheOrg")
+  '(("default" . "Henri")
+    ("0" . "Henri Bearblog")
+    ("bear" . "Henri Bearblog")
+    ("bearblog" . "Henri Bearblog")
+    ("hb" . "Henri Bearblog")
+    ("h" . "Henri")
+    ("henri" . "Henri")
     ("1" . "ReadTheOrg")
     ("rto" . "ReadTheOrg")
     ("readtheorg" . "ReadTheOrg")
+    ("local" . "ReadTheOrg Local")
+    ("rto-local" . "ReadTheOrg Local")
     ("2" . "Bigblow") 
     ("bb" . "Bigblow")
     ("bigblow" . "Bigblow"))
@@ -76,7 +114,7 @@
   "使用快捷方式应用主题。
 SHORTCUT 可以是数字编号、缩写或主题名称。
 例如：'1', 'rto', 'readtheorg', 'default' 等。"
-  (interactive "sHTML主题 (1=ReadTheOrg, 2=Bigblow, default/rto/bb): ")
+  (interactive "sHTML主题 (0=Henri Bearblog, 1=ReadTheOrg, 2=Bigblow, default/bear/rto/bb): ")
   (let* ((normalized-shortcut (downcase (string-trim shortcut)))
          (theme-name (cdr (assoc normalized-shortcut my/org-html-theme-shortcuts))))
     (if theme-name
@@ -88,7 +126,7 @@ SHORTCUT 可以是数字编号、缩写或主题名称。
 (defun my/org-html-show-theme-shortcuts ()
   "显示所有可用的主题快捷方式。"
   (interactive)
-  (message "HTML主题快捷方式:\n1/rto/readtheorg/default -> ReadTheOrg\n2/bb/bigblow -> Bigblow"))
+  (message "HTML主题快捷方式:\n0/bear/hb/default -> Henri Bearblog\nh/henri -> Henri\n1/rto/readtheorg -> ReadTheOrg\nlocal/rto-local -> ReadTheOrg Local\n2/bb/bigblow -> Bigblow"))
 
 ;; 更简单的主题应用函数
 (defun my/org-html-theme-1 ()
@@ -225,14 +263,7 @@ THEME-NAME 是要使用的主题名称。"
   (when (and (eq major-mode 'org-mode)
              (buffer-file-name)
              (not (string-match "SETUPFILE:.*org-html-themes" (buffer-string))))
-    (save-excursion
-      (goto-char (point-min))
-      (when (or (looking-at "^#\\+TITLE:")
-                (re-search-forward "^#\\+TITLE:" nil t))
-        (end-of-line)
-        (newline)
-        (insert (format "#+SETUPFILE: %s" 
-                        (my/org-html-get-theme-setup-file my/org-html-default-theme)))))))
+    (my/org-html-ensure-default-theme)))
 
 ;; 可以选择性启用自动应用主题
 ;; (add-hook 'org-mode-hook 'my/org-html-auto-apply-theme)
@@ -377,11 +408,8 @@ THEME-NAME 是要使用的主题名称。"
 (defun my/org-html-export-hook (backend)
   "HTML 导出时的钩子函数。
 BACKEND 是导出后端，由钩子提供。"
-  ;; 可以在这里添加导出时的自动处理逻辑
-  ;; 例如：只在 HTML 导出时执行某些操作
   (when (eq backend 'html)
-    ;; 这里可以添加 HTML 导出特定的处理逻辑
-    ))
+    (my/org-html-ensure-default-theme)))
 
 (add-hook 'org-export-before-processing-hook 'my/org-html-export-hook)
 

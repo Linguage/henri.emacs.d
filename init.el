@@ -24,6 +24,8 @@
 ;;; Code:
 ;;; init.el --- Emacs 配置入口文件 -*- lexical-binding: t -*-
 
+(require 'seq)
+
 ;; =============================================================================
 ;; 启动性能优化
 
@@ -82,14 +84,16 @@
 (require 'package)
 
 ;; 配置包管理源
-; (setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-;                          ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
-;                          ("melpa"  . "https://mirrors.tuna.tsinghua.edu.cn/elpa/melpa/")))
+(setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
+                         ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
+                         ;; TUNA's MELPA mirror can temporarily reference missing
+                         ;; tarballs; keep MELPA official for first-time bootstrap.
+                         ("melpa"  . "https://melpa.org/packages/")))
 
-(setq package-archives
-      '(("gnu" . "https://elpa.gnu.org/packages/")
-        ("melpa" . "https://melpa.org/packages/")
-        ("org" . "https://orgmode.org/elpa/")))
+;; (setq package-archives
+;;       '(("gnu" . "https://elpa.gnu.org/packages/")
+;;         ("melpa" . "https://melpa.org/packages/")
+;;         ("org" . "https://orgmode.org/elpa/")))
 
 ; ; 使用 USTC 镜像源（中科大）
 ; (setq package-archives '(("gnu"    . "http://mirrors.ustc.edu.cn/elpa/gnu/")
@@ -115,7 +119,206 @@
   (require 'use-package))
 
 ;; 设置 Emacs 启动时的默认目录
-(setq default-directory "~/Documents/EmacsNotes/")
+(defvar henri/default-notes-directory
+  (expand-file-name "~/Documents/EmacsNotes/")
+  "Default directory opened when Emacs starts.")
+
+(defvar henri/config-directory
+  (file-name-directory (or load-file-name user-init-file))
+  "Directory of Henri's Emacs configuration.")
+
+(defvar henri/startup-directory-suppression-active t
+  "Non-nil while startup directory Dired buffers should be suppressed.")
+
+(defun henri/config-directory-p (dir)
+  "Return non-nil when DIR is this Emacs configuration directory."
+  (when (stringp dir)
+    (let* ((expanded (file-truename (expand-file-name dir)))
+           (config-dir (file-truename user-emacs-directory))
+           (repo-dir (file-truename henri/config-directory)))
+      (or (string= expanded (directory-file-name config-dir))
+          (string= expanded (directory-file-name repo-dir))))))
+
+(defun henri/startup-directory-suppression-active-p ()
+  "Return non-nil while startup directory suppression is active."
+  henri/startup-directory-suppression-active)
+
+(defun henri/drop-startup-directory-args ()
+  "Ignore directory command-line args during app startup.
+
+This prevents Emacs from opening a redundant Dired frame for the
+configuration directory before the dashboard is shown.  File arguments are
+left intact, so explicit file opens still work."
+  (when (boundp 'command-line-args-left)
+    (setq command-line-args-left
+          (seq-remove
+           (lambda (arg)
+             (and (stringp arg)
+                  (not (string-prefix-p "-" arg))
+                  (file-directory-p (expand-file-name arg))))
+           command-line-args-left))))
+
+(henri/drop-startup-directory-args)
+
+(run-at-time
+ 60 nil
+ (lambda ()
+   (setq henri/startup-directory-suppression-active nil)))
+
+(defun henri/open-notes-directory ()
+  "Open Henri's notes directory in Dired."
+  (interactive)
+  (dired henri/default-notes-directory))
+
+(defun henri/open-journal-directory ()
+  "Open Henri's Journal directory in Dired."
+  (interactive)
+  (dired (expand-file-name "Journal/" henri/default-notes-directory)))
+
+(defun henri/find-file-in-notes ()
+  "Find file starting from `henri/default-notes-directory'."
+  (interactive)
+  (let ((default-directory henri/default-notes-directory))
+    (if (fboundp 'counsel-find-file)
+        (counsel-find-file)
+      (call-interactively #'find-file))))
+
+(global-set-key [remap find-file] #'henri/find-file-in-notes)
+
+(defun henri/dashboard-insert-action (label action)
+  "Insert dashboard LABEL as a button invoking ACTION."
+  (insert-text-button
+   label
+   'action (lambda (_button) (call-interactively action))
+   'follow-link t
+   'help-echo (format "Run %s" action))
+  (insert "\n"))
+
+(defconst henri/dashboard-logo
+  '("        _________"
+    "     .-'  _____  '-."
+    "    /   .'     '.   \\"
+    "   /   /  .---.  \\   \\"
+    "  |   |  /  _  \\  |   |"
+    "  |   | |  / \\  | |   |"
+    "  |   |  \\ '-' /  |   |"
+    "   \\   \\  '---'  /   /"
+    "    '.  '.___.'  .'"
+    "      '-._____.-'")
+  "ASCII logo displayed on Henri's dashboard.")
+
+(defun henri/dashboard-insert-centered (text &optional face)
+  "Insert TEXT centered in the current window, optionally using FACE."
+  (let* ((width (max 80 (window-width)))
+         (padding (max 0 (/ (- width (string-width text)) 2))))
+    (insert (make-string padding ?\s))
+    (insert (if face (propertize text 'face face) text))
+    (insert "\n")))
+
+(defun henri/dashboard ()
+  "Create and return Henri's startup dashboard buffer."
+  (let ((buffer (get-buffer-create "*Henri Dashboard*")))
+    (with-current-buffer buffer
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (insert "\n")
+        (dolist (line henri/dashboard-logo)
+          (henri/dashboard-insert-centered line 'font-lock-keyword-face))
+        (insert "\n")
+        (henri/dashboard-insert-centered "henri.emacs.d" 'font-lock-function-name-face)
+        (henri/dashboard-insert-centered "Personal writing and coding workspace")
+        (insert "\n  Notes root: " henri/default-notes-directory "\n\n")
+        (henri/dashboard-insert-action "  [RET] Open Notes" #'henri/open-notes-directory)
+        (henri/dashboard-insert-action "        Open Journal" #'henri/open-journal-directory)
+        (henri/dashboard-insert-action "        Find File in Notes" #'henri/find-file-in-notes)
+        (insert "\n  Shortcuts\n")
+        (insert "  C-x C-f  Find file from Notes\n")
+        (insert "  C-c c    Org capture\n")
+        (insert "  C-c a    Org agenda\n")
+        (insert "  C-c h 0  Apply default HTML theme\n")
+        (goto-char (point-min))
+        (special-mode)
+        (setq-local display-line-numbers nil)
+        (setq-local default-directory henri/default-notes-directory)))
+    buffer))
+
+(defun henri/redirect-startup-config-dired-noselect (orig-fun dir-or-list &rest args)
+  "Return dashboard instead of startup Dired for the config directory."
+  (if (and (henri/startup-directory-suppression-active-p)
+           (stringp dir-or-list)
+           (henri/config-directory-p dir-or-list))
+      (henri/dashboard)
+    (apply orig-fun dir-or-list args)))
+
+(defun henri/redirect-startup-config-dired (orig-fun dirname &rest args)
+  "Show dashboard instead of startup Dired for the config directory."
+  (if (and (henri/startup-directory-suppression-active-p)
+           (stringp dirname)
+           (henri/config-directory-p dirname))
+      (switch-to-buffer (henri/dashboard))
+    (apply orig-fun dirname args)))
+
+(advice-add 'dired-noselect :around #'henri/redirect-startup-config-dired-noselect)
+(advice-add 'dired :around #'henri/redirect-startup-config-dired)
+
+(defun henri/replace-startup-config-dired-buffer ()
+  "Replace an accidental startup Dired buffer for the config directory."
+  (when (and (henri/startup-directory-suppression-active-p)
+             (derived-mode-p 'dired-mode)
+             (boundp 'dired-directory)
+             (stringp dired-directory)
+             (henri/config-directory-p dired-directory))
+    (let ((dired-buffer (current-buffer)))
+      (switch-to-buffer (henri/dashboard))
+      (when (buffer-live-p dired-buffer)
+        (kill-buffer dired-buffer)))))
+
+(add-hook 'dired-mode-hook #'henri/replace-startup-config-dired-buffer)
+
+(defun henri/show-dashboard-only ()
+  "Show the dashboard and remove redundant startup config Dired frames."
+  (interactive)
+  (let ((buffer (henri/dashboard)))
+    (pop-to-buffer-same-window buffer)
+    (delete-other-windows)
+    (when (display-graphic-p)
+      (let ((dashboard-frame (selected-frame)))
+        (dolist (frame (frame-list))
+          (unless (eq frame dashboard-frame)
+            (delete-frame frame t)))))
+    buffer))
+
+(defun henri/startup-config-dired-buffer-p (buffer)
+  "Return non-nil when BUFFER is a startup Dired buffer for the config dir."
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (and (derived-mode-p 'dired-mode)
+           (boundp 'dired-directory)
+           (stringp dired-directory)
+           (henri/config-directory-p dired-directory)))))
+
+(defun henri/cleanup-startup-config-dired ()
+  "Remove late startup Dired windows for the config directory."
+  (when (henri/startup-directory-suppression-active-p)
+    (let ((dashboard (henri/dashboard))
+          (dired-buffers (seq-filter #'henri/startup-config-dired-buffer-p
+                                     (buffer-list))))
+      (when dired-buffers
+        (switch-to-buffer dashboard)
+        (delete-other-windows)
+        (dolist (buffer dired-buffers)
+          (when (buffer-live-p buffer)
+            (kill-buffer buffer)))))))
+
+(when (file-directory-p henri/default-notes-directory)
+  (setq default-directory henri/default-notes-directory
+        initial-buffer-choice #'henri/dashboard))
+
+(add-hook 'window-setup-hook #'henri/show-dashboard-only)
+(add-hook 'window-setup-hook #'henri/cleanup-startup-config-dired)
+(run-at-time 0.2 nil #'henri/cleanup-startup-config-dired)
+(run-at-time 1.0 nil #'henri/cleanup-startup-config-dired)
+(run-at-time 3.0 nil #'henri/cleanup-startup-config-dired)
 
 ; ;; 启动时打开特定文件
 ; (find-file "~/Documents/Code-Test/Emacs/test.org")
@@ -192,7 +395,9 @@ VERBOSE 非空时输出更多细节。"
          (pkg-count (length package-activated-list))
          (gc-thresh gc-cons-threshold)
          (lsp-bufs (cl-loop for b in (buffer-list)
-                            when (buffer-local-value 'eglot--managed-mode b)
+                            when (and (boundp 'eglot--managed-mode)
+                                      (buffer-local-boundp 'eglot--managed-mode b)
+                                      (buffer-local-value 'eglot--managed-mode b))
                             collect (buffer-name b)))
          (msg (format "[health] uptime=%.2fs packages=%d gc-threshold=%s lsp-buffers=%d"
                       uptime pkg-count gc-thresh (length lsp-bufs))))
@@ -209,5 +414,5 @@ VERBOSE 非空时输出更多细节。"
                 (add-hook 'before-save-hook #'eglot-format-buffer nil t)))))
 
 
-; (expand-file-name "lisp/init-rime.el" user-emacs-directory))
-(load-file (expand-file-name "lisp/init-rime.el" user-emacs-directory))
+(when (and (boundp 'henri-enable-rime) henri-enable-rime)
+  (load-file (expand-file-name "lisp/init-rime.el" user-emacs-directory)))

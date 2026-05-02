@@ -73,6 +73,10 @@
   "Enable grip-mode for GitHub Markdown preview."
   :type 'boolean :group 'henri-writing)
 
+(defcustom henri-enable-rime nil
+  "Enable emacs-rime input method integration."
+  :type 'boolean :group 'henri-writing)
+
 ;; Org sub-module toggles ----------------------------------------------------
 (defcustom henri-org-enable-base t
   "Enable base Org configuration module (required for others)."
@@ -161,6 +165,7 @@ Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(
 (defun henri/apply-current-theme (&optional force)
   "Apply theme chosen by strategy. FORCE to bypass recent list avoidance."
   (interactive "P")
+  (require 'doom-themes nil t)
   (let* ((chosen (if force (henri--select-theme) (henri--select-theme))))
     (dolist (th custom-enabled-themes) (disable-theme th))
     (load-theme chosen t)

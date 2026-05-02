@@ -30,20 +30,26 @@
 
 ;;; Code:
 
+(require 'seq)
+
 ;; =============================================================================
 ;; 基础界面设置
 
 ;; 窗口布局配置
-(set-frame-size (selected-frame) 130 40)   ; 设置窗口大小
+;; 初始 frame 尺寸在 early-init.el 中设置，避免启动后再跳动。
 (add-to-list 'default-frame-alist '(top . 0.5))    ; 窗口垂直居中
 (add-to-list 'default-frame-alist '(left . 0.5))   ; 窗口水平居中
 (add-to-list 'default-frame-alist '(alpha . (95 . 95))) ; 设置透明度
 
 ;; 界面元素配置
-(menu-bar-mode -1)                         ; 关闭菜单栏
-(tool-bar-mode -1)                         ; 关闭工具栏
-(scroll-bar-mode -1)                       ; 关闭滚动条
-(blink-cursor-mode 0)                      ; 关闭光标闪烁
+(when (fboundp 'menu-bar-mode)
+  (menu-bar-mode -1))                       ; 关闭菜单栏
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))                       ; 关闭工具栏
+(when (fboundp 'scroll-bar-mode)
+  (scroll-bar-mode -1))                     ; 关闭滚动条
+(when (fboundp 'blink-cursor-mode)
+  (blink-cursor-mode 0))                    ; 关闭光标闪烁
 
 ;; 显示增强
 (global-display-line-numbers-mode)         ; 显示行号
@@ -76,11 +82,11 @@
 ;; 主题策略由 init-custom.el 中的 defcustom 控制
 (use-package doom-themes
   :ensure t
-  :after init-custom
-  :commands (henri/apply-current-theme)
-  :init
-  ;; 初始应用主题（延迟到 after-init 避免阻塞）
-  (add-hook 'after-init-hook #'henri/apply-current-theme))
+  :demand t
+  :config
+  (when (fboundp 'doom-themes-org-config)
+    (doom-themes-org-config))
+  (henri/apply-current-theme))
 
 ;; 可选：centaur-tabs（依赖用户开关）
 (when (boundp 'henri-enable-centaur-tabs)
@@ -136,24 +142,36 @@
 
 ;; 状态栏美化
 ;; 安装并配置 doom-modeline
+(use-package nerd-icons
+  :ensure t
+  :demand t)
+
 (use-package doom-modeline
   :ensure t
+  :demand t
+  :after nerd-icons
   :init
+  (setq doom-modeline-height 28
+        doom-modeline-bar-width 3
+        doom-modeline-window-width-limit 85
+        doom-modeline-buffer-file-name-style 'truncate-upto-project
+        doom-modeline-buffer-encoding nil
+        doom-modeline-indent-info nil
+        doom-modeline-minor-modes nil
+        doom-modeline-enable-word-count nil
+        doom-modeline-github nil
+        doom-modeline-mu4e nil
+        doom-modeline-irc nil
+        doom-modeline-lsp nil
+        doom-modeline-env-version nil
+        doom-modeline-check-simple-format t
+        doom-modeline-vcs-max-length 12)
   (doom-modeline-mode 1)
   :config
   ;; 设置 doom-modeline 主题
   ; (setq doom-modeline-theme 'doom-modeline) ; 默认主题
   (setq doom-modeline-theme 'doom-modeline-light) ; 亮色主题
   ; (setq doom-modeline-theme 'doom-modeline-dark) ; 暗色主题
-    ;; 其他配置选项
-  (setq doom-modeline-height 30) ; 设置模型线高度
-  (setq doom-modeline-bar-width 4) ; 设置模型线宽度
-  (setq doom-modeline-lsp t) ; 启用 LSP 状态显示
-  (setq doom-modeline-github t) ; 启用 GitHub 状态显示
-  (setq doom-modeline-mu4e t) ; 启用 mu4e 状态显示
-  (setq doom-modeline-irc t) ; 启用 IRC 状态显示
-  (setq doom-modeline-minor-modes t) ; 显示次要模式
-  (setq doom-modeline-enable-word-count t) ; 启用字数统计
   )
 
 
@@ -165,10 +183,9 @@
 (use-package all-the-icons
   :ensure t
   :config
-  ;; 检查字体是否已安装，如果没有则安装
   (unless (member "all-the-icons" (font-family-list))
     (when (display-graphic-p)
-      (all-the-icons-install-fonts t))))
+      (message "[henri] all-the-icons fonts not found; run M-x all-the-icons-install-fonts if icons look wrong."))))
 
 
 (defun henri/get-os-type ()
@@ -182,15 +199,30 @@
    ((eq system-type 'windows-nt) 'windows)
    (t 'unknown)))
 
+(defun henri/font-family-available-p (family)
+  "Return non-nil when font FAMILY is available."
+  (member family (font-family-list)))
+
+(defun henri/first-available-font (&rest families)
+  "Return the first available font from FAMILIES."
+  (seq-find #'henri/font-family-available-p families))
+
 (defun henri/set-font ()
   "根据操作系统设置字体。"
   (let ((os-type (henri/get-os-type)))
     (cond
      ;; macOS 字体设置
      ((eq os-type 'macos)
-      (set-face-attribute 'default nil 
-                         :family "JetBrains Mono"
-                         :height 140)
+      (let ((latin-font (henri/first-available-font
+                         "Cascadia Code NF"
+                         "CaskaydiaCove Nerd Font Mono"
+                         "CaskaydiaCove Nerd Font"
+                         "JetBrains Mono")))
+        (when latin-font
+          (set-face-attribute 'default nil :family latin-font :height 140)
+          (set-face-attribute 'fixed-pitch nil :family latin-font :height 1.0)))
+      (when (henri/font-family-available-p "SF Pro Text")
+        (set-face-attribute 'variable-pitch nil :family "SF Pro Text" :height 1.0))
       (dolist (charset '(kana han symbol cjk-misc bopomofo))
         (set-fontset-font t charset
                          (font-spec :family "PingFang SC"))))

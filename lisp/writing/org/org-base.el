@@ -159,6 +159,53 @@
             (set-face-attribute 'org-code nil :background "#f0f0f0" :foreground "#d73502")
             (set-face-attribute 'org-verbatim nil :background "#f0f0f0" :foreground "#006400")))
 
+;; Org Mode 正文字体：恢复旧 Doom 配置中的笔记正文楷体效果
+(defun henri/org-setup-body-font ()
+  "Use a dedicated prose font in Org buffers when available."
+  (when (display-graphic-p)
+    (let* ((families (font-family-list))
+           (family (cond
+                    ((member "Kaiti TC" families) "Kaiti TC")
+                    ((member "苍耳今楷 02" families) "苍耳今楷 02")
+                    ((member "TsangerJinKai02" families) "TsangerJinKai02")
+                    ((member "Songti SC" families) "Songti SC")
+                    (t nil))))
+      (when family
+        (setq buffer-face-mode-face `(:family ,family :height 1.08))
+        (buffer-face-mode 1)))))
+
+(add-hook 'org-mode-hook #'henri/org-setup-body-font)
+
+(defun henri/apply-org-faces ()
+  "Apply Henri's preferred Org faces after themes and Org are loaded."
+  (custom-theme-set-faces
+   'user
+   '(org-document-title ((t (:foreground "#2f3542" :weight bold :height 1.45))))
+   '(org-level-1 ((t (:foreground "#2563eb" :weight bold :height 1.35))))
+   '(org-level-2 ((t (:foreground "#7c3aed" :weight bold :height 1.24))))
+   '(org-level-3 ((t (:foreground "#15803d" :weight bold :height 1.15))))
+   '(org-level-4 ((t (:foreground "#c2410c" :weight bold :height 1.08))))
+   '(org-level-5 ((t (:foreground "#0f766e" :weight bold))))
+   '(org-level-6 ((t (:foreground "#9333ea" :weight bold))))
+   '(org-block ((t (:inherit fixed-pitch :background "#f6f8fa" :foreground "#24292f" :extend t))))
+   '(org-block-begin-line ((t (:background "#eef2f7" :foreground "#64748b" :extend t))))
+   '(org-block-end-line ((t (:background "#eef2f7" :foreground "#64748b" :extend t))))
+   '(org-code ((t (:inherit fixed-pitch :background "#eef2f7" :foreground "#b42318"))))
+   '(org-verbatim ((t (:inherit fixed-pitch :background "#eef2f7" :foreground "#166534"))))
+   '(org-table ((t (:inherit fixed-pitch :foreground "#475569"))))
+   '(org-link ((t (:foreground "#2563eb" :underline t :weight bold))))
+   '(org-quote ((t (:slant italic :foreground "#475569" :background "#f8fafc" :extend t)))))
+  )
+
+(with-eval-after-load 'org
+  (henri/apply-org-faces))
+
+(add-hook 'org-mode-hook
+          (lambda ()
+            (henri/apply-org-faces)
+            (font-lock-flush)
+            (font-lock-ensure)))
+
 ;; 美化列表缩进
 (setq org-list-indent-offset 2)
 (setq org-adapt-indentation t)
@@ -191,10 +238,8 @@
   :ensure t
   :if (display-graphic-p)
   :config
-  ;; 检查字体是否已安装
   (unless (member "all-the-icons" (font-family-list))
-    (message "Installing all-the-icons fonts...")
-    (all-the-icons-install-fonts t)))
+    (message "[henri] all-the-icons fonts not found; run M-x all-the-icons-install-fonts if icons look wrong.")))
 
 ;; Org Mode 中的图标支持
 (add-hook 'org-mode-hook
@@ -408,6 +453,15 @@
   (define-key org-mode-map (kbd "C-c v s") 'henri/org-show-all)
   (define-key org-mode-map (kbd "C-c v o") 'henri/org-overview)
   (define-key org-mode-map (kbd "C-c v c") 'henri/org-content))
+
+(with-eval-after-load 'org
+  (henri/apply-org-faces))
+
+(advice-add 'load-theme
+            :after
+            (lambda (&rest _)
+              (when (featurep 'org)
+                (henri/apply-org-faces))))
 
 (provide 'org-base)
 

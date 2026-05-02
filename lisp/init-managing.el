@@ -46,7 +46,10 @@
   :ensure t
   :after ivy
   :bind (("M-x" . counsel-M-x)
-         ("C-x C-f" . counsel-find-file)))
+         ("C-x C-f" . henri/find-file-in-notes)))
+
+(global-set-key (kbd "C-x C-f") #'henri/find-file-in-notes)
+(global-set-key [remap find-file] #'henri/find-file-in-notes)
 
 ;; Swiper - 交互式搜索工具
 (use-package swiper
@@ -61,9 +64,8 @@
 (use-package all-the-icons
   :ensure t
   :config
-  ;; 安装字体（仅需运行一次）
   (unless (member "all-the-icons" (font-family-list))
-    (all-the-icons-install-fonts t)))
+    (message "[henri] all-the-icons fonts not found; run M-x all-the-icons-install-fonts if icons look wrong.")))
 
 ;; NeoTree - 文件树侧边栏
 (use-package neotree

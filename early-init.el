@@ -19,6 +19,24 @@
       inhibit-startup-message t
       inhibit-startup-echo-area-message t)
 
+;; Shape the first graphical frame before it is displayed.
+(setq frame-resize-pixelwise t)
+(add-to-list 'initial-frame-alist '(width . 118))
+(add-to-list 'initial-frame-alist '(height . 38))
+(add-to-list 'initial-frame-alist '(top . 0.5))
+(add-to-list 'initial-frame-alist '(left . 0.5))
+(add-to-list 'initial-frame-alist '(alpha . (95 . 95)))
+(add-to-list 'default-frame-alist '(width . 118))
+(add-to-list 'default-frame-alist '(height . 38))
+(add-to-list 'default-frame-alist '(top . 0.5))
+(add-to-list 'default-frame-alist '(left . 0.5))
+(add-to-list 'default-frame-alist '(alpha . (95 . 95)))
+
+;; On macOS, opening files/directories from the app should reuse the initial
+;; frame instead of popping an extra one during startup.
+(when (eq system-type 'darwin)
+  (setq ns-pop-up-frames nil))
+
 ;; Disable unneeded UI early (can be re-enabled later if desired).
 (when (display-graphic-p)
   (menu-bar-mode -1)
