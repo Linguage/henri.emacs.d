@@ -126,9 +126,11 @@
 (when window-system
   (henri/set-font))
 
-;; 字体缩放（运行时）
-(global-set-key (kbd "C-=") (lambda () (interactive) (henri/font-size-adjust 1)))
-(global-set-key (kbd "C--") (lambda () (interactive) (henri/font-size-adjust -1)))
+;; 字体缩放（运行时；前缀 N 如 C-u N C-= 一次调整 N 档）
+(global-set-key (kbd "C-=") #'henri/font-size-adjust)
+(global-set-key (kbd "C--")
+                (lambda (n) (interactive "p")
+                  (henri/font-size-adjust (- (or n 1)))))
 (global-set-key (kbd "C-c F r") #'henri/font-size-reset)
 (global-set-key (kbd "C-c F b") #'henri-big-font-mode)
 

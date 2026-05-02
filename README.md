@@ -13,7 +13,7 @@
 | [蓝图](docs/specs/BLUEPRINT.md) | 宏观规划与文档边界 |
 | [架构](docs/specs/ARCHITECTURE.md) | 模块与目录语义 |
 | [路线图](docs/specs/ROADMAP.md) | 阶段任务 |
-| [审查整改归档](docs/legacy/2026-05-02-emacs-config-review-fixes.md) | 可移植性整改记录（已结案） |
+| [在制任务 jobs](docs/jobs/README.md) | 当前专题活页（如对齐全 Doom 分期能力） |
 
 个人路径（笔记根、项目目录、Conda、LeetCode、Org HTML 主题等）集中在 [`lisp/init-custom.el`](lisp/init-custom.el) 的 `henri-*` `defcustom`，切换机器时优先改此处或通过 `M-x customize-group RET henri-paths`。
 
@@ -32,6 +32,7 @@
 | `.local/cache/`、`.local/etc/` | 预留命名空间（同上，启动完成后创建） |
 | `rime/` | Rime 用户数据（`henri-rime-directory`） |
 | `tree-sitter/`、`transient/` 等 | 常见运行时目录 |
+| `profile-*.el` | 可选「多机器 profile」叠加（见下文 `henri/load-profile`）；根目录 `.gitignore` 中有显式条目 |
 
 未引入 **`no-littering`**：第三方包仍可能把状态写在默认位置；需要时可在后续单独评估。
 
@@ -45,7 +46,7 @@
 - 模块化 Org 子功能按需加载
 - 大文件自动降级优化（行号/语法检查等）
 - 集中化备份与自动保存目录
-- 健康报告与启动 profiling 脚本
+- 分阶段启动钩子（`henri-first-input-hook` / `henri-first-buffer-hook` / `henri-first-file-hook`，见 [`lisp/ops/lib-hooks.el`](lisp/ops/lib-hooks.el)）与大文件 / so-long 策略（[`lisp/ops/lib-files.el`](lisp/ops/lib-files.el)）
 
 ## 2. 系统要求
 
@@ -143,25 +144,41 @@
 - Org Mode
 - LaTeX
 
-### 3.6 运维 / 工具 (ops)
+### 3.6 运维层与通用库 (`lisp/ops/`)
 
-- `status.el` 模块状态/健康辅助
-- `backup.el` 集中备份/自动保存
-- `scripts/profile-startup.el` 启动性能脚本
-- `scripts/generate-health.el` 批处理健康 JSON
+**治理（本机路径 / 诊断）**
+
+- [`paths.el`](lisp/ops/paths.el)、[`backup.el`](lisp/ops/backup.el)、[`status.el`](lisp/ops/status.el) — 同上节「henri-runtime」与状态
+- [`profiles.el`](lisp/ops/profiles.el) — 若存在可读文件 `profile-<name>.el`（`name` = 环境变量 `HENRI_PROFILE` 或 `(system-name)`）则 `henri/load-profile` 加载
+- [`doctor.el`](lisp/ops/doctor.el) — `M-x henri/doctor`（`C-c h d`）
+
+**通用库**
+
+- [`lib-hooks.el`](lisp/ops/lib-hooks.el) — `henri-first-{input,buffer,file}-hook`
+- [`lib-system.el`](lisp/ops/lib-system.el)、[`lib-fonts.el`](lisp/ops/lib-fonts.el)、[`lib-files.el`](lisp/ops/lib-files.el) — 可执行检测、字体、大文件与 `henri-buffer-real-p`
+
+**脚本**：`scripts/profile-startup.el`、`scripts/generate-health.el`
+
+### 3.7 本阶段常用快捷键（字体 / 自检）
+
+| 按键 | 说明 |
+|------|------|
+| `C-=` / `C--` | `henri/font-size-adjust`；`C-u N` 前缀一次 N 档 |
+| `C-c F r` / `C-c F b` | 字号重置 / 演示大字号模式 |
+| `C-c h d` | `henri/doctor` |
 
 ## 3.x 架构 & 层次
 
 | 层级 | 说明 | 入口 |
 |------|------|------|
 | early-init | 启动前 GC / UI / file-name-handler 优化 | `early-init.el` |
-| core | 包初始化 + 基础模块加载 | `init.el` |
+| core | 包初始化 + `init-custom` / `paths` / `profiles` / `lib-*` / `doctor` / `init-dashboard` 等 | `init.el` |
 | customization | 所有 defgroup/defcustom | `lisp/init-custom.el` |
 | startup dashboard | 启动页、`initial-buffer-choice`、笔记快捷命令 | `lisp/init-dashboard.el` |
 | managing/styling | 导航/补全/界面主题/标签 | `lisp/init-managing.el` / `lisp/init-styling.el` |
 | programming | LSP / 运行 / 调试 / 语言桥接 | `lisp/init-programming.el` |
 | writing | Markdown / Org / LaTeX | `lisp/init-writing.el` |
-| ops | 状态/备份/脚本支持 | `lisp/ops/*` |
+| ops | 运维与通用库：`paths` / `backup` / `status` / `profiles` / `doctor` / `lib-*` | `lisp/ops/*` |
 
 ## 3.x 配置开关（部分）
 
@@ -179,6 +196,7 @@
 | `henri-large-file-threshold` | 大文件优化触发阈值（字节）|
 | `henri-backup-enable` | 集中备份/自动保存开关 |
 | `henri-health-report-on-startup` | 启动后输出健康信息 |
+| `henri-active-profile` | 当前 profile 名；可选文件 `profile-<name>.el` 见 [`profiles.el`](lisp/ops/profiles.el) |
 
 ## 3.x 新增交互命令
 
@@ -190,7 +208,8 @@
 | `henri/show-module-status` | 查看各模块启用/加载状态 |
 | `henri/profile-startup-report` | 启动性能快照（用于脚本或 M-x）|
 | `henri/generate-health-json` | 批处理输出健康 JSON（脚本调用）|
-| `henri/restore-from-large-file` | 手动恢复大文件降级前的模式 |
+| `henri/doctor` | `C-c h d`：依赖自检（含特性 loaded/available/MISSING）|
+| `henri/font-size-adjust` | `C-=` / `C--`（支持数字前缀）；`henri/font-size-reset`、`henri-big-font-mode` 见上表 |
 
 ## 4. 性能优化
 

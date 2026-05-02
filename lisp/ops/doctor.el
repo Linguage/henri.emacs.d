@@ -7,6 +7,18 @@
 (defun henri--doctor-check (kind name pred)
   (princ (format "  %-7s %-32s %s\n" kind name (if pred "OK" "MISSING"))))
 
+(defun henri--doctor-feature-status (feature)
+  "Return \"loaded\", \"available\", or \"MISSING\" for FEATURE symbol."
+  (let ((name (symbol-name feature)))
+    (cond ((featurep feature) "loaded")
+          ((locate-library name) "available")
+          (t "MISSING"))))
+
+(defun henri--doctor-print-feat (feature)
+  (princ (format "  %-8s %-22s %s\n" "feat"
+                 (symbol-name feature)
+                 (henri--doctor-feature-status feature))))
+
 (defun henri/doctor ()
   "Show executables, fonts, directories, and common features."
   (interactive)
@@ -34,7 +46,7 @@
         (princ "\nFeatures:\n")
         (dolist (f '(eglot treesit doom-themes which-key markdown-mode
                      magit diff-hl org))
-          (henri--doctor-check "feat" (symbol-name f) (featurep f)))
+          (henri--doctor-print-feat f))
         (princ "\nProfile / theme:\n")
         (let ((themes (when (boundp 'custom-enabled-themes)
                         custom-enabled-themes)))

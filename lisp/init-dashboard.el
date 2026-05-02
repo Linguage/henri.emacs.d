@@ -3,9 +3,12 @@
 ;;; Commentary:
 ;; Henri startup buffer (`initial-buffer-choice'), random ASCII logos, and
 ;; small helpers for opening the notes tree (also used by `counsel' binding
-;; in `init-managing').  Requires `init-custom' (for `henri-notes-directory').
+;; in `init-managing').  `init.el' loads `init-custom' before this file so
+;; `henri-notes-directory' is defined.
 
 ;;; Code:
+
+(defvar henri-notes-directory)
 
 (defvar henri/default-notes-directory nil
   "Expanded notes directory; set from `henri-notes-directory'.")

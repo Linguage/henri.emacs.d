@@ -1,6 +1,14 @@
 ;;; lib-fonts.el --- Fonts and scaling -*- lexical-binding: t -*-
 
+;;; Commentary:
+;; Depends on `init-custom' for `henri-font-default-size' / `henri-font-big-size'
+;; (`defcustom'); fallbacks below satisfy load-order and byte-compiler.
+
 ;;; Code:
+
+;; Declared in init-custom.el — defaults used if this file is compiled alone.
+(defvar henri-font-default-size 140)
+(defvar henri-font-big-size 220)
 
 (require 'lib-system)
 (require 'seq)

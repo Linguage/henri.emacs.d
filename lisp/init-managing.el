@@ -32,8 +32,6 @@
 ;; 5. 布局管理
 ;;    - 窗口分割      -- 自定义窗口布局
 ;;    - 启动布局      -- 自动设置初始布局
-;;    - 窗口分割      -- 自定义窗口布局
-;;    - 启动布局      -- 自动设置初始布局
 
 ;;; Code:
 
@@ -108,6 +106,7 @@
       explicit-shell-file-name henri-shell)
 
 ;; 环境变量同步优化 - 更激进的延迟加载
+;; macOS 下 PATH 注入在 `henri-first-input-hook' 中调用 `henri/initialize-shell-env'，避免与下方 :init 重复执行。
 (use-package exec-path-from-shell
   :ensure t
   :defer t  ; 完全延迟加载，仅在首次需要时加载
@@ -135,14 +134,7 @@
   (exec-path-from-shell-copy-env "CONDA_PREFIX")
   (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV"))
 
-(defun henri/initialize-shell-env-once-from-prog-mode ()
-  "Run `henri/initialize-shell-env', then drop this hook."
-  (henri/initialize-shell-env)
-  (remove-hook 'prog-mode-hook #'henri/initialize-shell-env-once-from-prog-mode))
-
-(add-hook 'prog-mode-hook #'henri/initialize-shell-env-once-from-prog-mode)
-
-;; 首次用户输入前初始化 exec-path-from-shell（与 idle-timer 相比语义更清晰）
+;; 首次用户交互前初始化 exec-path-from-shell（先于常见 `prog-mode' 打开文件）
 (add-hook 'henri-first-input-hook #'henri/initialize-shell-env)
 
 ;; =============================================================================

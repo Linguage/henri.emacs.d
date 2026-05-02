@@ -12,7 +12,9 @@
   :type 'hook :group 'henri-core)
 
 (defcustom henri-first-buffer-hook nil
-  "Normal hook run once on the first `window-buffer-change-functions' event."
+  "Normal hook run once when a real window shows a non-dashboard buffer.
+Triggered from `window-buffer-change-functions'; dashboard and minibuffer
+are ignored so centaur-tabs etc. do not wake on the startup screen."
   :type 'hook :group 'henri-core)
 
 (defcustom henri-first-file-hook nil
@@ -32,9 +34,13 @@
   (run-hooks 'henri-first-input-hook)
   (remove-hook 'pre-command-hook #'henri--run-first-input-hooks))
 
-(defun henri--run-first-buffer-hooks ()
-  (run-hooks 'henri-first-buffer-hook)
-  (remove-hook 'window-buffer-change-functions #'henri--run-first-buffer-hooks))
+(defun henri--run-first-buffer-hooks (&rest _)
+  "Run `henri-first-buffer-hook' once, skipping dashboard / minibuffer windows."
+  (when (and (not (minibufferp))
+             (buffer-name)
+             (not (string-prefix-p "*Henri Dashboard" (buffer-name))))
+    (run-hooks 'henri-first-buffer-hook)
+    (remove-hook 'window-buffer-change-functions #'henri--run-first-buffer-hooks)))
 
 (defun henri--run-first-file-hooks ()
   (run-hooks 'henri-first-file-hook)

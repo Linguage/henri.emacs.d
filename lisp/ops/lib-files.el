@@ -4,32 +4,25 @@
 
 (require 'cl-lib)
 
-(defvar henri-large-file-detected-bytes nil
-  "If non-nil, file was large before insert; see `henri--prepare-for-large-files-a'.")
-(put 'henri-large-file-detected-bytes 'permanent-local t)
+;; Forward-declare (defined in init-custom.el); survives load-order / byte-compile quirks.
+(defvar henri-large-file-threshold)
+(defvar henri-large-file-hard-threshold)
+(defvar henri-large-file-disable-modes)
+(defvar henri-large-file-minor-highlighting-level)
+(defvar henri-buffer-blacklist-prefixes)
 
 (defun henri--prepare-for-large-files-a (size _op filename &rest _)
-  "Run before `abort-if-file-too-large' to flag very large FILENAME."
+  "Run before `abort-if-file-too-large' for a user-visible heads-up.
+So-long is handled by `global-so-long-mode' (`henri-first-file-hook')."
   (when (and (numberp size)
              (boundp 'henri-large-file-hard-threshold)
              (> size henri-large-file-hard-threshold))
-    (ignore-errors
-      (setq-local henri-large-file-detected-bytes size))
     (message "[henri] Large file (~%d MB): %s"
              (/ size (* 1024 1024))
              (or filename ""))))
 
 (when (fboundp 'advice-add)
   (advice-add 'abort-if-file-too-large :before #'henri--prepare-for-large-files-a))
-
-(defun henri/so-long-after-large-file-detected ()
-  "Turn on `so-long-minor-mode' when this buffer was flagged as oversized."
-  (when (and henri-large-file-detected-bytes buffer-file-name)
-    (when (fboundp 'so-long-minor-mode)
-      (so-long-minor-mode 1))
-    (kill-local-variable 'henri-large-file-detected-bytes)))
-
-(add-hook 'find-file-hook #'henri/so-long-after-large-file-detected)
 
 (defun henri-buffer-real-p (buffer-or-name)
   "Non-nil if BUFFER-OR-NAME should appear in tabs / buffer UIs."
