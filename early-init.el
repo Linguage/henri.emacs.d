@@ -25,12 +25,12 @@
 (add-to-list 'initial-frame-alist '(height . 38))
 (add-to-list 'initial-frame-alist '(top . 0.5))
 (add-to-list 'initial-frame-alist '(left . 0.5))
-(add-to-list 'initial-frame-alist '(alpha . (95 . 95)))
+(add-to-list 'initial-frame-alist '(alpha . (98 . 98)))
 (add-to-list 'default-frame-alist '(width . 118))
 (add-to-list 'default-frame-alist '(height . 38))
 (add-to-list 'default-frame-alist '(top . 0.5))
 (add-to-list 'default-frame-alist '(left . 0.5))
-(add-to-list 'default-frame-alist '(alpha . (95 . 95)))
+(add-to-list 'default-frame-alist '(alpha . (100 . 100)))
 
 ;; 图形界面下不显示工具栏（`tool-bar-lines' 在首帧创建前即生效；不依赖
 ;; `display-graphic-p'，因部分 macOS 构建下 early-init 阶段该谓词仍为 nil）。
