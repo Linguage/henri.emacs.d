@@ -95,7 +95,9 @@
 
 ;; Local configuration modules
 (dolist (dir '("lisp" "lisp/visual" "lisp/ops" "lisp/programming_languages"
-               "lisp/writing" "lisp/writing/org" "lisp/writing/LaTeX"))
+               "lisp/writing" "lisp/writing/markdown"
+               "lisp/writing/org" "lisp/writing/LaTeX"
+               "lisp/writing/pdf"))
   (add-to-list 'load-path (expand-file-name dir user-emacs-directory)))
 
 (require 'fix-warnings)

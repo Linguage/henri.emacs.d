@@ -29,7 +29,9 @@
         (princ "[henri] doctor\n\n")
         (princ "Executables:\n")
         (dolist (e '("git" "rg" "fd" "clangd" "pylsp" "fortls" "octave"
-                     "pandoc" "grip" "node"))
+                     "pandoc" "grip" "node" "markdownlint"
+                     "xelatex" "tectonic" "pngpaste"
+                     "pkg-config" "automake" "autoconf"))
           (henri--doctor-check "exec" e (executable-find e)))
         (princ "\nFonts:\n")
         (dolist (f '("Cascadia Code NF" "JetBrains Mono"
@@ -45,7 +47,7 @@
             (henri--doctor-check "dir" d (file-directory-p (expand-file-name d)))))
         (princ "\nFeatures:\n")
         (dolist (f '(eglot treesit doom-themes which-key markdown-mode
-                     magit diff-hl org))
+                     magit diff-hl org markdown-toc pdf-tools))
           (henri--doctor-print-feat f))
         (princ "\nProfile / theme:\n")
         (let ((themes (when (boundp 'custom-enabled-themes)

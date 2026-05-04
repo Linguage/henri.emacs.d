@@ -106,22 +106,9 @@
     org-latex-theme-content))
 
 ;; =============================================================================
-;; PDF 工具配置
+;; PDF 工具集成（pdf-tools 主体已迁出至 `lisp/writing/pdf/pdf-base.el'，
+;; 由 `henri-pdf-enable-tools' 控制；此处仅保留 Org 导出后自动打开 PDF 的钩子）
 
-(use-package pdf-tools
-  :ensure t
-  :mode ("\\.pdf\\'" . pdf-view-mode)
-  :config
-  (when (and (display-graphic-p) (fboundp 'pdf-tools-install))
-    (pdf-tools-install-noverify))
-  ;; 设置 PDF-tools 兼容性
-  ;; 禁用 PDF 查看模式下的行号显示
-  (add-hook 'pdf-view-mode-hook
-            (lambda ()
-              (when (bound-and-true-p display-line-numbers-mode)
-                (display-line-numbers-mode -1)))))
-
-;; 修改 org-open-pdf-after-export 函数确保使用 pdf-tools
 (defun henri/open-pdf-after-export (backend)
   "Open the generated PDF file in pdf-tools after org-mode export.
 Skipped in batch mode (noninteractive) so that headless export does

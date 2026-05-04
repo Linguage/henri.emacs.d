@@ -1,0 +1,128 @@
+/* henri-bearblog-md: minimal blog theme for Pandoc HTML exports
+   Adapted from the Org henri-bearblog theme, targeting Pandoc's HTML5 structure. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&display=swap');
+
+:root {
+    --hb-page-max: 640px;
+    --hb-font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --hb-font-prose: "KingHwa_OldSong", "京華老宋体", "TsangerJinKai02", "仓耳今楷02",
+                     "STSongti-SC-Regular", "Songti SC", "STSong", serif;
+    --hb-font-heading: var(--hb-font-prose);
+    --hb-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                    "Liberation Mono", monospace;
+    --hb-bg: #fafafa;
+    --hb-text: #2e2e2e;
+    --hb-text-muted: #555;
+    --hb-accent: #00539f;
+    --hb-border: #eee;
+    --hb-code-bg: #f0f0f0;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --hb-bg: #1a1a1a;
+        --hb-text: #e0e0e0;
+        --hb-text-muted: #aaa;
+        --hb-accent: #7cb8f7;
+        --hb-border: #333;
+        --hb-code-bg: #222;
+    }
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--hb-bg);
+    color: var(--hb-text);
+    font-family: var(--hb-font-prose);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+main, body {
+    width: min(var(--hb-page-max), calc(100vw - 32px));
+    max-width: var(--hb-page-max);
+    margin: 0 auto;
+    padding: 40px 0 80px;
+}
+
+header h1.title, h1.title {
+    font-family: var(--hb-font-heading);
+    font-size: 1.6rem;
+    font-weight: 400;
+    margin: 0 0 1.2rem;
+}
+
+nav#TOC {
+    margin: 0 0 2rem;
+    font-size: 0.9em;
+    color: var(--hb-text-muted);
+}
+nav#TOC ul { padding-left: 1.2rem; }
+nav#TOC a { color: var(--hb-accent); text-decoration: none; }
+nav#TOC a:hover { text-decoration: underline; }
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--hb-font-heading);
+    font-weight: 400;
+    color: var(--hb-text);
+}
+
+h1 { font-size: 1.6rem; margin: 1.5rem 0 0.8rem; }
+h2 { font-size: 1.4rem; margin: 1.8rem 0 0.7rem; }
+h3 { font-size: 1.2rem; margin: 1.5rem 0 0.6rem; }
+h4 { font-size: 1.05rem; margin: 1.2rem 0 0.5rem; font-weight: 600; }
+
+p { margin: 0 0 0.8rem; }
+p, li { color: var(--hb-text-muted); }
+
+a { color: var(--hb-accent); text-decoration: underline; text-underline-offset: 0.12em; }
+a:hover { opacity: 0.8; }
+
+ul, ol { margin: 0.4rem 0 0.7rem; padding-left: 1.3rem; }
+li { margin: 0.25rem 0; line-height: 1.5; }
+
+blockquote {
+    margin: 1.2rem 0;
+    padding: 0.3rem 0 0.3rem 1rem;
+    border-left: 2px solid var(--hb-accent);
+    color: var(--hb-text-muted);
+    font-style: italic;
+}
+
+hr { margin: 2rem 0; border: 0; border-top: 1px solid var(--hb-border); }
+
+table { width: 100%; margin: 1rem 0; border-collapse: collapse; font-size: 14px; }
+th, td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--hb-border); text-align: left; }
+th { font-weight: 600; }
+
+code {
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    background: var(--hb-code-bg);
+    font-family: var(--hb-font-mono);
+    font-size: 0.9em;
+}
+pre {
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+    overflow-x: auto;
+    border: 1px solid var(--hb-border);
+    border-radius: 6px;
+    background: var(--hb-code-bg);
+    font-family: var(--hb-font-mono);
+    line-height: 1.5;
+}
+pre code { padding: 0; background: none; font-size: inherit; }
+div.sourceCode { margin: 1rem 0; }
+div.sourceCode pre { margin: 0; }
+
+img { display: block; max-width: 100%; height: auto; margin: 1rem auto; }
+
+input[type="checkbox"] { margin-right: 0.4rem; accent-color: var(--hb-accent); }
+
+::selection { background: var(--hb-accent); color: #fff; }

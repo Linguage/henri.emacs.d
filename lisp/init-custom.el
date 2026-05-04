@@ -69,8 +69,8 @@
   "Enable leetcode integration."
   :type 'boolean :group 'henri-programming)
 
-(defcustom henri-enable-grip t
-  "Enable grip-mode for GitHub Markdown preview."
+(defcustom henri-enable-grip nil
+  "Enable grip-mode for GitHub Markdown preview (requires grip CLI + GitHub token)."
   :type 'boolean :group 'henri-writing)
 
 (defcustom henri-enable-rime nil
@@ -92,6 +92,46 @@
   :type 'boolean :group 'henri-writing)
 (defcustom henri-org-enable-academic t
   "Enable Org academic writing module."
+  :type 'boolean :group 'henri-writing)
+
+;; Markdown sub-module toggles -----------------------------------------------
+(defcustom henri-md-enable-export t
+  "启用 Markdown → PDF/HTML/docx 导出模块 `markdown-export'."
+  :type 'boolean :group 'henri-writing)
+
+(defcustom henri-md-enable-toc t
+  "启用 Markdown 目录/导航模块 `markdown-nav'（含 markdown-toc、outline）。"
+  :type 'boolean :group 'henri-writing)
+
+(defcustom henri-md-enable-notes t
+  "启用 Markdown 笔记增强模块 `markdown-notes'（截图、拖拽、字数统计）。"
+  :type 'boolean :group 'henri-writing)
+
+(defcustom henri-md-enable-lint nil
+  "启用 Markdown lint 模块 `markdown-lint'（需 markdownlint CLI）。"
+  :type 'boolean :group 'henri-writing)
+
+(defcustom henri-md-enable-template nil
+  "启用 Markdown 博客 front-matter 模板模块 `markdown-template'。"
+  :type 'boolean :group 'henri-writing)
+
+(defcustom henri-md-pdf-engine "xelatex"
+  "Markdown → PDF 使用的 pandoc LaTeX 引擎。
+可选 \"xelatex\" 或 \"tectonic\"."
+  :type '(choice (const "xelatex") (const "tectonic"))
+  :group 'henri-writing)
+
+(defcustom henri-md-export-output-dir nil
+  "导出输出目录；nil 表示与源文件同目录。"
+  :type '(choice (const :tag "与源文件同目录" nil)
+                 (directory :tag "指定目录"))
+  :group 'henri-writing)
+
+;; PDF 子模块开关 ---------------------------------------------------------------
+(defcustom henri-pdf-enable-tools t
+  "启用 pdf-tools 子模块 `pdf-base'（在 Emacs 内查看 PDF）。
+首次使用需 `brew install poppler automake autoconf pkg-config' 并执行
+`M-x pdf-tools-install' 完成 epdfinfo 本地编译。"
   :type 'boolean :group 'henri-writing)
 
 (defcustom henri-org-cjk-serif-family "TsangerJinKai02"

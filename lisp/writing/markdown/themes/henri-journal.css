@@ -1,0 +1,269 @@
+/* henri-journal-md: warm digital garden theme for Pandoc HTML exports
+   Adapted from the Org henri-journal theme, targeting Pandoc's HTML5 structure. */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&display=swap');
+
+:root {
+    --hj-page-max: 720px;
+    --hj-page-gutter: 24px;
+    --hj-font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --hj-font-prose: "KingHwa_OldSong", "京華老宋体", "TsangerJinKai02", "仓耳今楷02",
+                     "STSongti-SC-Regular", "Songti SC", "STSong", serif;
+    --hj-font-heading: var(--hj-font-prose);
+    --hj-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                    "Liberation Mono", monospace;
+
+    --hj-surface: #fcf9f8;
+    --hj-surface-low: #f6f3f2;
+    --hj-surface-container: #f0eded;
+    --hj-surface-high: #e4e2e1;
+    --hj-text: #1b1c1c;
+    --hj-text-muted: #404848;
+    --hj-outline: #707978;
+    --hj-outline-soft: #dcd9d9;
+    --hj-outline-variant: #c0c8c7;
+    --hj-primary: #356364;
+    --hj-primary-strong: #1e4e4e;
+    --hj-primary-soft: #bbeceb;
+    --hj-primary-mid: #4e7c7c;
+    --hj-secondary-soft: #d1e9d2;
+    --hj-code-bg: #f0eded;
+    --hj-code-text: #1b1c1c;
+    --hj-shadow: 0 10px 30px rgba(44, 44, 44, 0.05);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --hj-surface: #1f2220;
+        --hj-surface-low: #282c29;
+        --hj-surface-container: #303531;
+        --hj-surface-high: #3d443f;
+        --hj-text: #f3f0f0;
+        --hj-text-muted: #c0c8c7;
+        --hj-outline: #9aa3a1;
+        --hj-outline-soft: #424a48;
+        --hj-outline-variant: #5d6764;
+        --hj-primary: #a0cfcf;
+        --hj-primary-strong: #bbeceb;
+        --hj-primary-soft: #244646;
+        --hj-primary-mid: #386666;
+        --hj-secondary-soft: #374c3b;
+        --hj-code-bg: #161917;
+        --hj-code-text: #f3f0f0;
+        --hj-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+    }
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--hj-surface);
+    color: var(--hj-text);
+    font-family: var(--hj-font-prose);
+    font-size: 16px;
+    line-height: 1.52;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Pandoc wraps content in <main> or <body> directly */
+main, body {
+    width: min(var(--hj-page-max), calc(100vw - var(--hj-page-gutter) * 2));
+    max-width: var(--hj-page-max);
+    margin: 0 auto;
+    padding: 56px 0 144px;
+}
+
+/* Page title (from --metadata title) */
+header h1.title, h1.title {
+    color: var(--hj-text);
+    font-family: var(--hj-font-heading);
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 400;
+    line-height: 1.1;
+    margin: 0 0 1.5rem;
+}
+
+/* Pandoc TOC */
+nav#TOC {
+    margin: 0 0 2.5rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--hj-outline-soft);
+    border-radius: 8px;
+    background: var(--hj-surface-low);
+}
+nav#TOC > ul { list-style: none; padding-left: 0; }
+nav#TOC ul { padding-left: 1.2rem; }
+nav#TOC li { margin: 0.3rem 0; }
+nav#TOC a {
+    color: var(--hj-primary-strong);
+    text-decoration: none;
+}
+nav#TOC a:hover { text-decoration: underline; }
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--hj-text);
+    font-family: var(--hj-font-heading);
+    font-weight: 500;
+    line-height: 1.25;
+    letter-spacing: 0;
+}
+
+h1 { font-size: 30px; font-weight: 400; margin: 1.5rem 0 1rem; }
+h2 {
+    margin: 10px 0 42px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--hj-outline-soft);
+    font-size: 30px;
+    font-weight: 400;
+}
+h3 { margin: 48px 0 28px; font-size: 25px; font-weight: 400; }
+h4 { margin: 42px 0 22px; font-size: 18px; font-weight: 600; line-height: 1.45; }
+h5 { margin: 30px 0 14px; font-size: 16px; font-weight: 700; }
+h6 {
+    margin: 24px 0 12px;
+    color: var(--hj-outline);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* Pandoc header anchors */
+.header-section-number { margin-right: 0.35em; color: inherit; }
+
+p { margin: 0 0 1.05rem; }
+p, li { color: var(--hj-text-muted); }
+
+strong, b { color: var(--hj-text); font-weight: 600; }
+em, i { color: var(--hj-text); }
+
+a {
+    color: var(--hj-primary-strong);
+    text-decoration-color: color-mix(in srgb, var(--hj-primary) 45%, transparent);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    transition: color 0.18s, text-decoration-color 0.18s;
+}
+a:hover { color: var(--hj-primary); text-decoration-color: var(--hj-primary); }
+
+/* Lists */
+ul, ol { margin: 0.45rem 0 0.85rem; padding-left: 1.35rem; }
+li { margin: 0.34rem 0; line-height: 1.48; }
+
+ul { list-style: none; }
+ul > li { position: relative; }
+ul > li::before {
+    content: "";
+    position: absolute;
+    top: 0.88em;
+    left: -1.05rem;
+    width: 5px; height: 5px;
+    border-radius: 1px;
+    background: var(--hj-primary-mid);
+}
+ul ul > li::before { width: 4px; height: 4px; background: var(--hj-outline); }
+ol { padding-left: 1.6rem; }
+
+/* GFM task list (Pandoc renders as checkboxes) */
+input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: var(--hj-primary-mid);
+}
+
+/* Blockquote */
+blockquote {
+    margin: 1.6rem 0;
+    padding: 0.2rem 0 0.2rem 1.2rem;
+    border-left: 1px solid var(--hj-primary);
+    color: var(--hj-text-muted);
+    font-family: var(--hj-font-heading);
+    font-size: 20px;
+    font-style: italic;
+}
+
+hr { margin: 3rem 0; border: 0; border-top: 1px solid var(--hj-outline-soft); }
+
+/* Tables */
+table {
+    width: 100%;
+    margin: 1.5rem 0 2rem;
+    border-collapse: collapse;
+    border-top: 1px solid var(--hj-text);
+    border-bottom: 1px solid var(--hj-text);
+    font-size: 14px;
+}
+th, td {
+    padding: 0.6rem 0.7rem;
+    border-bottom: 1px solid var(--hj-outline-soft);
+    text-align: left;
+    vertical-align: top;
+}
+th { color: var(--hj-text); font-weight: 700; }
+tr:last-child td { border-bottom: 0; }
+
+/* Code */
+code {
+    padding: 0.12em 0.35em;
+    border-radius: 4px;
+    background: var(--hj-code-bg);
+    color: var(--hj-code-text);
+    font-family: var(--hj-font-mono);
+    font-size: 0.92em;
+}
+pre {
+    margin: 1.4rem 0;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    border: 1px solid var(--hj-outline-soft);
+    border-radius: 8px;
+    background: var(--hj-code-bg);
+    color: var(--hj-code-text);
+    font-family: var(--hj-font-mono);
+    line-height: 1.55;
+}
+pre code {
+    padding: 0;
+    background: none;
+    font-size: inherit;
+}
+
+/* Pandoc sourceCode class (highlighted blocks) */
+div.sourceCode { margin: 1.4rem 0; }
+div.sourceCode pre {
+    margin: 0;
+    border-radius: 8px;
+}
+
+/* Images */
+img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.5rem auto;
+    border-radius: 8px;
+}
+
+/* Definition lists (Pandoc dl) */
+dl { margin: 1rem 0; }
+dt { color: var(--hj-text); font-weight: 600; }
+dd { margin-left: 1.5rem; color: var(--hj-text-muted); }
+
+/* Footnotes (Pandoc) */
+a.footnote-ref, a.footnote-back { color: var(--hj-primary-mid); }
+section.footnotes { font-size: 0.9em; color: var(--hj-text-muted); }
+
+::selection { background: var(--hj-primary-soft); color: var(--hj-text); }
+
+@media (max-width: 760px) {
+    main, body {
+        width: min(100% - 36px, var(--hj-page-max));
+        padding-top: 42px;
+    }
+    h2 { font-size: 27px; margin-bottom: 34px; }
+    h3 { font-size: 22px; margin-top: 40px; }
+}

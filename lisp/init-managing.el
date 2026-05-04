@@ -134,8 +134,8 @@
   (exec-path-from-shell-copy-env "CONDA_PREFIX")
   (exec-path-from-shell-copy-env "CONDA_DEFAULT_ENV"))
 
-;; 首次用户交互前初始化 exec-path-from-shell（先于常见 `prog-mode' 打开文件）
-(add-hook 'henri-first-input-hook #'henri/initialize-shell-env)
+;; 在启动阶段同步 shell PATH，确保 pandoc/grip 等外部工具在所有模块中可见。
+(add-hook 'emacs-startup-hook #'henri/initialize-shell-env)
 
 ;; =============================================================================
 ;; 窗口布局配置 (延迟加载)
@@ -179,6 +179,11 @@
     "C-c h" "henri/html-themes"
     "C-c j" "henri/journal"
     "C-c m" "henri/markdown"
+    "C-c m e" "henri/md-export"
+    "C-c m t" "henri/md-toc"
+    "C-c m T" "henri/md-template"
+    "C-c m i" "henri/md-insert"
+    "C-c m s" "henri/md-theme"
     "C-c o" "henri/org"
     "C-c v" "henri/vc-diff"
     "C-c w" "henri/window"
