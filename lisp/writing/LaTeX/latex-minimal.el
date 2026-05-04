@@ -23,8 +23,15 @@
   :group 'henri-writing
   :prefix "henri-latex-")
 
-(defcustom henri-latex-texbin-directory "/Library/TeX/texbin"
-  "macOS BasicTeX/MacTeX executable directory used as a PATH fallback."
+(defcustom henri-latex-texbin-directory
+  (cond ((file-directory-p "/Library/TeX/texbin") "/Library/TeX/texbin")
+        ((file-directory-p "/usr/local/texlive/bin/x86_64-linux")
+         "/usr/local/texlive/bin/x86_64-linux")
+        ((file-directory-p "/usr/local/texlive/bin/aarch64-linux")
+         "/usr/local/texlive/bin/aarch64-linux")
+        (t "/Library/TeX/texbin"))
+  "TeX executable directory used as a PATH fallback.
+Auto-detected at load time for macOS (MacTeX) and Linux (TeX Live)."
   :type 'directory
   :group 'henri-latex)
 

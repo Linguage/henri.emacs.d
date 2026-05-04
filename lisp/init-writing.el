@@ -83,7 +83,6 @@
   (setq markdown-fontify-code-blocks-natively t)  ; 原生代码块高亮
   (setq markdown-display-remote-images t)         ; 显示远程图片
   :bind (:map markdown-mode-map
-         ("C-c C-v" . markdown-preview)          ; 使用内置预览
          ("C-c C-c p" . markdown-preview-mode)   ; 备选预览模式
          ("C-c m p" . henri/markdown-preview-offline)
          ("C-c m g" . henri/markdown-preview-github-style)
@@ -93,7 +92,7 @@
 (use-package grip-mode
   :ensure t
   :after markdown-mode
-  :if (and (boundp 'henri-enable-grip) henri-enable-grip)
+  :if henri-enable-grip
   :bind (:map markdown-mode-map
          ("C-c C-g" . grip-mode)))
 

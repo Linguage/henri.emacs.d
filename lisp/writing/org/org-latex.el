@@ -112,8 +112,8 @@
   :ensure t
   :mode ("\\.pdf\\'" . pdf-view-mode)
   :config
-  (when (fboundp 'pdf-tools-install)
-    (pdf-tools-install t))
+  (when (and (display-graphic-p) (fboundp 'pdf-tools-install))
+    (pdf-tools-install-noverify))
   ;; 设置 PDF-tools 兼容性
   ;; 禁用 PDF 查看模式下的行号显示
   (add-hook 'pdf-view-mode-hook
@@ -122,17 +122,20 @@
                 (display-line-numbers-mode -1)))))
 
 ;; 修改 org-open-pdf-after-export 函数确保使用 pdf-tools
-(defun org-open-pdf-after-export (backend)
-  "Open the generated PDF file in pdf-tools after org-mode export."
-  (when (eq backend 'latex)
+(defun henri/open-pdf-after-export (backend)
+  "Open the generated PDF file in pdf-tools after org-mode export.
+Skipped in batch mode (noninteractive) so that headless export does
+not pop a buffer or require pdf-tools."
+  (when (and (eq backend 'latex)
+             (not noninteractive)
+             buffer-file-name)
     (let ((pdf-file (concat (file-name-sans-extension buffer-file-name) ".pdf")))
       (when (file-exists-p pdf-file)
         (find-file pdf-file)
-        ;; 确保在此处关闭行号显示
         (when (bound-and-true-p display-line-numbers-mode)
           (display-line-numbers-mode -1))))))
 
-(add-hook 'org-export-after-processing-hook 'org-open-pdf-after-export)
+(add-hook 'org-export-after-processing-hook 'henri/open-pdf-after-export)
 
 ;; =============================================================================
 ;; 文档类和配置（延迟加载）
@@ -224,21 +227,14 @@
   ;; 导出辅助函数
 
   (defun org-export-pdf-with-theme (theme-name)
-    "使用指定主题导出 PDF"
+    "使用指定主题导出 PDF。"
     (interactive 
      (list (completing-read "选择主题导出 PDF: " 
                            (mapcar 'car org-latex-themes-alist))))
-    (let ((org-latex-classes-backup org-latex-classes))
-      (unwind-protect
-          (progn
-            ;; 临时设置导出类
-            (if (string= theme-name "default")
-                (setq-local org-latex-default-class "article-default")
-              (setq-local org-latex-default-class (concat "article-" theme-name)))
-            ;; 执行导出
-            (org-latex-export-to-pdf))
-        ;; 恢复设置
-        (setq org-latex-classes org-latex-classes-backup))))
+    (if (string= theme-name "default")
+        (setq-local org-latex-default-class "article-default")
+      (setq-local org-latex-default-class (concat "article-" theme-name)))
+    (org-latex-export-to-pdf))
 
   (defun org-export-pdf-quick ()
     "快速导出 PDF（使用当前主题或默认主题）"
@@ -358,11 +354,6 @@
 
 (add-hook 'org-mode-hook #'org-latex-setup-keybindings)
 
-;; =============================================================================
-;; 全局快捷键
-
-(global-set-key (kbd "C-c l d") 'org-latex-diagnose-fonts)
-(global-set-key (kbd "C-c l r") 'org-latex-reload-config)
 
 (provide 'org-latex)
 

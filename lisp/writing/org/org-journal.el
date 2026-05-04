@@ -181,22 +181,22 @@ KIND must be `diary' (shared file for all journal capture types)."
   (interactive)
   (setq org-agenda-files (delete-dups (henri-journal-agenda-files))))
 
-(setq org-directory henri-journal-directory)
 (setq org-default-notes-file (henri-journal-file "notes.org"))
 
 ;; 统一日志模板 - diary / work / study 写入同一月度 journal；模板与 tag 区分
 (setq org-capture-templates
-      '(("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-         "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
-         :empty-lines 1)
+      (append (bound-and-true-p org-capture-templates)
+              '(("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+                 "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
+                 :empty-lines 1)
 
-        ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-         "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** TODO 列表\n- [ ] \n"
-         :empty-lines 1)
+                ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+                 "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** TODO 列表\n- [ ] \n"
+                 :empty-lines 1)
 
-        ("s" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-         "*** %U %? :journal:study:\n%i\n**** 主题\n\n**** 概念\n\n**** 解读\n\n**** 类别\n\n"
-         :empty-lines 1)))
+                ("s" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+                 "*** %U %? :journal:study:\n%i\n**** 主题\n\n**** 概念\n\n**** 解读\n\n**** 类别\n\n"
+                 :empty-lines 1))))
 
 ;; 设置 Org-mode 的 Agenda 文件 - 统一路径命名
 (henri-journal-refresh-agenda-files)
@@ -256,7 +256,7 @@ KIND must be `diary' (shared file for all journal capture types)."
 ;; 日志查看和搜索功能
 
 ;; 通用日志查看函数 - 支持多种日志类型
-(defun my/view-journal-by-date (&optional journal-type date)
+(defun henri/view-journal-by-date (&optional journal-type date)
   "在同一月度 journal 文件中打开 DATE 当天的 subtree。
 JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型选择）。"
   (interactive
@@ -277,19 +277,20 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
                              nil t)
           (progn
             (org-reveal)
-            (org-show-subtree)
+            (cond ((fboundp 'org-fold-show-subtree) (org-fold-show-subtree))
+                  ((fboundp 'org-show-subtree) (org-show-subtree)))
             (recenter))
         (message "未找到 %s 的 journal day" date-prefix)))))
 
 ;; 便捷函数 - 直接查看个人日记
-(defun my/view-diary-by-date (&optional date)
+(defun henri/view-diary-by-date (&optional date)
   "通过选择日期查看特定日期的个人日记"
   (interactive)
   (let ((date (or date (org-read-date nil nil nil "选择日期: "))))
-    (my/view-journal-by-date "diary" date)))
+    (henri/view-journal-by-date "diary" date)))
 
 ;; 添加通用日志搜索功能
-(defun my/search-journal ()
+(defun henri/search-journal ()
   "在所有日志中搜索关键词"
   (interactive)
   (let ((keyword (read-string "搜索关键词: ")))
@@ -343,7 +344,7 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 ;; 日历集成
 
 ;; 优化日历集成功能
-(defun my/calendar-open-journal ()
+(defun henri/calendar-open-journal ()
   "在日历中选择日期后打开对应的日志条目"
   (interactive)
   (let* ((date (calendar-cursor-to-date))
@@ -356,7 +357,7 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
                                           ("工作记录" . "work")
                                           ("学习卡片" . "study"))
                                         nil t)))
-    (my/view-journal-by-date
+    (henri/view-journal-by-date
      (cond ((string= journal-type "个人日记") "diary")
            ((string= journal-type "工作记录") "work")
            ((string= journal-type "学习卡片") "study")
@@ -365,15 +366,15 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 
 (add-hook 'calendar-mode-hook
           (lambda ()
-            (local-set-key (kbd "RET") 'my/calendar-open-journal)))
+            (local-set-key (kbd "RET") 'henri/calendar-open-journal)))
 
 ;; =============================================================================
 ;; 快捷键设置
 
 (global-set-key (kbd "C-c c") 'org-capture)            ;; 快速创建日志
 (global-set-key (kbd "C-c a") 'org-agenda)             ;; 打开议程视图
-(global-set-key (kbd "C-c j s") 'my/search-journal)      ;; 搜索日志
-(global-set-key (kbd "C-c j d") 'my/view-diary-by-date)  ;; 直接查看个人日记
+(global-set-key (kbd "C-c j s") 'henri/search-journal)      ;; 搜索日志
+(global-set-key (kbd "C-c j d") 'henri/view-diary-by-date)  ;; 直接查看个人日记
 
 ;; =============================================================================
 ;; Journal LaTeX 文档类注册（从 org-latex.el 解耦）
@@ -438,51 +439,6 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 (add-hook 'org-export-filter-options-functions
           #'org-journal-apply-latex-export-options)
 
-(defun org-journal-setup-pdf-export ()
-  "为期刊文件设置常规 Journal PDF 导出。"
-  (interactive)
-  (when (buffer-file-name)
-    (save-excursion
-      (goto-char (point-min))
-      ;; 检查是否已经有LATEX_CLASS设置
-      (unless (re-search-forward "^#\\+LATEX_CLASS:" nil t)
-        ;; 如果没有，在适当位置添加
-        (goto-char (point-min))
-        (if (re-search-forward "^#\\+STARTUP:" nil t)
-            (progn
-              (end-of-line)
-              (insert "\n#+LATEX_CLASS: journal")
-              (when (called-interactively-p 'any)
-                (save-buffer)))
-          ;; 如果没有STARTUP行，在其他位置添加
-          (goto-char (point-min))
-          (if (re-search-forward "^#\\+OPTIONS:" nil t)
-              (progn
-                (end-of-line)
-                (insert "\n#+LATEX_CLASS: journal")
-                (when (called-interactively-p 'any)
-                  (save-buffer)))
-            ;; 如果都没有，在最前面添加
-            (goto-char (point-min))
-            (insert "#+LATEX_CLASS: journal\n")
-            (when (called-interactively-p 'any)
-              (save-buffer))))))
-    (when (called-interactively-p 'any)
-      (save-buffer))
-    (message "已为当前期刊文件设置常规 Journal PDF 导出")))
-
-(defun org-journal-auto-setup-pdf ()
-  "如果当前文件包含journal标签，自动设置PDF导出"
-  (when (and (derived-mode-p 'org-mode)
-             (or (save-excursion
-                   (goto-char (point-min))
-                   (re-search-forward ":journal:" nil t))
-                 (and buffer-file-name
-                      (string-match-p "journal\\|diary" buffer-file-name))))
-    (org-journal-setup-pdf-export)))
-
-;; 自动为期刊文件设置正确的LaTeX类
-(add-hook 'org-mode-hook 'org-journal-auto-setup-pdf)
 
 (provide 'org-journal)
 

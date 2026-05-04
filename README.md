@@ -312,30 +312,40 @@
 
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
-| `C-c C-r` | henri/reload-org-theme | 重新加载主题 |
 | `C-c C-b` | henri/toggle-org-bullets | 切换 bullets 样式 |
-| `C-c v s` | henri/org-show-all | 展开所有内容 |
+| `C-c v s` | henri/org-show-all | 展开所有内容（org-fold-show-all） |
 | `C-c v o` | henri/org-overview | 仅显示大纲 |
 | `C-c v c` | henri/org-content | 显示内容标题 |
-
-#### Org Mode - 修复和维护
-
-| 快捷键 | 功能 | 说明 |
-|--------|------|------|
-| `C-c o f` | henri/emergency-org-fix | 紧急修复 Org 配置 |
 | `C-c o v` | henri/cycle-org-startup-folded | 循环切换启动折叠状态 |
 
 #### Org Journal - 日志管理
 
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
-| `C-c j s` | my/search-journal | 搜索日志内容 |
-| `C-c j d` | my/view-diary-by-date | 按日期查看日记 |
+| `C-c j s` | henri/search-journal | 搜索日志内容 |
+| `C-c j d` | henri/view-diary-by-date | 按日期查看日记 |
+
+#### Org HTML - 主题与导出
+
+| 快捷键 | 功能 | 说明 |
+|--------|------|------|
+| `C-c h t` | henri/org-html-set-theme | 选择并设置 HTML 主题（写入 SETUPFILE） |
+| `C-c h d` | henri/org-html-apply-default-theme | 应用默认主题（Henri Journal） |
+| `C-c h e` | henri/org-html-export-and-open | 导出并在浏览器打开 |
+| `C-c h w` | henri/org-html-export-with-theme | 用指定主题导出（不修改源 buffer） |
+| `C-c h s` | henri/org-html-apply-theme-by-shortcut | 缩写应用主题（0/1/2/rto/bb/...） |
+| `C-c h ?` | henri/org-html-show-theme-shortcuts | 列出所有缩写映射 |
+| `C-c h r` | henri/org-html-remove-theme | 移除主题 SETUPFILE |
+| `C-c h k` | henri/org-html-check-local-themes | 检查本地主题文件 |
+| `C-c h i` | henri/org-html-install-themes | 下载/安装主题 |
 
 #### Org LaTeX - PDF 导出
 
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
+| `C-c l t` | org-latex-apply-theme | 选择 LaTeX 主题 |
+| `C-c l p` | org-export-pdf-with-theme | 用指定主题导出 PDF |
+| `C-c l q` | org-export-pdf-quick | 快速导出 PDF |
 | `C-c l d` | org-latex-diagnose-fonts | 诊断字体、TeX 命令、`ctex.sty` 与实验 LaTeX-Diary 主题资源 |
 | `C-c l r` | org-latex-reload-config | 重新加载 latexmk + XeLaTeX 导出配置 |
 
