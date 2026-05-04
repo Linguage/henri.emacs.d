@@ -1,0 +1,15 @@
+# work-notes 索引
+
+本目录存放按时间推进的研发工作记录，**只承载经历**：当时做了什么、踩了什么坑、阶段判断如何变化。
+
+如果一份记录已被反复回看且承担了"跨任务可复用结论"的职责，应主动迁入 [`../reports/`](../reports/INDEX.md)。
+
+较早的 work note 可能保留旧路径或历史命令，应视为当时上下文。
+
+## 按日期浏览
+
+- 2026-05-02: [`01_EMACS_NOTES_DASHBOARD_JOURNAL_2026-05-02.md`](01_EMACS_NOTES_DASHBOARD_JOURNAL_2026-05-02.md)
+- 2026-05-02: [`02_EMACS_PATHS_ORG_FONT_GIT_MD_SUMMARY_2026-05-02.md`](02_EMACS_PATHS_ORG_FONT_GIT_MD_SUMMARY_2026-05-02.md)（路径、启动、Org 字体、Git/Markdown）
+- 2026-05-02: [`03_VISUAL_MODULES_MIGRATION_SUMMARY_2026-05-02.md`](03_VISUAL_MODULES_MIGRATION_SUMMARY_2026-05-02.md)（`lisp/visual` 分层、兼容入口、doctor / profiles / dashboard）
+- 2026-05-03: [`04_JOURNAL_UNIFY_AND_EMACS_ROBUSTNESS_SUMMARY_2026-05-03.md`](04_JOURNAL_UNIFY_AND_EMACS_ROBUSTNESS_SUMMARY_2026-05-03.md)（Journal 合流、包刷新、Eglot 白名单、大文件）
+- 2026-05-04: [`05_LATEX_JOURNAL_EXPORT_WORKFLOW_SUMMARY_2026-05-04.md`](05_LATEX_JOURNAL_EXPORT_WORKFLOW_SUMMARY_2026-05-04.md)（LaTeX 写作工作台、Journal PDF 主题、TOC / outline 修复）

@@ -15,13 +15,9 @@
 !lisp/**
 !lisp/**/**
 
-# 文档（按需白名单 specs / jobs，避免 `*` 把整个 `docs/` 挡在版本库外）
+# 文档系统是项目治理内容，docs 下的文档不应被 `*` 隐藏。
 !docs/
-!docs/specs/
-!docs/specs/ARCHITECTURE.md
-!docs/jobs/
-!docs/jobs/README.md
-!docs/jobs/emacs-align-doom-patterns.md
+!docs/**
 
 # Emacs byte-compiled artifacts are machine/version-local generated files.
 *.elc
