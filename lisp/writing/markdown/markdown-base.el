@@ -23,6 +23,9 @@
 ;;; Code:
 
 (require 'lib-system)
+(require 'browse-url)
+(require 'subr-x)
+(require 'url-util)
 
 ;; -----------------------------------------------------------------------------
 ;; 依赖体检
@@ -89,6 +92,63 @@
         (list "--css" css)
       nil)))
 
+(defun henri/markdown--file-url (path)
+  "Return a file:// URL for PATH."
+  (browse-url-file-url (expand-file-name path)))
+
+(defun henri/markdown--preview-base-header (source-file)
+  "Write and return a temporary HTML header with a base URL for SOURCE-FILE.
+
+Pandoc preview HTML lives under a temp directory.  Without a <base> tag,
+EWW resolves relative Markdown links against that temp directory instead
+of the source document directory."
+  (let* ((base-dir (file-name-as-directory
+                    (file-name-directory (expand-file-name source-file))))
+         (header-file (expand-file-name "base.html"
+                                        (henri/markdown--preview-tmpdir))))
+    (with-temp-file header-file
+      (insert (format "<base href=\"%s\">\n"
+                      (henri/markdown--file-url base-dir))))
+    header-file))
+
+(defun henri/markdown--relative-url-p (url)
+  "Return non-nil when URL is relative to the current Markdown file."
+  (and (stringp url)
+       (not (string-empty-p url))
+       (not (string-prefix-p "#" url))
+       (not (string-prefix-p "/" url))
+       (not (string-prefix-p "//" url))
+       (not (string-match-p "\\`[[:alpha:]][[:alnum:]+.-]*:" url))))
+
+(defun henri/markdown--absolute-file-url (url base-dir)
+  "Resolve relative URL against BASE-DIR and return a file:// URL."
+  (let* ((hash-pos (string-match-p "#" url))
+         (path-part (if hash-pos (substring url 0 hash-pos) url))
+         (fragment (if hash-pos (substring url hash-pos) "")))
+    (if (string-empty-p path-part)
+        url
+      (concat (henri/markdown--file-url
+               (expand-file-name (url-unhex-string path-part) base-dir))
+              fragment))))
+
+(defun henri/markdown--rewrite-html-relative-links (html-file source-file)
+  "Rewrite relative href/src links in HTML-FILE against SOURCE-FILE's directory."
+  (let ((base-dir (file-name-directory (expand-file-name source-file))))
+    (with-temp-buffer
+      (insert-file-contents html-file)
+      (goto-char (point-min))
+      (while (re-search-forward "\\(href\\|src\\)=\"\\([^\"]+\\)\"" nil t)
+        (let ((attr (match-string 1))
+              (url (match-string 2)))
+          (when (henri/markdown--relative-url-p url)
+            (let ((replacement
+                   (save-match-data
+                     (format "%s=\"%s\""
+                             attr
+                             (henri/markdown--absolute-file-url url base-dir)))))
+              (replace-match replacement t t)))))
+      (write-region (point-min) (point-max) html-file nil 'silent))))
+
 (defun henri/markdown--render-to-html ()
   "用 pandoc 把当前缓冲区渲染为独立 HTML，返回 HTML 文件路径。"
   (unless (henri/executable-p "pandoc")
@@ -103,10 +163,12 @@
                (concat (file-name-base src) ".html")
                (henri/markdown--preview-tmpdir)))
          (resource-path (file-name-directory src))
+         (base-header (henri/markdown--preview-base-header src))
          (args (append
                 (list src
                       "-o" out
                       "-s"
+                      "--include-in-header" base-header
                       "--metadata" (format "title=%s" (file-name-base src))
                       "--resource-path" resource-path
                       "-f" "gfm"
@@ -117,6 +179,7 @@
         (unless (zerop exit)
           (pop-to-buffer (current-buffer))
           (error "pandoc 渲染失败（exit=%d）" exit))))
+    (henri/markdown--rewrite-html-relative-links out src)
     out))
 
 ;;;###autoload
