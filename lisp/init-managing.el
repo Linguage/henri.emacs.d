@@ -22,7 +22,8 @@
 ;; 3. 功能增强
 ;;    - which-key      -- 快捷键提示
 ;;    - exec-path-from-shell -- 环境变量同步
-;;    - eshell        -- Shell 环境配置
+;;    - vterm        -- 主力终端
+;;    - eshell       -- 备用 Lisp shell
 ;;
 ;; 4. Git（本地）
 ;;    - magit       -- 状态、blame、log 等
@@ -101,7 +102,7 @@
 
 
 ;; =============================================================================
-;; Shell 环境配置 (延迟加载)
+;; Shell / terminal 配置 (延迟加载)
 (setq shell-file-name henri-shell
       explicit-shell-file-name henri-shell)
 
@@ -137,6 +138,25 @@
 ;; 在启动阶段同步 shell PATH，确保 pandoc/grip 等外部工具在所有模块中可见。
 (add-hook 'emacs-startup-hook #'henri/initialize-shell-env)
 
+;; vterm 作为主力终端；eshell 只保留为备用 Lisp shell。
+(use-package vterm
+  :ensure t
+  :commands (vterm henri/vterm)
+  :init
+  (setq vterm-always-compile-module t)
+  (setq vterm-shell henri-shell)
+  (setq vterm-kill-buffer-on-exit t)
+  (setq vterm-max-scrollback 10000)
+  :config
+  (setq vterm-shell henri-shell))
+
+(defun henri/vterm ()
+  "Open Henri's primary terminal with the configured login shell."
+  (interactive)
+  (henri/initialize-shell-env)
+  (require 'vterm)
+  (vterm))
+
 ;; =============================================================================
 ;; 窗口布局配置 (延迟加载)
 (use-package eshell
@@ -152,17 +172,13 @@
 
 ;; 延迟窗口布局设置 - 改为手动触发
 (defun henri/setup-window-layout ()
-  "手动设置窗口布局：分割窗口并启动eshell。
+  "手动设置窗口布局：分割窗口并启动 vterm。
 现在通过快捷键 C-c w l 手动触发，不再自动执行。"
   (interactive)  ; 添加 interactive 使其可以通过快捷键调用
   (when (display-graphic-p)
     (split-window-right)
     (other-window 1)
-    ;; 启动 eshell
-    (if (featurep 'eshell)
-        (eshell)
-      (require 'eshell)
-      (eshell))))
+    (henri/vterm)))
 
 ;; 全局 visual-line：首次按键前启用（与 `henri-first-input-hook' 一致）
 (add-hook 'henri-first-input-hook (lambda () (global-visual-line-mode 1)))
@@ -186,6 +202,9 @@
     "C-c m s" "henri/md-theme"
     "C-c o" "henri/org"
     "C-c v" "henri/vc-diff"
+    "C-c w e" "henri/vterm"
+    "C-c w E" "henri/eshell"
+    "C-c w v" "henri/vterm"
     "C-c w" "henri/window"
     "C-c F" "henri/font"
     "C-c ^" "henri/smerge"
@@ -195,7 +214,9 @@
 ;; =============================================================================
 ;; 手动控制选项快捷键
 (global-set-key (kbd "C-c w l") #'henri/setup-window-layout)  ; 手动触发窗口布局
-(global-set-key (kbd "C-c w e") #'eshell)                     ; 手动启动eshell
+(global-set-key (kbd "C-c w e") #'henri/vterm)                ; 主力终端
+(global-set-key (kbd "C-c w v") #'henri/vterm)                ; 主力终端
+(global-set-key (kbd "C-c w E") #'eshell)                     ; 备用 eshell
 
 ;; =============================================================================
 ;; Git：Magit + 边距/ fringe 变更提示（diff-hl）+ 合并冲突（smerge）

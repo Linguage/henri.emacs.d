@@ -190,7 +190,7 @@ Override with environment variable HENRI_PROFILE."
   '("*epc" "*helm" "*Helm" "*Compile-Log*" "*lsp" "*company"
     "*Flycheck" "*tramp" " *Mini" "*help" "*straight" " *temp" "*Help"
     "*mybuf" "*Warnings*" "*Messages*" "*scratch*" "*Completions*"
-    "*Async-native-compile-log*" "*eshell*" "*shell*" "*terminal*"
+    "*Async-native-compile-log*" "*eshell*" "*shell*" "*terminal*" "*vterm*"
     "*markdown-preview*" "*grip-")
   "Prefix matches for buffer names considered hidden (tabs, see `henri-buffer-real-p')."
   :type '(repeat string) :group 'henri-core)

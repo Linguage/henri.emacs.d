@@ -17,7 +17,7 @@
 
 个人路径（笔记根、项目目录、Conda、LeetCode、Org HTML 主题等）集中在 [`lisp/init-custom.el`](lisp/init-custom.el) 的 `henri-*` `defcustom`，切换机器时优先改此处或通过 `M-x customize-group RET henri-paths`。
 
-- **`henri-paths`**：`henri-notes-directory`、`henri-org-html-themes-directory`、`henri-shell`（子进程 / quickrun / `exec-path-from-shell` 使用的 shell，默认优先 `zsh` 否则 `/bin/sh`）等机器相关路径。
+- **`henri-paths`**：`henri-notes-directory`、`henri-org-html-themes-directory`、`henri-shell`（子进程 / quickrun / vterm / `exec-path-from-shell` 使用的 shell，默认优先 `zsh` 否则 `/bin/sh`）等机器相关路径。
 - **`henri-runtime`**（[`lisp/ops/paths.el`](lisp/ops/paths.el)）：`henri-var-directory`、备份/自动保存子目录、`tree-sitter`、`rime`、`transient` 等；目录在 **`after-init-hook`** 中按需创建，避免纯 `--batch` 加载配置时在仓库里 mkdir。
 
 ### 运行时目录与本机文件（Git 策略）
