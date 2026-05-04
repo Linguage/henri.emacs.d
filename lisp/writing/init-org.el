@@ -15,6 +15,7 @@
 ;; - org-latex.el    : LaTeX/PDF 导出和工具（合并版本）
 ;; - org-journal.el  : 日志系统和 Agenda
 ;; - org-html.el     : HTML 导出和主题
+;; - org-roam-henri.el : Org-roam 通用知识库
 ;; - org-academic.el : 学术写作模板系统
 
 ;;; Code:
@@ -47,7 +48,12 @@
 (when (and (boundp 'henri-org-enable-html) henri-org-enable-html)
 	(require 'org-html))
 
-;; 5. 学术写作 - 新增
+;; 5. Org-roam 通用知识库
+;; Roam
+(when (and (boundp 'henri-org-enable-roam) henri-org-enable-roam)
+	(require 'org-roam-henri))
+
+;; 6. 学术写作 - 新增
 ;; Academic
 (when (and (boundp 'henri-org-enable-academic) henri-org-enable-academic)
 	(require 'org-academic))

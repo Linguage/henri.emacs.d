@@ -2,23 +2,27 @@
 
 ;; Author: Henri
 ;; Maintainer: Henri
-;; Version: 1.0
+;; Version: 2.0
 ;; Keywords: org, academic, writing, research
 
 ;;; Commentary:
 
-;; Org Mode 学术写作模板系统，包含：
-;; - 学术论文模板（多种格式）
-;; - 研究笔记模板
-;; - 文献管理和引用
-;; - 学术写作工作流
+;; Lightweight academic writing workflow:
+;; - idea    -- short thinking cards
+;; - reading -- literature reading cards
+;; - project -- research project pages
+;; - paper   -- full paper drafts
+;;
+;; The templates intentionally avoid heavy inline LaTeX headers.  Stable PDF
+;; export is delegated to `org-latex.el' classes such as `ctexart'.
 
 ;;; Code:
 
 (require 'seq)
+(require 'subr-x)
 
 ;; =============================================================================
-;; 学术写作目录设置
+;; Customization
 
 (defgroup org-academic nil
   "Academic writing workflow."
@@ -28,51 +32,95 @@
   (if (boundp 'henri-notes-directory)
       (expand-file-name "Academic" (expand-file-name henri-notes-directory))
     (expand-file-name "~/Academic"))
-  "学术写作文档的根目录"
+  "Academic writing root directory."
+  :type 'directory
+  :group 'org-academic)
+
+(defcustom org-academic-ideas-dir
+  (expand-file-name "Ideas" org-academic-directory)
+  "Lightweight idea notes directory."
+  :type 'directory
+  :group 'org-academic)
+
+(defcustom org-academic-reading-dir
+  (expand-file-name "Reading" org-academic-directory)
+  "Literature reading notes directory."
+  :type 'directory
+  :group 'org-academic)
+
+(defcustom org-academic-projects-dir
+  (expand-file-name "Projects" org-academic-directory)
+  "Research project pages directory."
   :type 'directory
   :group 'org-academic)
 
 (defcustom org-academic-papers-dir
   (expand-file-name "Papers" org-academic-directory)
-  "学术论文存放目录"
+  "Paper drafts and conference abstracts directory."
   :type 'directory
   :group 'org-academic)
 
 (defcustom org-academic-notes-dir
   (expand-file-name "Research-Notes" org-academic-directory)
-  "研究笔记存放目录"
+  "Legacy research notes directory kept for existing files."
   :type 'directory
   :group 'org-academic)
 
 (defcustom org-academic-bibliography-file
   (expand-file-name "bibliography.bib" org-academic-directory)
-  "参考文献数据库文件"
+  "BibTeX bibliography file."
   :type 'file
   :group 'org-academic)
 
 (defcustom org-academic-library-dir
   (expand-file-name "PDFs" org-academic-directory)
-  "文献 PDF 文件目录。"
+  "Literature PDF directory."
   :type 'directory
   :group 'org-academic)
 
 (defcustom org-academic-literature-notes-dir
-  (expand-file-name "Literature" org-academic-notes-dir)
-  "文献阅读笔记目录。"
+  org-academic-reading-dir
+  "Academic literature notes directory used by Citar.
+
+By default this points to `org-academic-reading-dir' at load time.  If
+you customize `org-academic-reading-dir', customize this option as well
+so `citar-open-notes' continues to use the same reading-card directory."
   :type 'directory
   :group 'org-academic)
 
 (defcustom org-academic-org-roam-dir
-  org-academic-notes-dir
-  "Org-roam 学术笔记目录。"
+  org-academic-directory
+  "Legacy Org-roam academic notes directory.
+
+Org-roam is now configured by `org-roam-henri' as a general writing
+knowledge base.  This option is kept for compatibility with older
+custom files and should not set `org-roam-directory' directly."
   :type 'directory
   :group 'org-academic)
 
+(defcustom org-academic-enable-org-roam nil
+  "Compatibility option for the older academic Org-roam integration.
+
+The active Org-roam setup now lives in `org-roam-henri'.  Keep this nil
+unless older local customizations still read it."
+  :type 'boolean
+  :group 'org-academic)
+
+(make-obsolete-variable
+ 'org-academic-org-roam-dir
+ 'henri-org-roam-directory
+ "2026-05-04")
+
+(make-obsolete-variable
+ 'org-academic-enable-org-roam
+ 'henri-org-roam-enable-citar-integration
+ "2026-05-04")
+
 ;; =============================================================================
-;; 文献与知识库工具
+;; Citations and optional knowledge base
 
 (defun org-academic-configure-citations ()
-  "Configure Org Cite and Citar from the academic path customizations."
+  "Configure Org Cite and Citar from academic path customizations."
   (setq org-cite-global-bibliography (list org-academic-bibliography-file)
         org-cite-insert-processor 'citar
         org-cite-follow-processor 'citar
@@ -90,744 +138,402 @@
 (with-eval-after-load 'oc
   (org-academic-configure-citations))
 
-(use-package org-roam
-  :ensure t
-  :defer t
-  :custom
-  (org-roam-directory org-academic-org-roam-dir)
-  :config
-  (when (fboundp 'org-roam-db-autosync-mode)
-    (org-roam-db-autosync-mode 1)))
-
-(use-package citar-org-roam
-  :ensure t
-  :after (citar org-roam)
-  :custom
-  (citar-org-roam-subdir
-   (file-relative-name org-academic-literature-notes-dir org-academic-org-roam-dir))
-  :config
-  (citar-org-roam-mode 1))
-
 ;; =============================================================================
-;; 学术写作模板定义
-
-(defvar org-academic-paper-template
-  "#+TITLE: %^{论文标题}
-#+AUTHOR: %^{作者姓名}
-#+DATE: %T
-#+EMAIL: %^{邮箱地址}
-#+LANGUAGE: zh-cn
-#+OPTIONS: toc:2 num:t ^:nil
-#+STARTUP: content
-
-#+BEGIN_EXPORT html
-<style>
-.abstract { 
-  background-color: #f8f9fa; 
-  padding: 15px; 
-  border-left: 4px solid #007acc; 
-  margin: 20px 0; 
-}
-</style>
-#+END_EXPORT
-
-* 摘要
-:PROPERTIES:
-:CUSTOM_ID: abstract
-:END:
-
-#+BEGIN_abstract
-%^{摘要内容}
-
-*关键词：* %^{关键词（用逗号分隔）}
-#+END_abstract
-
-* 1. 引言
-:PROPERTIES:
-:CUSTOM_ID: introduction
-:END:
-
-** 1.1 研究背景
-
-** 1.2 研究问题
-
-** 1.3 研究目标
-
-** 1.4 论文结构
-
-* 2. 文献综述
-:PROPERTIES:
-:CUSTOM_ID: literature-review
-:END:
-
-** 2.1 理论基础
-
-** 2.2 相关研究
-
-** 2.3 研究空白
-
-* 3. 研究方法
-:PROPERTIES:
-:CUSTOM_ID: methodology
-:END:
-
-** 3.1 研究设计
-
-** 3.2 数据收集
-
-** 3.3 分析方法
-
-* 4. 研究结果
-:PROPERTIES:
-:CUSTOM_ID: results
-:END:
-
-** 4.1 主要发现
-
-** 4.2 数据分析
-
-* 5. 讨论
-:PROPERTIES:
-:CUSTOM_ID: discussion
-:END:
-
-** 5.1 结果解释
-
-** 5.2 理论贡献
-
-** 5.3 实践意义
-
-** 5.4 研究局限
-
-* 6. 结论
-:PROPERTIES:
-:CUSTOM_ID: conclusion
-:END:
-
-** 6.1 主要结论
-
-** 6.2 未来研究方向
-
-* 参考文献
-:PROPERTIES:
-:CUSTOM_ID: references
-:END:
-
-#+bibliography: %s
-
-* 附录
-:PROPERTIES:
-:CUSTOM_ID: appendix
-:END:
-
-#+BEGIN_COMMENT
-论文写作说明：
-1. 使用 C-c a i 插入文献引用
-2. 使用 C-c C-x C-l 预览 LaTeX 片段
-3. 使用 C-c C-e 导出为所需格式
-4. 参考文献使用 BibTeX 格式管理
-#+END_COMMENT"
-  "学术论文基础模板")
-
-(defvar org-academic-research-note-template
-  "#+TITLE: %^{研究笔记标题}
-#+AUTHOR: %^{研究者}
-#+DATE: %T
-#+TAGS: research note %^{标签}
-#+CATEGORY: %^{研究领域}
-#+STARTUP: content
-
-* 研究信息
-:PROPERTIES:
-:研究主题: %^{研究主题}
-:研究阶段: %^{阶段|文献调研|实验设计|数据收集|数据分析|论文写作}
-:优先级: %^{优先级|A|B|C}
-:截止日期: %^{截止日期}t
-:相关项目: %^{相关项目}
-:END:
-
-** 研究背景
-%^{研究背景和动机}
-
-** 研究问题
-%^{具体研究问题}
-
-* 文献笔记
-:PROPERTIES:
-:CUSTOM_ID: literature-notes
-:END:
-
-** 核心文献
-
-| 作者 | 标题 | 年份 | 核心观点 | 引用价值 |
-|------+------+------+----------+----------|
-|      |      |      |          |          |
-
-** 理论框架
-
-** 方法论参考
-
-* 研究思路
-:PROPERTIES:
-:CUSTOM_ID: research-ideas
-:END:
-
-** 假设
-1. 
-
-** 研究设计
-- 研究类型：
-- 样本选择：
-- 数据收集方法：
-- 分析方法：
-
-** 预期结果
-
-* 进展记录
-:PROPERTIES:
-:CUSTOM_ID: progress-log
-:END:
-
-** TODO 待办事项
-- [ ] 
-- [ ] 
-- [ ] 
-
-** 已完成
-- [X] 
-
-* 资源链接
-:PROPERTIES:
-:CUSTOM_ID: resources
-:END:
-
-** 相关网站
-
-** 数据来源
-
-** 软件工具
-
-* 反思总结
-:PROPERTIES:
-:CUSTOM_ID: reflection
-:END:
-
-** 遇到的问题
-
-** 解决方案
-
-** 经验教训
-
-** 下一步计划"
-  "研究笔记模板")
-
-(defvar org-academic-conference-abstract-template
-  "#+TITLE: %^{会议摘要标题}
-#+AUTHOR: %^{作者}
-#+DATE: %T
-#+CONFERENCE: %^{会议名称}
-#+DEADLINE: %^{提交截止日期}t
-#+OPTIONS: toc:nil num:nil
-
-* 会议信息
-:PROPERTIES:
-:会议名称: %^{会议全称}
-:会议时间: %^{会议时间}
-:会议地点: %^{会议地点}
-:摘要字数限制: %^{字数限制}
-:提交方式: %^{提交方式}
-:END:
-
-* 摘要
-
-** 标题
-%^{英文标题（如需要）}
-
-** 正文
-%^{摘要正文内容}
-
-** 关键词
-%^{关键词列表}
-
-* 扩展信息
-
-** 研究意义
-
-** 创新点
-
-** 预期影响
-
-* 投稿状态
-:PROPERTIES:
-:投稿状态: %^{状态|准备中|已投稿|已接收|已拒绝}
-:反馈意见: 
-:修改计划:
-:END:"
-  "会议摘要模板")
-
-;; =============================================================================
-;; 简化模板格式化函数
-
-(defun org-academic-format-simple-paper-template (title bib-file)
-  "创建简洁的学术论文模板"
+;; Internal helpers
+
+(defun org-academic--ensure-dirs ()
+  "Create academic directories required by the lightweight workflow."
+  (dolist (dir (list org-academic-directory
+                     org-academic-ideas-dir
+                     org-academic-reading-dir
+                     org-academic-projects-dir
+                     org-academic-papers-dir
+                     org-academic-notes-dir
+                     org-academic-library-dir
+                     org-academic-literature-notes-dir))
+    (when (and dir (not (file-directory-p dir)))
+      (make-directory dir t))))
+
+(defun org-academic--safe-title (title)
+  "Return a filesystem-safe slug from TITLE."
+  (let ((slug (replace-regexp-in-string "[^a-zA-Z0-9\u4e00-\u9fff]+" "-" title)))
+    (string-trim slug "-+" "-+")))
+
+(defun org-academic--blank-string-p (value)
+  "Return non-nil when VALUE is nil or an empty string."
+  (or (null value)
+      (and (stringp value) (string-empty-p value))))
+
+(defun org-academic--dated-file (dir title &optional suffix)
+  "Return a dated Org file path under DIR for TITLE and optional SUFFIX."
+  (expand-file-name
+   (format "%s_%s%s.org"
+           (format-time-string "%Y%m%d")
+           (org-academic--safe-title title)
+           (or suffix ""))
+   dir))
+
+(defun org-academic--relative-bib (target-file)
+  "Return bibliography path relative to TARGET-FILE."
+  (file-relative-name org-academic-bibliography-file
+                      (file-name-directory target-file)))
+
+(defun org-academic--front-matter (title type &optional options)
+  "Return stable academic Org front matter for TITLE and TYPE."
   (format "#+TITLE: %s
 #+AUTHOR: %s
 #+DATE: %s
 #+EMAIL: %s
 #+LANGUAGE: zh-cn
-#+OPTIONS: toc:3 num:t ^:nil title:t
-#+STARTUP: showeverything
-#+LATEX_CLASS: article
-#+LATEX_CLASS_OPTIONS: [a4paper,12pt]
-#+LATEX_HEADER: \\usepackage[UTF8]{ctex}
-#+LATEX_HEADER: \\usepackage[margin=2.5cm]{geometry}
-#+LATEX_HEADER: \\usepackage{setspace}
-#+LATEX_HEADER: \\onehalfspacing
-#+LATEX_HEADER: \\usepackage{fancyhdr}
-#+LATEX_HEADER: \\pagestyle{fancy}
-#+LATEX_HEADER: \\fancyhf{}
-#+LATEX_HEADER: \\fancyhead[C]{%s}
-#+LATEX_HEADER: \\fancyfoot[C]{\\thepage}
-#+LATEX_HEADER: \\renewcommand{\\headrulewidth}{0.4pt}
-#+LATEX_HEADER: \\renewcommand{\\footrulewidth}{0.4pt}
-#+LATEX_HEADER: \\usepackage{titletoc}
-#+LATEX_HEADER: \\usepackage{titlesec}
-#+LATEX_HEADER: \\titleformat{\\section}{\\Large\\bfseries}{\\thesection}{1em}{}
-#+LATEX_HEADER: \\titleformat{\\subsection}{\\large\\bfseries}{\\thesubsection}{1em}{}
-#+LATEX_HEADER: \\titleformat{\\subsubsection}{\\normalsize\\bfseries}{\\thesubsubsection}{1em}{}
-#+LATEX_HEADER: \\renewcommand{\\contentsname}{目录}
+#+CATEGORY: academic-%s
+#+OPTIONS: %s
+#+STARTUP: content
+#+LATEX_CLASS: ctexart
+
+"
+          title
+          (or user-full-name "Henri")
+          (format-time-string "%Y-%m-%d")
+          (or user-mail-address "email@example.com")
+          type
+          (or options "toc:nil num:nil ^:nil title:t")))
+
+(defun org-academic--open-new-file (file content message-prefix)
+  "Create FILE with CONTENT and show MESSAGE-PREFIX."
+  (when (file-exists-p file)
+    (user-error "文件已存在: %s" file))
+  (make-directory (file-name-directory file) t)
+  (find-file file)
+  (insert content)
+  (goto-char (point-min))
+  (org-mode)
+  (save-buffer)
+  (message "✓ %s: %s" message-prefix file))
+
+(defun org-academic--files (dir)
+  "Return recent Org files in DIR."
+  (when (file-directory-p dir)
+    (seq-take
+     (sort (directory-files dir nil "\\.org\\'")
+           #'string>)
+     8)))
+
+(defun org-academic--insert-file-list (label dir)
+  "Insert a dashboard section LABEL for recent Org files in DIR."
+  (insert (format "## %s\n" label))
+  (let ((files (org-academic--files dir)))
+    (if files
+        (dolist (file files)
+          (insert (format "- [[file:%s][%s]]\n"
+                          (expand-file-name file dir)
+                          file)))
+      (insert "- 暂无\n")))
+  (insert "\n"))
+
+;; =============================================================================
+;; Templates
+
+(defun org-academic-format-idea-template (title)
+  "Create a lightweight idea note template."
+  (format "%s* 一句话
+
+[这条想法最核心的判断。]
+
+* 为什么现在重要
+
+-
+
+* 证据 / 触发
+
+- 来源：
+- 观察：
+
+* 可以继续追问
+
+-
+
+* 下一步
+
+- [ ]
+"
+          (org-academic--front-matter title "idea")))
+
+(defun org-academic-format-reading-template (title cite-key bib-file)
+  "Create a literature reading note template."
+  (format "%s#+bibliography: %s
+
+* 文献信息
+
+- Citation: %s
+- PDF:
+- 主题:
+
+* 核心问题
+
+[作者试图回答什么问题？]
+
+* 方法 / 材料
+
+[数据、实验、推导或论证路径。]
+
+* 关键结论
+
+-
+
+* 可引用片段
+
+#+BEGIN_QUOTE
+
+#+END_QUOTE
+
+* 与我的研究的关系
+
+- 支持：
+- 反驳：
+- 可迁移：
+
+* 下一步
+
+- [ ]
+"
+          (org-academic--front-matter title "reading")
+          bib-file
+          (if (org-academic--blank-string-p cite-key)
+              "[cite key]"
+            (format "cite:%s" cite-key))))
+
+(defun org-academic-format-project-template (title bib-file)
+  "Create a research project note template."
+  (format "%s#+bibliography: %s
+
+* 定位
+
+- 研究主题：
+- 当前阶段：
+- 成果形态：
+
+* 研究问题
+
+1.
+
+* 工作假设
+
+-
+
+* 方法路径
+
+- 材料 / 数据：
+- 工具 / 模型：
+- 验证方式：
+
+* 进展
+
+** TODO 下一步
+
+- [ ]
+
+** 记录
+
+-
+
+* 产出
+
+- 论文：
+- 数据：
+- 代码：
+- 报告：
+"
+          (org-academic--front-matter title "project" "toc:2 num:nil ^:nil title:t")
+          bib-file))
+
+(defun org-academic-format-simple-paper-template (title bib-file)
+  "Create a stable full paper draft template."
+  (format "%s#+bibliography: %s
 
 * 摘要
 
-[在此填写摘要内容...]
+[在此填写摘要。]
 
-*关键词：* [关键词1, 关键词2, 关键词3]
+* 关键词
+
+[关键词1；关键词2；关键词3]
 
 * 引言
 
 ** 研究背景
 
-[填写研究背景]
-
 ** 研究问题
 
-[填写研究问题]
-
-** 研究目标
-
-[填写研究目标]
-
-** 论文结构
-
-[填写论文结构]
+** 贡献概述
 
 * 文献综述
 
-** 理论基础
-
-[填写理论基础]
-
 ** 相关研究
-
-[填写相关研究]
 
 ** 研究空白
 
-[填写研究空白]
-
-* 研究方法
+* 方法
 
 ** 研究设计
 
-[填写研究设计]
-
-** 数据收集
-
-[填写数据收集]
+** 数据 / 材料
 
 ** 分析方法
 
-[填写分析方法]
-
-* 研究结果
-
-** 主要发现
-
-[填写主要发现]
-
-** 数据分析
-
-[填写数据分析]
+* 结果
 
 * 讨论
 
-** 结果解释
-
-[填写结果解释]
-
-** 理论贡献
-
-[填写理论贡献]
+** 理论意义
 
 ** 实践意义
 
-[填写实践意义]
-
-** 研究局限
-
-[填写研究局限]
+** 局限
 
 * 结论
 
-** 主要结论
-
-[填写主要结论]
-
-** 未来研究方向
-
-[填写未来研究方向]
-
 * 参考文献
 
-#+bibliography: %s
-
-* 附录
-
-#+BEGIN_COMMENT
-论文写作说明：
-1. 使用 C-c a i 插入文献引用
-2. 使用 C-c C-x C-l 预览 LaTeX 片段
-3. 使用 C-c C-e 导出为所需格式
-4. 参考文献使用 BibTeX 格式管理
-#+END_COMMENT"
-          title
-          (or user-full-name "作者姓名")
-          (format-time-string "%Y-%m-%d")
-          (or user-mail-address "email@example.com")
-          title ; 用于页眉
+#+print_bibliography:
+"
+          (org-academic--front-matter title "paper" "toc:2 num:t ^:nil title:t")
           bib-file))
 
 (defun org-academic-format-simple-note-template (title)
-  "创建简洁的研究笔记模板"
-  (format "#+TITLE: %s
-#+AUTHOR: %s
-#+DATE: %s
-#+EMAIL: %s
-#+LANGUAGE: zh-cn
-#+OPTIONS: toc:3 num:t ^:nil title:t
-#+STARTUP: showeverything
-#+LATEX_CLASS: article
-#+LATEX_CLASS_OPTIONS: [a4paper,12pt]
-#+LATEX_HEADER: \\usepackage[UTF8]{ctex}
-#+LATEX_HEADER: \\usepackage[margin=2.5cm]{geometry}
-#+LATEX_HEADER: \\usepackage{setspace}
-#+LATEX_HEADER: \\onehalfspacing
-#+LATEX_HEADER: \\usepackage{fancyhdr}
-#+LATEX_HEADER: \\pagestyle{fancy}
-#+LATEX_HEADER: \\fancyhf{}
-#+LATEX_HEADER: \\fancyhead[C]{%s}
-#+LATEX_HEADER: \\fancyfoot[C]{\\thepage}
-#+LATEX_HEADER: \\renewcommand{\\headrulewidth}{0.4pt}
-#+LATEX_HEADER: \\renewcommand{\\footrulewidth}{0.4pt}
-#+LATEX_HEADER: \\usepackage{titletoc}
-#+LATEX_HEADER: \\usepackage{titlesec}
-#+LATEX_HEADER: \\titleformat{\\section}{\\Large\\bfseries}{\\thesection}{1em}{}
-#+LATEX_HEADER: \\titleformat{\\subsection}{\\large\\bfseries}{\\thesubsection}{1em}{}
-#+LATEX_HEADER: \\titleformat{\\subsubsection}{\\normalsize\\bfseries}{\\thesubsubsection}{1em}{}
-#+LATEX_HEADER: \\renewcommand{\\contentsname}{目录}
-
-* 研究信息
-
-** 研究主题
-[填写研究主题]
-
-** 研究阶段
-[文献调研/实验设计/数据收集/数据分析/论文写作]
-
-** 优先级
-[A/B/C]
-
-** 截止日期
-[YYYY-MM-DD]
-
-** 相关项目
-[项目名称]
-
-** 研究背景
-[描述研究背景和动机...]
-
-** 研究问题
-[明确具体研究问题...]
-
-* 文献笔记
-
-** 核心文献
-
-| 作者 | 标题 | 年份 | 核心观点 | 引用价值 |
-|------+------+------+----------+----------|
-|      |      |      |          |          |
-
-** 理论框架
-
-** 方法论参考
-
-* 研究思路
-
-** 假设
-1. 
-
-** 研究设计
-- 研究类型：
-- 样本选择：
-- 数据收集方法：
-- 分析方法：
-
-** 预期结果
-
-* 进展记录
-
-** TODO 待办事项
-- [ ] 
-- [ ] 
-- [ ] 
-
-** 已完成
-- [X] 
-
-* 资源链接
-
-** 相关网站
-
-** 数据来源
-
-** 软件工具
-
-* 反思总结
-
-** 遇到的问题
-
-** 解决方案
-
-** 经验教训
-
-** 下一步计划"
-          title
-          (or user-full-name "研究者")
-          (format-time-string "%Y-%m-%d")
-          (or user-mail-address "email@example.com")
-          title))
+  "Compatibility wrapper: create a lightweight idea note template."
+  (org-academic-format-idea-template title))
 
 (defun org-academic-format-simple-abstract-template (title conference)
-  "创建简洁的会议摘要模板"
-  (format "#+TITLE: %s
-#+AUTHOR: %s
-#+DATE: %s
-#+EMAIL: %s
-#+LANGUAGE: zh-cn
-#+OPTIONS: toc:3 num:t ^:nil title:t
-#+STARTUP: showeverything
-#+LATEX_CLASS: article
-#+LATEX_CLASS_OPTIONS: [a4paper,12pt]
-#+LATEX_HEADER: \\usepackage[UTF8]{ctex}
-#+LATEX_HEADER: \\usepackage[margin=2.5cm]{geometry}
-#+LATEX_HEADER: \\usepackage{setspace}
-#+LATEX_HEADER: \\onehalfspacing
-#+LATEX_HEADER: \\usepackage{fancyhdr}
-#+LATEX_HEADER: \\pagestyle{fancy}
-#+LATEX_HEADER: \\fancyhf{}
-#+LATEX_HEADER: \\fancyhead[C]{%s}
-#+LATEX_HEADER: \\fancyfoot[C]{\\thepage}
-#+LATEX_HEADER: \\renewcommand{\\headrulewidth}{0.4pt}
-#+LATEX_HEADER: \\renewcommand{\\footrulewidth}{0.4pt}
-#+LATEX_HEADER: \\usepackage{titletoc}
-#+LATEX_HEADER: \\usepackage{titlesec}
-#+LATEX_HEADER: \\titleformat{\\section}{\\Large\\bfseries}{\\thesection}{1em}{}
-#+LATEX_HEADER: \\titleformat{\\subsection}{\\large\\bfseries}{\\thesubsection}{1em}{}
-#+LATEX_HEADER: \\titleformat{\\subsubsection}{\\normalsize\\bfseries}{\\thesubsubsection}{1em}{}
-#+LATEX_HEADER: \\renewcommand{\\contentsname}{目录}
+  "Create a stable conference abstract template."
+  (format "%s* 会议信息
 
-* 会议信息
-
-** 会议名称
-%s
-
-** 会议时间
-[YYYY-MM-DD]
-
-** 会议地点
-[会议地点]
-
-** 摘要字数限制
-[字数限制]
-
-** 提交方式
-[在线提交/邮件等]
+- 会议名称：%s
+- 会议时间：
+- 地点：
+- 字数限制：
+- 截止日期：
 
 * 摘要
 
 ** 标题
+
 [英文标题（如需要）]
 
 ** 正文
-[摘要正文内容...]
+
+[摘要正文内容。]
 
 ** 关键词
-[关键词1, 关键词2, 关键词3]
 
-* 扩展信息
-
-** 研究意义
-
-** 创新点
-
-** 预期影响
+[关键词1；关键词2；关键词3]
 
 * 投稿状态
 
-** 投稿状态
-准备中
-
-** 反馈意见
-[填写反馈意见]
-
-** 修改计划
-[填写修改计划]"
-          title
-          (or user-full-name "作者")
-          (format-time-string "%Y-%m-%d")
-          (or user-mail-address "email@example.com")
-          title ; 用于页眉
-          conference
+- 状态：准备中
+- 反馈：
+- 修改计划：
+"
+          (org-academic--front-matter title "abstract")
           conference))
 
 ;; =============================================================================
-;; 简化的模板创建函数
+;; Creation commands
+
+(defun org-academic-create-idea-note (&optional title)
+  "Create a lightweight academic idea note."
+  (interactive "s想法标题: ")
+  (org-academic--ensure-dirs)
+  (let* ((note-title (if (org-academic--blank-string-p title) "新想法" title))
+         (file (org-academic--dated-file org-academic-ideas-dir note-title)))
+    (org-academic--open-new-file
+     file
+     (org-academic-format-idea-template note-title)
+     "已创建想法卡")))
+
+(defun org-academic-create-reading-note (&optional title cite-key)
+  "Create a literature reading note."
+  (interactive
+   (list (read-string "阅读笔记标题: ")
+         (read-string "Cite key（可空）: ")))
+  (org-academic--ensure-dirs)
+  (let* ((note-title (if (org-academic--blank-string-p title) "新阅读笔记" title))
+         (file (org-academic--dated-file org-academic-reading-dir note-title))
+         (bib-file (org-academic--relative-bib file)))
+    (org-academic--open-new-file
+     file
+     (org-academic-format-reading-template note-title (or cite-key "") bib-file)
+     "已创建阅读卡")))
+
+(defun org-academic-create-project-note (&optional title)
+  "Create a research project note."
+  (interactive "s项目标题: ")
+  (org-academic--ensure-dirs)
+  (let* ((project-title (if (org-academic--blank-string-p title) "新研究项目" title))
+         (file (org-academic--dated-file org-academic-projects-dir project-title))
+         (bib-file (org-academic--relative-bib file)))
+    (org-academic--open-new-file
+     file
+     (org-academic-format-project-template project-title bib-file)
+     "已创建研究项目")))
 
 (defun org-academic-create-paper (&optional title)
-  "创建新的学术论文文档 - 只需要输入标题"
+  "Create a full academic paper draft."
   (interactive "s论文标题: ")
-  (let* ((paper-title (or title "新学术论文"))
-         (safe-title (replace-regexp-in-string "[^a-zA-Z0-9\u4e00-\u9fff]" "-" paper-title))
-         (filename (format "%s/%s_%s.org" 
-                          org-academic-papers-dir
-                          (format-time-string "%Y%m%d")
-                          safe-title))
-         (bib-file (file-relative-name org-academic-bibliography-file 
-                                      (file-name-directory filename))))
-    
-    (unless (file-exists-p org-academic-papers-dir)
-      (make-directory org-academic-papers-dir t))
-    
-    (find-file filename)
-    (insert (org-academic-format-simple-paper-template paper-title bib-file))
-    (goto-char (point-min))
-    (org-mode)
-    (message "✓ 已创建学术论文: %s" filename)))
+  (org-academic--ensure-dirs)
+  (let* ((paper-title (if (org-academic--blank-string-p title) "新学术论文" title))
+         (file (org-academic--dated-file org-academic-papers-dir paper-title))
+         (bib-file (org-academic--relative-bib file)))
+    (org-academic--open-new-file
+     file
+     (org-academic-format-simple-paper-template paper-title bib-file)
+     "已创建学术论文")))
 
 (defun org-academic-create-research-note (&optional title)
-  "创建新的研究笔记 - 只需要输入标题"
+  "Compatibility command: create a lightweight idea note."
   (interactive "s研究笔记标题: ")
-  (let* ((note-title (or title "新研究笔记"))
-         (safe-title (replace-regexp-in-string "[^a-zA-Z0-9\u4e00-\u9fff]" "-" note-title))
-         (filename (format "%s/%s_%s.org" 
-                          org-academic-notes-dir
-                          (format-time-string "%Y%m%d")
-                          safe-title)))
-    
-    (unless (file-exists-p org-academic-notes-dir)
-      (make-directory org-academic-notes-dir t))
-    
-    (find-file filename)
-    (insert (org-academic-format-simple-note-template note-title))
-    (goto-char (point-min))
-    (org-mode)
-    (message "✓ 已创建研究笔记: %s" filename)))
+  (org-academic-create-idea-note title))
 
 (defun org-academic-create-conference-abstract (&optional title)
-  "创建会议摘要 - 只需要输入标题"
+  "Create a conference abstract note."
   (interactive "s摘要标题: ")
-  (let* ((abstract-title (or title "新会议摘要"))
+  (org-academic--ensure-dirs)
+  (let* ((abstract-title (if (org-academic--blank-string-p title) "新会议摘要" title))
          (conference (read-string "会议名称: " "学术会议"))
-         (safe-title (replace-regexp-in-string "[^a-zA-Z0-9\u4e00-\u9fff]" "-" abstract-title))
-         (filename (format "%s/%s_%s_abstract.org" 
-                          org-academic-papers-dir
-                          (format-time-string "%Y%m%d")
-                          safe-title)))
-    
-    (unless (file-exists-p org-academic-papers-dir)
-      (make-directory org-academic-papers-dir t))
-    
-    (find-file filename)
-    (insert (org-academic-format-simple-abstract-template abstract-title conference))
-    (goto-char (point-min))
-    (org-mode)
-    (message "✓ 已创建会议摘要: %s" filename)))
-
-;; =============================================================================
-;; 快速创建命令 (无交互)
+         (file (org-academic--dated-file org-academic-papers-dir abstract-title "_abstract")))
+    (org-academic--open-new-file
+     file
+     (org-academic-format-simple-abstract-template abstract-title conference)
+     "已创建会议摘要")))
 
 (defun org-academic-quick-paper ()
-  "快速创建学术论文（无交互）"
+  "Quickly create a timestamped academic paper draft."
   (interactive)
-  (let* ((paper-title (format "学术论文_%s" (format-time-string "%m%d_%H%M")))
-         (safe-title (replace-regexp-in-string "[^a-zA-Z0-9\u4e00-\u9fff]" "-" paper-title))
-         (filename (format "%s/%s_%s.org" 
-                          org-academic-papers-dir
-                          (format-time-string "%Y%m%d")
-                          safe-title))
-         (bib-file (file-relative-name org-academic-bibliography-file 
-                                      (file-name-directory filename))))
-    
-    (unless (file-exists-p org-academic-papers-dir)
-      (make-directory org-academic-papers-dir t))
-    
-    (find-file filename)
-    (insert (org-academic-format-simple-paper-template paper-title bib-file))
-    (goto-char (point-min))
-    (org-mode)
-    (message "✓ 快速创建学术论文: %s" filename)))
+  (org-academic-create-paper
+   (format "学术论文_%s" (format-time-string "%m%d_%H%M"))))
 
 (defun org-academic-quick-note ()
-  "快速创建研究笔记（无交互）"
+  "Quickly create a timestamped lightweight idea note."
   (interactive)
-  (let* ((note-title (format "研究笔记_%s" (format-time-string "%m%d_%H%M")))
-         (safe-title (replace-regexp-in-string "[^a-zA-Z0-9\u4e00-\u9fff]" "-" note-title))
-         (filename (format "%s/%s_%s.org" 
-                          org-academic-notes-dir
-                          (format-time-string "%Y%m%d")
-                          safe-title)))
-    
-    (unless (file-exists-p org-academic-notes-dir)
-      (make-directory org-academic-notes-dir t))
-    
-    (find-file filename)
-    (insert (org-academic-format-simple-note-template note-title))
-    (goto-char (point-min))
-    (org-mode)
-    (message "✓ 快速创建研究笔记: %s" filename)))
+  (org-academic-create-idea-note
+   (format "想法_%s" (format-time-string "%m%d_%H%M"))))
 
 ;; =============================================================================
-;; 文献管理功能
+;; Bibliography and citations
 
 (defun org-academic-setup-bibliography ()
-  "设置参考文献环境"
+  "Create bibliography, PDF, and reading-note directories when missing."
   (interactive)
-  (dolist (dir (list org-academic-directory
-                     org-academic-library-dir
-                     org-academic-literature-notes-dir))
-    (unless (file-exists-p dir)
-      (make-directory dir t)))
+  (org-academic--ensure-dirs)
   (unless (file-exists-p org-academic-bibliography-file)
     (make-directory (file-name-directory org-academic-bibliography-file) t)
     (with-temp-file org-academic-bibliography-file
       (insert "% 参考文献数据库\n% 使用 BibTeX 格式\n\n")))
   (org-academic-configure-citations)
-  
   (find-file org-academic-bibliography-file)
   (message "参考文献数据库已就绪: %s" org-academic-bibliography-file))
 
 (defun org-academic-insert-citation ()
-  "插入文献引用"
+  "Insert a citation through Citar, with a manual fallback."
   (interactive)
   (if (fboundp 'citar-insert-citation)
       (citar-insert-citation)
@@ -835,116 +541,76 @@
       (insert (format "cite:%s" cite-key)))))
 
 ;; =============================================================================
-;; 学术写作工作流
+;; Dashboard
 
 (defun org-academic-dashboard ()
-  "打开学术写作仪表板"
+  "Open the academic writing dashboard."
   (interactive)
+  (org-academic--ensure-dirs)
   (let ((dashboard-buffer "*Academic Dashboard*"))
     (get-buffer-create dashboard-buffer)
     (with-current-buffer dashboard-buffer
       (erase-buffer)
-      (insert "# 学术写作仪表板 📚\n\n")
-      (insert "## 快速创建命令\n")
-      (insert "### 标准创建（需要输入标题）\n")
-      (insert "- `C-c a p` 创建学术论文\n")
-      (insert "- `C-c a n` 创建研究笔记\n") 
-      (insert "- `C-c a c` 创建会议摘要\n\n")
-      (insert "### 快速创建（无交互）\n")
-      (insert "- `C-c a P` 快速创建论文（自动命名）\n")
-      (insert "- `C-c a N` 快速创建笔记（自动命名）\n\n")
-      (insert "### 管理功能\n")
-      (insert "- `C-c a b` 管理参考文献\n")
-      (insert "- `C-c a d` 打开仪表板\n")
-      (insert "- `C-c a i` 插入文献引用\n\n")
-      (insert "## 文献工作流\n")
+      (insert "# 学术写作仪表板\n\n")
+      (insert "## 快速入口\n")
+      (insert "- `C-c a n` 想法卡（轻量 note）\n")
+      (insert "- `C-c a r` 阅读卡\n")
+      (insert "- `C-c a j` 研究项目页\n")
+      (insert "- `C-c a p` 论文草稿\n")
+      (insert "- `C-c a c` 会议摘要\n")
+      (insert "- `C-c a b` 初始化 bibliography / PDFs\n")
+      (insert "- `C-c a i` 插入引用\n\n")
+      (insert "## 路径\n")
       (insert (format "- BibTeX: `%s`\n" org-academic-bibliography-file))
-      (insert (format "- PDF: `%s`\n" org-academic-library-dir))
-      (insert (format "- 文献笔记: `%s`\n" org-academic-literature-notes-dir))
-      (insert (format "- Org-roam: `%s`\n\n" org-academic-org-roam-dir))
-      
-      (insert "## 最近论文\n")
-      (when (file-exists-p org-academic-papers-dir)
-        (let ((files (directory-files org-academic-papers-dir nil "\\.org$")))
-          (if files
-              (dolist (file (seq-take files 5))
-                (insert (format "- [[file:%s/%s][%s]]\n" 
-                               org-academic-papers-dir file file)))
-            (insert "- 暂无文档\n"))))
-      
-      (insert "\n## 最近笔记\n")
-      (when (file-exists-p org-academic-notes-dir)
-        (let ((files (directory-files org-academic-notes-dir nil "\\.org$")))
-          (if files
-              (dolist (file (seq-take files 5))
-                (insert (format "- [[file:%s/%s][%s]]\n" 
-                               org-academic-notes-dir file file)))
-            (insert "- 暂无笔记\n"))))
-      
-      (insert "\n---\n")
+      (insert (format "- PDFs: `%s`\n" org-academic-library-dir))
+      (insert (format "- Ideas: `%s`\n" org-academic-ideas-dir))
+      (insert (format "- Reading: `%s`\n" org-academic-reading-dir))
+      (insert (format "- Projects: `%s`\n" org-academic-projects-dir))
+      (insert (format "- Papers: `%s`\n\n" org-academic-papers-dir))
+      (org-academic--insert-file-list "Ideas" org-academic-ideas-dir)
+      (org-academic--insert-file-list "Reading Notes" org-academic-reading-dir)
+      (org-academic--insert-file-list "Projects" org-academic-projects-dir)
+      (org-academic--insert-file-list "Papers" org-academic-papers-dir)
+      (insert "---\n")
       (insert "*提示：按 `q` 退出此缓冲区*")
-      
       (org-mode)
       (goto-char (point-min))
-      (local-set-key (kbd "q") 'kill-this-buffer))
+      (local-set-key (kbd "q") #'kill-this-buffer))
     (switch-to-buffer dashboard-buffer)))
 
 ;; =============================================================================
-;; 快捷键绑定 - 简化版
+;; Minor mode and initialization
 
 (defvar org-academic-mode-map
   (let ((map (make-sparse-keymap)))
-    ;; 基础创建命令（需要输入标题）
-    (define-key map (kbd "C-c a p") 'org-academic-create-paper)
-    (define-key map (kbd "C-c a n") 'org-academic-create-research-note)
-    (define-key map (kbd "C-c a c") 'org-academic-create-conference-abstract)
-    
-    ;; 快速创建命令（无交互）
-    (define-key map (kbd "C-c a P") 'org-academic-quick-paper)
-    (define-key map (kbd "C-c a N") 'org-academic-quick-note)
-    
-    ;; 管理功能
-    (define-key map (kbd "C-c a b") 'org-academic-setup-bibliography)
-    (define-key map (kbd "C-c a d") 'org-academic-dashboard)
-    (define-key map (kbd "C-c a i") 'org-academic-insert-citation)
+    (define-key map (kbd "C-c a n") #'org-academic-create-idea-note)
+    (define-key map (kbd "C-c a r") #'org-academic-create-reading-note)
+    (define-key map (kbd "C-c a j") #'org-academic-create-project-note)
+    (define-key map (kbd "C-c a p") #'org-academic-create-paper)
+    (define-key map (kbd "C-c a c") #'org-academic-create-conference-abstract)
+    (define-key map (kbd "C-c a P") #'org-academic-quick-paper)
+    (define-key map (kbd "C-c a N") #'org-academic-quick-note)
+    (define-key map (kbd "C-c a b") #'org-academic-setup-bibliography)
+    (define-key map (kbd "C-c a d") #'org-academic-dashboard)
+    (define-key map (kbd "C-c a i") #'org-academic-insert-citation)
     map)
-  "学术写作模式快捷键映射")
+  "Keymap for `org-academic-mode'.")
 
 (define-minor-mode org-academic-mode
-  "学术写作辅助模式 - 简化版"
+  "Academic writing helper mode."
   :lighter " Academic"
   :keymap org-academic-mode-map
   :global t)
 
-;; =============================================================================
-;; 初始化 - 简化版
-
 (defun org-academic-init ()
-  "初始化学术写作环境"
+  "Initialize the academic writing environment."
   (interactive)
-  
-  ;; 创建必要的目录
-  (unless (file-exists-p org-academic-directory)
-    (make-directory org-academic-directory t))
-  (unless (file-exists-p org-academic-papers-dir)
-    (make-directory org-academic-papers-dir t))
-  (unless (file-exists-p org-academic-notes-dir)
-    (make-directory org-academic-notes-dir t))
-  (unless (file-exists-p org-academic-library-dir)
-    (make-directory org-academic-library-dir t))
-  (unless (file-exists-p org-academic-literature-notes-dir)
-    (make-directory org-academic-literature-notes-dir t))
-  (unless (file-exists-p org-academic-org-roam-dir)
-    (make-directory org-academic-org-roam-dir t))
+  (org-academic--ensure-dirs)
   (org-academic-configure-citations)
-  
-  ;; 启用学术写作模式
   (org-academic-mode 1)
-  
   (message "✓ 学术写作环境初始化完成"))
 
-;; 自动初始化
-(add-hook 'org-mode-hook 
+(add-hook 'org-mode-hook
           (lambda ()
             (when (string-match-p "/Academic/" (or buffer-file-name ""))
               (org-academic-mode 1))))

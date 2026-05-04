@@ -52,8 +52,6 @@
         ("" "graphicx" t)
         ("" "grffile" t)
         ("" "longtable" nil)
-        ("" "wrapfig" nil)
-        ("" "rotating" nil)
         ("normalem" "ulem" t)
         ("" "amsmath" t)
         ("" "textcomp" t)
@@ -252,11 +250,17 @@ not pop a buffer or require pdf-tools."
               (if program-path
                   (insert (format "✅ %s 可用: %s\n" program program-path))
                 (insert (format "❌ %s 未找到\n" program)))))
-          (if-let ((ctex-path (org-latex--kpsewhich "ctex.sty")))
-              (insert (format "✅ ctex.sty 可用: %s\n" ctex-path))
-            (insert (if (executable-find "kpsewhich")
-                        "❌ ctex.sty 未找到\n"
-                      "❌ 无法检查 ctex.sty：kpsewhich 未找到\n"))))
+          (insert "\n基础 LaTeX 包检查:\n")
+          (if (executable-find "kpsewhich")
+              (dolist (pkg '("ctex.sty" "xeCJK.sty" "longtable.sty" "ulem.sty"
+                             "wrapfig.sty" "rotating.sty"))
+                (if-let ((pkg-path (org-latex--kpsewhich pkg)))
+                    (insert (format "✅ %s 可用: %s\n" pkg pkg-path))
+                  (insert (format "⚠️ %s 未找到（当前默认导出不强依赖）\n" pkg))))
+            (insert (concat
+                     "❌ 无法检查 LaTeX 包：kpsewhich 未找到\n"
+                     "   macOS TeX Live 通常位于 /Library/TeX/texbin；"
+                     "请确认该目录已进入 Emacs 的 exec-path/PATH。\n"))))
 
         ;; 检查实验 LaTeX Diary 主题资源
         (insert "\nLaTeX Diary 实验主题检查（非 Journal 默认依赖）:\n")

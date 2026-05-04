@@ -90,9 +90,30 @@
 (defcustom henri-org-enable-html t
   "Enable Org HTML export theming module."
   :type 'boolean :group 'henri-writing)
+(defcustom henri-org-enable-roam t
+  "Enable Org-roam knowledge base module."
+  :type 'boolean :group 'henri-writing)
 (defcustom henri-org-enable-academic t
   "Enable Org academic writing module."
   :type 'boolean :group 'henri-writing)
+
+(defcustom henri-org-roam-directory
+  (if (boundp 'henri-notes-directory)
+      (expand-file-name "Roam" (expand-file-name henri-notes-directory))
+    (expand-file-name "~/Documents/EmacsNotes/Roam"))
+  "Root directory for the general Org-roam knowledge base."
+  :type 'directory
+  :group 'henri-writing)
+
+(defcustom henri-org-roam-enable-citar-integration nil
+  "Enable optional Citar Org-roam integration when packages are available.
+
+The default literature-note source is Academic/Reading via
+`org-academic-literature-notes-dir'.  Set this to non-nil only when you
+intentionally want Citar note creation to be handled by `citar-org-roam'
+under `henri-org-roam-directory'/references."
+  :type 'boolean
+  :group 'henri-writing)
 
 ;; Markdown sub-module toggles -----------------------------------------------
 (defcustom henri-md-enable-export t
