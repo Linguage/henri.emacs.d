@@ -306,7 +306,11 @@
 | `C-c C-l` | org-insert-link | 插入链接 |
 | `C-c C-t` | org-todo | 切换 TODO 状态 |
 | `C-c a` | org-agenda | 打开议程 |
-| `C-c c` | org-capture | 快速创建日志 |
+| `C-c c` | org-capture | 快速捕获任务 / 日志 |
+| `C-c o a` | henri/org-agenda-dashboard | 今日 GTD Dashboard |
+| `C-c o i` | henri/open-agenda-inbox | 打开 agenda inbox |
+| `C-c o t` | henri/open-agenda-tasks | 打开 tasks |
+| `C-c o p` | henri/open-agenda-projects | 打开 projects |
 
 #### Org Mode - 视图控制
 

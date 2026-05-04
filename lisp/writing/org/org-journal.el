@@ -20,7 +20,67 @@
 
 ;; 基础 Org Journal 设置
 (require 'org)
+(require 'org-agenda)
 (require 'ox)
+
+;; =============================================================================
+;; 轻量 GTD Agenda 配置
+
+(defvar henri-agenda-directory
+  (expand-file-name "agenda/" (expand-file-name henri-notes-directory))
+  "Directory for Henri's GTD agenda files.")
+
+(defun henri-agenda-file (name)
+  "Return absolute path for agenda file NAME."
+  (expand-file-name name henri-agenda-directory))
+
+(defun henri-agenda-files ()
+  "Return the task-focused files used by the main Org agenda."
+  (mapcar #'henri-agenda-file
+          '("inbox.org" "tasks.org" "projects.org" "someday.org")))
+
+(defun henri-agenda--file-title (file)
+  "Return a human-friendly title for agenda FILE."
+  (pcase (file-name-base file)
+    ("inbox" "Inbox")
+    ("tasks" "Tasks")
+    ("projects" "Projects")
+    ("someday" "Someday")
+    (_ (capitalize (file-name-base file)))))
+
+(defun henri-agenda-ensure-files ()
+  "Create Henri's agenda directory and core Org files when missing."
+  (make-directory henri-agenda-directory t)
+  (dolist (file (henri-agenda-files))
+    (unless (file-exists-p file)
+      (write-region
+       (format "#+TITLE: %s\n#+STARTUP: content\n\n"
+               (henri-agenda--file-title file))
+       nil file nil 'silent))))
+
+(defun henri-agenda-refresh-files ()
+  "Refresh `org-agenda-files' from Henri's task-focused agenda files."
+  (interactive)
+  (henri-agenda-ensure-files)
+  (setq org-agenda-files (henri-agenda-files)))
+
+(defun henri/open-agenda-inbox ()
+  "Open the GTD inbox file."
+  (interactive)
+  (henri-agenda-ensure-files)
+  (find-file (henri-agenda-file "inbox.org")))
+
+(defun henri/open-agenda-tasks ()
+  "Open the GTD tasks file."
+  (interactive)
+  (henri-agenda-ensure-files)
+  (find-file (henri-agenda-file "tasks.org")))
+
+(defun henri/open-agenda-projects ()
+  "Open the GTD projects file."
+  (interactive)
+  (henri-agenda-ensure-files)
+  (find-file (henri-agenda-file "projects.org")))
 
 ;; 设置日志存放目录
 (defvar henri-journal-directory
@@ -177,29 +237,44 @@ KIND must be `diary' (shared file for all journal capture types)."
      "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))))
 
 (defun henri-journal-refresh-agenda-files ()
-  "Refresh `org-agenda-files' from Journal monthlies."
+  "Refresh task agenda files and ensure the current monthly journal exists.
+Journal files stay out of the main `org-agenda-files' and are used only by
+Journal-specific custom agenda commands."
   (interactive)
-  (setq org-agenda-files (delete-dups (henri-journal-agenda-files))))
+  (henri-journal-ensure-monthly-file 'diary)
+  (henri-agenda-refresh-files))
 
-(setq org-default-notes-file (henri-journal-file "notes.org"))
+(henri-agenda-refresh-files)
 
-;; 统一日志模板 - diary / work / study 写入同一月度 journal；模板与 tag 区分
+(setq org-default-notes-file (henri-agenda-file "inbox.org"))
+
+;; 轻量 GTD + 统一日志模板。
+;; diary / work / study 写入同一月度 journal；模板与 tag 区分。
 (setq org-capture-templates
       (append (bound-and-true-p org-capture-templates)
-              '(("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+              `(("t" "快速 TODO" entry (file ,(henri-agenda-file "inbox.org"))
+                 "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
+                 :empty-lines 1)
+
+                ("p" "项目 TODO" entry (file ,(henri-agenda-file "projects.org"))
+                 "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
+                 :empty-lines 1)
+
+                ("s" "Someday" entry (file ,(henri-agenda-file "someday.org"))
+                 "* TODO %? :SOMEDAY:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
+                 :empty-lines 1)
+
+                ("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
                  "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
                  :empty-lines 1)
 
                 ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-                 "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** TODO 列表\n- [ ] \n"
+                 "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** 待办记录\n"
                  :empty-lines 1)
 
-                ("s" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+                ("l" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
                  "*** %U %? :journal:study:\n%i\n**** 主题\n\n**** 概念\n\n**** 解读\n\n**** 类别\n\n"
                  :empty-lines 1))))
-
-;; 设置 Org-mode 的 Agenda 文件 - 统一路径命名
-(henri-journal-refresh-agenda-files)
 
 ;; Journal 自动保存 -----------------------------------------------------------
 (defvar-local henri-journal--auto-save-timer nil
@@ -301,42 +376,78 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 
 ;; 统一 Agenda 视图名称和结构
 (setq org-agenda-custom-commands
-      '(("j" "日志概览"
+      '(("d" "今日 Dashboard"
+         ((agenda "" ((org-agenda-span 'day)
+                      (org-agenda-start-day nil)
+                      (org-agenda-overriding-header "今日安排:")))
+          (todo "DOING"
+                ((org-agenda-overriding-header "进行中:")))
+          (todo "WAITING"
+                ((org-agenda-overriding-header "等待中:")))
+          (tags-todo "CATEGORY=\"inbox\""
+                     ((org-agenda-overriding-header "Inbox:"))))
+         ((org-agenda-compact-blocks t)))
+
+        ("w" "本周计划"
          ((agenda "" ((org-agenda-span 'week)
                       (org-agenda-start-on-weekday nil)
-                      (org-agenda-show-all-dates t)))
+                      (org-agenda-overriding-header "本周安排:")))
+          (todo "DOING"
+                ((org-agenda-overriding-header "进行中:")))
+          (todo "WAITING"
+                ((org-agenda-overriding-header "等待中:"))))
+         ((org-agenda-compact-blocks t)))
+
+        ("p" "项目任务"
+         ((tags-todo "CATEGORY=\"projects\""
+                     ((org-agenda-overriding-header "项目任务:"))))
+         ((org-agenda-compact-blocks t)))
+
+        ("i" "Inbox 清理"
+         ((tags-todo "CATEGORY=\"inbox\""
+                     ((org-agenda-overriding-header "Inbox:"))))
+         ((org-agenda-compact-blocks t)))
+
+        ("j" "日志概览"
+         ((agenda "" ((org-agenda-span 'week)
+                      (org-agenda-start-on-weekday nil)
+                      (org-agenda-show-all-dates t)
+                      (org-agenda-files (henri-journal-agenda-files))))
           (tags "diary"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
+                 (org-agenda-files (henri-journal-agenda-files))
                  (org-agenda-prefix-format "  %i %?-12t% s")
                  (org-agenda-overriding-header "📔 个人日记:")))
           (tags "work"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
+                 (org-agenda-files (henri-journal-agenda-files))
                  (org-agenda-prefix-format "  %i %?-12t% s")
                  (org-agenda-overriding-header "💼 工作记录:")))
           (tags "study"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
+                 (org-agenda-files (henri-journal-agenda-files))
                  (org-agenda-prefix-format "  %i %?-12t% s")
-                 (org-agenda-overriding-header "📚 学习卡片:")))
-          (todo ""
-                ((org-agenda-files org-agenda-files)
-                 (org-agenda-overriding-header "📝 所有待办事项:"))))
+                 (org-agenda-overriding-header "📚 学习卡片:"))))
          ((org-agenda-compact-blocks t)))
-        
-        ("d" "个人日记"
+
+        ("J" "个人日记"
          ((tags "diary"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
+                 (org-agenda-files (henri-journal-agenda-files))
                  (org-agenda-overriding-header "📔 个人日记条目:"))))
          ((org-agenda-compact-blocks t)))
-        
-        ("w" "工作记录"
+
+        ("W" "工作记录"
          ((tags "work"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
+                 (org-agenda-files (henri-journal-agenda-files))
                  (org-agenda-overriding-header "💼 工作记录:"))))
          ((org-agenda-compact-blocks t)))
-        
-        ("s" "学习卡片"
+
+        ("L" "学习卡片"
          ((tags "study"
                 ((org-agenda-sorting-strategy '(time-up priority-down))
+                 (org-agenda-files (henri-journal-agenda-files))
                  (org-agenda-overriding-header "📚 学习卡片:"))))
          ((org-agenda-compact-blocks t)))))
 
@@ -371,8 +482,17 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 ;; =============================================================================
 ;; 快捷键设置
 
-(global-set-key (kbd "C-c c") 'org-capture)            ;; 快速创建日志
+(defun henri/org-agenda-dashboard ()
+  "Open Henri's daily GTD dashboard."
+  (interactive)
+  (org-agenda nil "d"))
+
+(global-set-key (kbd "C-c c") 'org-capture)            ;; 快速捕获
 (global-set-key (kbd "C-c a") 'org-agenda)             ;; 打开议程视图
+(global-set-key (kbd "C-c o a") 'henri/org-agenda-dashboard) ;; 今日 Dashboard
+(global-set-key (kbd "C-c o i") 'henri/open-agenda-inbox)     ;; 打开 Inbox
+(global-set-key (kbd "C-c o t") 'henri/open-agenda-tasks)     ;; 打开 Tasks
+(global-set-key (kbd "C-c o p") 'henri/open-agenda-projects)  ;; 打开 Projects
 (global-set-key (kbd "C-c j s") 'henri/search-journal)      ;; 搜索日志
 (global-set-key (kbd "C-c j d") 'henri/view-diary-by-date)  ;; 直接查看个人日记
 
