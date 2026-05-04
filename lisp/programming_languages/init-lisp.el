@@ -119,7 +119,7 @@
       (indent-region (point-min) (point-max))))
   
   :bind (:map lisp-mode-map
-              ("C-c f" . my/format-lisp-buffer)))
+              ("C-c e f" . my/format-lisp-buffer)))
 
 ;; =============================================================================
 ;; 代码导航与文档查看

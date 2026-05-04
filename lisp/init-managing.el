@@ -188,35 +188,14 @@
 (use-package which-key
   :ensure t
   :config
-  (which-key-mode)
-  (which-key-add-key-based-replacements
-    "C-c f" "henri/find"
-    "C-c g" "henri/git"
-    "C-c h" "henri/html"
-    "C-c j" "henri/journal"
-    "C-c m" "henri/markdown"
-    "C-c m e" "henri/md-export"
-    "C-c m t" "henri/md-toc"
-    "C-c m T" "henri/md-template"
-    "C-c m i" "henri/md-insert"
-    "C-c m s" "henri/md-theme"
-    "C-c o" "henri/org"
-    "C-c v" "henri/vc-diff"
-    "C-c w e" "henri/vterm"
-    "C-c w E" "henri/eshell"
-    "C-c w v" "henri/vterm"
-    "C-c w" "henri/window-terminal"
-    "C-c F" "henri/font"
-    "C-c ^" "henri/smerge"
-    "C-c e" "henri/eglot"
-    "C-c n" "henri/roam"))
+  (which-key-mode))
 
 ;; =============================================================================
 ;; 手动控制选项快捷键
 (global-set-key (kbd "C-c w l") #'henri/setup-window-layout)  ; 手动触发窗口布局
-(global-set-key (kbd "C-c w e") #'henri/vterm)                ; 主力终端
+(global-set-key (kbd "C-c w e") #'eshell)                     ; 备用 eshell
 (global-set-key (kbd "C-c w v") #'henri/vterm)                ; 主力终端
-(global-set-key (kbd "C-c w E") #'eshell)                     ; 备用 eshell
+(global-set-key (kbd "C-c w E") #'eshell)                     ; legacy explicit eshell
 
 ;; =============================================================================
 ;; Git：Magit + 边距/ fringe 变更提示（diff-hl）+ 合并冲突（smerge）
@@ -241,9 +220,9 @@
 (use-package diff-hl
   :ensure t
   :bind (:map diff-hl-mode-map
-         ("C-c v p" . diff-hl-previous-hunk)
-         ("C-c v n" . diff-hl-next-hunk)
-         ("C-c v r" . diff-hl-revert-hunk))
+         ("C-c g p" . diff-hl-previous-hunk)
+         ("C-c g n" . diff-hl-next-hunk)
+         ("C-c g r" . diff-hl-revert-hunk))
   :init
   (add-hook
    'henri-first-file-hook
@@ -269,12 +248,19 @@
 (add-hook 'find-file-hook #'henri/maybe-enable-smerge)
 
 (with-eval-after-load 'smerge-mode
-  (define-key smerge-mode-map (kbd "C-c ^ n") #'smerge-next)
-  (define-key smerge-mode-map (kbd "C-c ^ p") #'smerge-prev)
-  (define-key smerge-mode-map (kbd "C-c ^ u") #'smerge-keep-upper)
-  (define-key smerge-mode-map (kbd "C-c ^ l") #'smerge-keep-lower)
-  (define-key smerge-mode-map (kbd "C-c ^ b") #'smerge-keep-base)
-  (define-key smerge-mode-map (kbd "C-c ^ a") #'smerge-keep-all))
+  (define-key smerge-mode-map (kbd "C-c g m n") #'smerge-next)
+  (define-key smerge-mode-map (kbd "C-c g m p") #'smerge-prev)
+  (define-key smerge-mode-map (kbd "C-c g m u") #'smerge-keep-upper)
+  (define-key smerge-mode-map (kbd "C-c g m l") #'smerge-keep-lower)
+  (define-key smerge-mode-map (kbd "C-c g m b") #'smerge-keep-base)
+  (define-key smerge-mode-map (kbd "C-c g m a") #'smerge-keep-all)
+  (when (bound-and-true-p henri-keybindings-enable-legacy-aliases)
+    (define-key smerge-mode-map (kbd "C-c ^ n") #'smerge-next)
+    (define-key smerge-mode-map (kbd "C-c ^ p") #'smerge-prev)
+    (define-key smerge-mode-map (kbd "C-c ^ u") #'smerge-keep-upper)
+    (define-key smerge-mode-map (kbd "C-c ^ l") #'smerge-keep-lower)
+    (define-key smerge-mode-map (kbd "C-c ^ b") #'smerge-keep-base)
+    (define-key smerge-mode-map (kbd "C-c ^ a") #'smerge-keep-all)))
 
 ;; ================================
 ;; centaur-tabs 迁移到 styling，保持此处不重复定义（保留函数引用）。

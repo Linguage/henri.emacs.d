@@ -408,22 +408,20 @@ THEME-NAME 是要使用的主题名称。
 ;; 快捷键设置
 
 (with-eval-after-load 'org
-  ;; 原有的快捷键
-  (define-key org-mode-map (kbd "C-c h t") 'henri/org-html-set-theme)
-  (define-key org-mode-map (kbd "C-c h d") 'henri/org-html-apply-default-theme)
-  (define-key org-mode-map (kbd "C-c h e") 'henri/org-html-export-and-open)
-  (define-key org-mode-map (kbd "C-c h w") 'henri/org-html-export-with-theme)
-  (define-key org-mode-map (kbd "C-c h c") 'henri/org-html-add-custom-css)
-  (define-key org-mode-map (kbd "C-c h r") 'henri/org-html-remove-theme)
-  (define-key org-mode-map (kbd "C-c h i") 'henri/org-html-install-themes)
-  (define-key org-mode-map (kbd "C-c h k") 'henri/org-html-check-local-themes)
+  (define-key org-mode-map (kbd "C-c m h t") 'henri/org-html-set-theme)
+  (define-key org-mode-map (kbd "C-c m h d") 'henri/org-html-apply-default-theme)
+  (define-key org-mode-map (kbd "C-c m h e") 'henri/org-html-export-and-open)
+  (define-key org-mode-map (kbd "C-c m h w") 'henri/org-html-export-with-theme)
+  (define-key org-mode-map (kbd "C-c m h c") 'henri/org-html-add-custom-css)
+  (define-key org-mode-map (kbd "C-c m h r") 'henri/org-html-remove-theme)
+  (define-key org-mode-map (kbd "C-c m h i") 'henri/org-html-install-themes)
+  (define-key org-mode-map (kbd "C-c m h k") 'henri/org-html-check-local-themes)
   
-  ;; 新增的简化快捷键
-  (define-key org-mode-map (kbd "C-c h s") 'henri/org-html-apply-theme-by-shortcut)  ; 快捷方式
-  (define-key org-mode-map (kbd "C-c h ?") 'henri/org-html-show-theme-shortcuts)     ; 显示帮助
-  (define-key org-mode-map (kbd "C-c h 1") 'henri/org-html-theme-1)                 ; 主题1
-  (define-key org-mode-map (kbd "C-c h 2") 'henri/org-html-theme-2)                 ; 主题2
-  (define-key org-mode-map (kbd "C-c h 0") 'henri/org-html-theme-default))          ; 默认主题
+  (define-key org-mode-map (kbd "C-c m h s") 'henri/org-html-apply-theme-by-shortcut)
+  (define-key org-mode-map (kbd "C-c m h ?") 'henri/org-html-show-theme-shortcuts)
+  (define-key org-mode-map (kbd "C-c m h 1") 'henri/org-html-theme-1)
+  (define-key org-mode-map (kbd "C-c m h 2") 'henri/org-html-theme-2)
+  (define-key org-mode-map (kbd "C-c m h 0") 'henri/org-html-theme-default))
 
 ;; =============================================================================
 ;; 全局主题应用（可在任何地方使用）

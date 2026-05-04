@@ -90,10 +90,10 @@
 ;; 键位与 which-key 提示
 
 (with-eval-after-load 'pdf-tools
-  (define-key pdf-view-mode-map (kbd "C-c m c") #'henri/pdf-check-deps)
+  (define-key pdf-view-mode-map (kbd "C-c m d c") #'henri/pdf-check-deps)
   ;; 主题反色（夜间阅读）
   (when (fboundp 'pdf-view-midnight-mode)
-    (define-key pdf-view-mode-map (kbd "C-c m n") #'pdf-view-midnight-mode)))
+    (define-key pdf-view-mode-map (kbd "C-c m d n") #'pdf-view-midnight-mode)))
 
 (provide 'pdf-base)
 

@@ -193,11 +193,11 @@
     (octave-send-string "dbcont"))
   
   ;; 绑定调试快捷键
-  (define-key octave-mode-map (kbd "<f9>") 'octave-set-breakpoint)
-  (define-key octave-mode-map (kbd "S-<f9>") 'octave-clear-breakpoints)
-  (define-key octave-mode-map (kbd "<f10>") 'octave-step-debug)
-  (define-key octave-mode-map (kbd "<f11>") 'octave-continue-debug)
-  (define-key octave-mode-map (kbd "C-<f5>") 'octave-debug-file))
+  (define-key octave-mode-map (kbd "C-c d b") 'octave-set-breakpoint)
+  (define-key octave-mode-map (kbd "C-c d B") 'octave-clear-breakpoints)
+  (define-key octave-mode-map (kbd "C-c d s") 'octave-step-debug)
+  (define-key octave-mode-map (kbd "C-c d c") 'octave-continue-debug)
+  (define-key octave-mode-map (kbd "C-c d r") 'octave-debug-file))
 
 ;; =============================================================================
 ;; Octave 代码格式化配置

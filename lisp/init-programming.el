@@ -224,11 +224,11 @@
   :config
   (require 'realgud)
   ;; 调试快捷键设置
-  :bind (("<f6>" . realgud:pdb)
-         ("<f9>" . realgud:cmd-break)
-         ("<f10>" . realgud:cmd-step-over)
-         ("<f11>" . realgud:cmd-step)
-         ("<f12>" . realgud:cmd-next)))
+  :bind (("C-c d p" . realgud:pdb)
+         ("C-c d b" . realgud:cmd-break)
+         ("C-c d o" . realgud:cmd-step-over)
+         ("C-c d s" . realgud:cmd-step)
+         ("C-c d n" . realgud:cmd-next)))
 
 ;; =============================================================================
 ;; 代码运行工具配置
@@ -237,7 +237,7 @@
 (use-package quickrun
   :ensure t
   :commands (quickrun)
-  :bind ("<f5>" . quickrun)
+  :bind ("C-c d r" . quickrun)
   :init
   (setq quickrun-shell henri-shell)
   :config

@@ -115,6 +115,7 @@
 ;; =============================================================================
 ;; 加载核心配置模块
 (require 'init-managing)
+(require 'init-keys)
 (require 'init-styling)
 (require 'init-programming)
 (require 'init-writing)

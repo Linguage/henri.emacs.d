@@ -116,7 +116,7 @@ Lisp 是 Emacs 的亲生语言，在 Emacs 中配置优秀的 Lisp 开发环境�
       (indent-region (point-min) (point-max))))
   
   :bind (:map lisp-mode-map
-              ("C-c f" . my/format-lisp-buffer)))
+              ("C-c e f" . my/format-lisp-buffer)))
 
 ;; =============================================================================
 ;; 代码导航与文档查看

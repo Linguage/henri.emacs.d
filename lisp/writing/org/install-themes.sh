@@ -41,7 +41,7 @@ if git clone https://github.com/fniessen/org-html-themes.git "$THEMES_DIR"; then
     echo ""
     echo "注意: 上游仓库不含 Henri Bearblog；若需 Bearblog 请使用本仓库内的 org-html-themes 或自行合并。"
     echo "用法: Emacs 中 org-html 主题由 henri-org-html-themes-directory 指向该目录；"
-    echo "      C-c h d / C-c h t 切换主题，C-c h e 导出 HTML。"
+    echo "      C-c m h d / C-c m h t 切换主题，C-c m h e 导出 HTML。"
 else
     echo "克隆失败，请检查网络"
     exit 1

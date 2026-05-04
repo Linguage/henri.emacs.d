@@ -149,11 +149,11 @@
 
 (defun latex-themes-setup-keybindings ()
   "设置主题相关快捷键"
-  (local-set-key (kbd "C-c t i") 'latex-themes-insert-theme)
-  (local-set-key (kbd "C-c t c") 'latex-themes-create-custom-theme)
-  (local-set-key (kbd "C-c t e") 'latex-themes-edit-custom-theme)
-  (local-set-key (kbd "C-c t p") 'latex-themes-preview-theme)
-  (local-set-key (kbd "C-c t l") 'latex-themes-list-available))
+  (local-set-key (kbd "C-c m i") 'latex-themes-insert-theme)
+  (local-set-key (kbd "C-c m c") 'latex-themes-create-custom-theme)
+  (local-set-key (kbd "C-c m e") 'latex-themes-edit-custom-theme)
+  (local-set-key (kbd "C-c m p") 'latex-themes-preview-theme)
+  (local-set-key (kbd "C-c m l") 'latex-themes-list-available))
 
 ;; 在 LaTeX 模式中自动设置主题快捷键
 (add-hook 'LaTeX-mode-hook #'latex-themes-setup-keybindings)

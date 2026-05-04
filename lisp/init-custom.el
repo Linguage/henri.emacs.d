@@ -77,6 +77,15 @@
   "Enable emacs-rime input method integration."
   :type 'boolean :group 'henri-writing)
 
+(defcustom henri-keybindings-enable-legacy-aliases t
+  "Enable short-lived compatibility aliases for migrated keybindings.
+
+Aliases are only kept where they do not shadow Org/Emacs convention
+keys.  High-conflict keys such as `C-c a', `C-c l', and `C-c C-b' are
+released immediately."
+  :type 'boolean
+  :group 'henri-core)
+
 ;; Org sub-module toggles ----------------------------------------------------
 (defcustom henri-org-enable-base t
   "Enable base Org configuration module (required for others)."

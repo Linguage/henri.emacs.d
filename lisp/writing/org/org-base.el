@@ -244,10 +244,10 @@ do NOT scatter set-face-attribute calls elsewhere."
 (global-set-key (kbd "C-c o v") 'henri/cycle-org-startup-folded)
 
 (with-eval-after-load 'org
-  (define-key org-mode-map (kbd "C-c C-b") 'henri/toggle-org-bullets)
-  (define-key org-mode-map (kbd "C-c v s") 'henri/org-show-all)
-  (define-key org-mode-map (kbd "C-c v o") 'henri/org-overview)
-  (define-key org-mode-map (kbd "C-c v c") 'henri/org-content))
+  (define-key org-mode-map (kbd "C-c m v b") 'henri/toggle-org-bullets)
+  (define-key org-mode-map (kbd "C-c m v s") 'henri/org-show-all)
+  (define-key org-mode-map (kbd "C-c m v o") 'henri/org-overview)
+  (define-key org-mode-map (kbd "C-c m v c") 'henri/org-content))
 
 (provide 'org-base)
 

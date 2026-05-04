@@ -42,15 +42,17 @@
 | 前缀 | 域 | 典型入口 |
 |------|----|----------|
 | `C-c c` | capture | `C-c c t` 快速 TODO、`C-c c d` 个人日记 |
-| `C-c a` | agenda / academic | `C-c a` agenda 分发、`C-c a n` 想法卡、`C-c a p` 论文 |
+| `C-c a` | agenda | 打开 Org Agenda 分发 |
+| `C-c A` | academic | `C-c A n` 想法卡、`C-c A p` 论文 |
 | `C-c f` | find / file tree | `C-c f n` 查找 Notes 文件、`C-c f p` 打开项目文件树 |
 | `C-c n` | Org-roam | `C-c n f` 查找节点、`C-c n i` 插入链接、`C-c n j` daily |
 | `C-c o` | Org 视图 | `C-c o a` 今日 Dashboard、`C-c o i` Inbox |
-| `C-c h` | HTML 主题 | `C-c h t` 选主题、`C-c h e` 导出并打开 |
-| `C-c l` | LaTeX / PDF | `C-c l q` 快速 PDF、`C-c l d` 诊断 |
-| `C-c m` | Markdown | `C-c m p` 预览、`C-c m e p` 导出 PDF |
-| `C-c g` | Git（Magit） | `C-c g g` 状态、`C-c g b` blame |
-| `C-c v` | 版本控制 / 视图 | `C-c v n/p` diff-hl hunk 跳转 |
+| `C-c h` | help / doctor | `C-c h d` 自检 |
+| `C-c l` | store-link | 保留给 Org link |
+| `C-c m` | mode-local | Markdown 预览；Org 中 `C-c m h/l/v` |
+| `C-c g` | Git | `C-c g g` 状态、`C-c g n/p` hunk 跳转 |
+| `C-c w` | window / terminal | `C-c w e` eshell、`C-c w v` vterm |
+| `C-c d` | debug/run | `C-c d r` quickrun |
 | `C-c e` | Eglot | `C-c e f` 格式化 |
 
 ## 系统要求

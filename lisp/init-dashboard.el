@@ -101,7 +101,7 @@
         (insert "  C-c f p  Open project tree\n")
         (insert "  C-c c    Org capture\n")
         (insert "  C-c a    Org agenda\n")
-        (insert "  C-c h 0  Apply default HTML theme\n")
+        (insert "  C-c m h 0  Apply default HTML theme\n")
         (goto-char (point-min))
         (special-mode)
         (setq-local display-line-numbers nil)

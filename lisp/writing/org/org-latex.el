@@ -317,7 +317,7 @@ not pop a buffer or require pdf-tools."
         (insert "3. 使用英文文档类: #+LATEX_CLASS: article-safe\n")
         (insert "4. 使用中文文档类: #+LATEX_CLASS: ctexart\n")
         (insert "5. 重新加载配置: M-x org-latex-reload-config\n")
-        (insert "6. 快速导出: C-c l q\n")
+        (insert "6. 快速导出: C-c m l q\n")
         
         (goto-char (point-min)))
       (display-buffer diagnosis-buffer)))
@@ -337,11 +337,11 @@ not pop a buffer or require pdf-tools."
 
 (defun org-latex-setup-keybindings ()
   "设置 org-latex 相关快捷键"
-  (local-set-key (kbd "C-c l t") 'org-latex-apply-theme)
-  (local-set-key (kbd "C-c l p") 'org-export-pdf-with-theme)
-  (local-set-key (kbd "C-c l q") 'org-export-pdf-quick)
-  (local-set-key (kbd "C-c l d") 'org-latex-diagnose-fonts)
-  (local-set-key (kbd "C-c l r") 'org-latex-reload-config))
+  (local-set-key (kbd "C-c m l t") 'org-latex-apply-theme)
+  (local-set-key (kbd "C-c m l p") 'org-export-pdf-with-theme)
+  (local-set-key (kbd "C-c m l q") 'org-export-pdf-quick)
+  (local-set-key (kbd "C-c m l d") 'org-latex-diagnose-fonts)
+  (local-set-key (kbd "C-c m l r") 'org-latex-reload-config))
 
 (add-hook 'org-mode-hook #'org-latex-setup-keybindings)
 

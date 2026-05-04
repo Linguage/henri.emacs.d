@@ -22,16 +22,16 @@
 - **编译**：`.tex` 文件使用 AUCTeX 的 `LatexMk XeLaTeX`；Org PDF 导出使用 `latexmk -xelatex`。
 - **Journal PDF**：`#+LATEX_CLASS: journal` 使用常规 `ctex + geometry` 模板，默认保留目录、不编号、导出到 5 级标题。
 - **Journal 依赖**：若 BasicTeX 缺少主题包，可按诊断提示运行 `tlmgr init-usertree`，然后 `tlmgr --usermode install tikzpagenodes ifoddpage xargs xstring`。
-- **文献工作流**：`C-c a b` 初始化 BibTeX、PDF 与文献笔记目录；`C-c a i` 优先通过 `citar` 插入引用。
+- **文献工作流**：`C-c A b` 初始化 BibTeX、PDF 与文献笔记目录；`C-c A i` 优先通过 `citar` 插入引用。
 - **文献笔记真源**：正式文献阅读卡与 Citar notes 默认落在 `org-academic-literature-notes-dir`（默认 `Academic/Reading/`）；`Roam/references/` 只放通用资料节点。
 - **学术可调路径**：`M-x customize-group RET org-academic` 中维护 `org-academic-bibliography-file`、`org-academic-library-dir`、`org-academic-literature-notes-dir`。
 - **Org-roam 可调路径**：`M-x customize-group RET henri-writing` 中维护 `henri-org-roam-directory`；`henri-org-roam-enable-citar-integration` 默认为 `nil`，只有主动希望 Citar 创建 Roam reference 节点时才开启。
 
 ## 常用入口
 
-- **终端**：`C-c w e` / `C-c w v` 打开主力 `vterm`；`C-c w E` 保留 `eshell` 备用入口。
+- **终端**：`C-c w v` 打开主力 `vterm`；`C-c w e` / `C-c w E` 打开 `eshell`。
 - **文件与项目树**：`C-c f n` 查找 Notes 文件；`C-c f p` 打开当前项目的 NeoTree；`<f8>` 切换 NeoTree。
-- **自检与 HTML**：全局 `C-c h d` 是 `henri/doctor`；在 Org buffer 中，`C-c h d` 被局部绑定为应用默认 HTML 主题。
+- **自检与写作模式键**：全局 `C-c h d` 是 `henri/doctor`；Org buffer 中 HTML 主题走 `C-c m h ...`，LaTeX/PDF 走 `C-c m l ...`，视图走 `C-c m v ...`。
 
 ## 运行时目录（`henri-runtime`）
 
@@ -46,8 +46,8 @@
 ## Git（Magit / diff-hl / 合并）
 
 - **Magit**：`C-x g` 或 `C-c g g` 打开状态；`C-c g d` 总菜单；`C-c g f` 当前文件；`C-c g b` blame；`C-c g l` 当前文件 log。可通过 `henri-enable-magit` 关闭 Magit 块（仍保留 `diff-hl`）。
-- **diff-hl**：有改动的行在 fringe（图形）或 margin（终端）提示；`C-c v n` / `C-c v p` 跳转 hunk，`C-c v r` 还原当前 hunk。
-- **合并冲突**：打开含 `<<<<<<<` 的文件会自动 `smerge-mode`；冲突块内 `C-c ^ n/p` 导航，`C-c ^ u/l/b/a` 取舍。
+- **diff-hl**：有改动的行在 fringe（图形）或 margin（终端）提示；`C-c g n` / `C-c g p` 跳转 hunk，`C-c g r` 还原当前 hunk。
+- **合并冲突**：打开含 `<<<<<<<` 的文件会自动 `smerge-mode`；冲突块内 `C-c g m n/p` 导航，`C-c g m u/l/b/a` 取舍。
 
 ## Markdown 预览
 

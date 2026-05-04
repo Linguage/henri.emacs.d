@@ -13,5 +13,5 @@
 ## 新机器初次使用
 
 1. 读 [writing-system-guide.md](writing-system-guide.md)，确认 Agenda、Journal、Org-roam、Academic 各自放什么。
-2. 记住核心前缀：`C-c c` capture、`C-c a` agenda/academic、`C-c n` roam、`C-c o` org 视图。
-3. 跑 writing guide 末尾的常见检查：`C-c m c`（Markdown）、`C-c h k`（HTML 主题）、`C-c l d`（LaTeX）、`C-c o a`（Agenda）、`C-c n f`（Roam）。
+2. 记住核心前缀：`C-c c` capture、`C-c a` agenda、`C-c A` academic、`C-c n` roam、`C-c o` org 视图、`C-c m` 当前写作缓冲区能力。
+3. 跑 writing guide 末尾的常见检查：`C-c m c`（Markdown）、`C-c m h k`（HTML 主题）、`C-c m l d`（LaTeX）、`C-c o a`（Agenda）、`C-c n f`（Roam）。

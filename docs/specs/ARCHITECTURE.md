@@ -11,6 +11,7 @@
 | customization | [`lisp/init-custom.el`](../../lisp/init-custom.el) | 全部 `defgroup` / `defcustom`：主题策略、模块开关、路径、性能阈值 |
 | visual | [`lisp/visual/`](../../lisp/visual/) | 字体 / 主题包 / UI 组件三分离；`init-visual.el` 统一加载 |
 | managing | [`lisp/init-managing.el`](../../lisp/init-managing.el) | ivy / counsel / swiper / neotree / which-key / Magit / diff-hl |
+| keys | [`lisp/init-keys.el`](../../lisp/init-keys.el) | 全局快捷键治理、which-key 前缀标题、跨模块轻量入口 |
 | programming | [`lisp/init-programming.el`](../../lisp/init-programming.el) | company / eglot / tree-sitter / flycheck；语言桥接 |
 | writing | [`lisp/init-writing.el`](../../lisp/init-writing.el) | Markdown / Org / LaTeX / PDF 总线 |
 | ops | [`lisp/ops/`](../../lisp/ops/) | paths / backup / status / profiles / doctor / lib-* |
@@ -79,7 +80,12 @@
 ## 加载顺序要点
 
 1. `init-custom` 必须早于所有使用 `defcustom` 的模块。
-2. `visual-fonts` 会先于 `init-visual` 被加载一次（`init.el` 先 `require 'lib-fonts`）；`init-visual` 再次 `require` 为幂等。
-3. `paths.el` 的运行时目录创建在 `after-init-hook`；个人写作数据目录/文件只在交互式启动或显式命令中创建，避免 `--batch` 加载污染笔记根目录。
-4. `init-org.el` 中 roam 加载先于 academic，确保 `org-roam-directory` 不被 academic 覆盖。
-5. Org academic 的 `org-academic-init` 通过 `after-init-hook` 延迟执行，避免与 roam 初始化竞争。
+2. `init-keys` 在 `init-managing` 之后加载：which-key 包由 managing 启用，前缀治理由 keys 统一声明。
+3. `visual-fonts` 会先于 `init-visual` 被加载一次（`init.el` 先 `require 'lib-fonts`）；`init-visual` 再次 `require` 为幂等。
+4. `paths.el` 的运行时目录创建在 `after-init-hook`；个人写作数据目录/文件只在交互式启动或显式命令中创建，避免 `--batch` 加载污染笔记根目录。
+5. `init-org.el` 中 roam 加载先于 academic，确保 `org-roam-directory` 不被 academic 覆盖。
+6. Org academic 的 `org-academic-init` 通过 `after-init-hook` 延迟执行，避免与 roam 初始化竞争。
+
+## 快捷键治理
+
+全局快捷键遵循“一前缀一领域”：`C-c a` 只给 agenda，Academic 使用 `C-c A`，Org-roam 独占 `C-c n`，Git 与 hunk/smerge 合并在 `C-c g`，当前 major mode 的写作动作收进 `C-c m`。模式局部绑定保留在对应模块中，`init-keys.el` 只负责前缀标题和少量跨模块入口。迁移任务见 [`docs/jobs/keybindings-refactor.md`](../jobs/keybindings-refactor.md)。

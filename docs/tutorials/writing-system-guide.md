@@ -14,11 +14,12 @@ Writing 系统分成五条线：
 | Journal | 个人日记、工作记录、学习卡片 | `C-c c d/w/l`、`C-c j d` |
 | Org-roam | 长期知识节点、daily、资料、项目地图 | `C-c n f`、`C-c n i`、`C-c n j` |
 | Markdown | 普通文章、笔记、预览、导出 | `*.md` 文件内 `C-c m ...` |
-| Org 导出 | Org 写作、HTML 主题、PDF / LaTeX | `*.org` 文件内 `C-c h ...`、`C-c l ...` |
+| Org 导出 | Org 写作、HTML 主题、PDF / LaTeX | `*.org` 文件内 `C-c m h ...`、`C-c m l ...` |
+| Academic | 学术 idea、reading、project、paper | `C-c A n/r/j/p` |
 
 推荐原则：**任务进 agenda，经历进 Journal，长期知识进 Org-roam，成文内容用 Markdown 或 Org**。不要把所有东西都塞进 Journal，否则 agenda 会重新变吵。
 
-快捷键前缀约定：`C-c n` 只服务 Org-roam；项目文件树走 `C-c f p`；终端走 `C-c w e` / `C-c w v` 打开 vterm，`C-c w E` 保留 eshell。
+快捷键前缀约定：`C-c n` 只服务 Org-roam；`C-c a` 只打开 agenda；Academic 使用大写 `C-c A`；项目文件树走 `C-c f p`；终端走 `C-c w v` 打开 vterm，`C-c w e` / `C-c w E` 打开 eshell。
 
 ---
 
@@ -249,23 +250,23 @@ Org 基础写作使用 Emacs / Org 默认键即可；本配置额外提供视图
 | 快捷键 | 用途 |
 |--------|------|
 | `C-c o v` | 循环切换 Org 启动折叠级别 |
-| `C-c C-b` | 切换 org-bullets |
-| `C-c v s` | 展开所有内容 |
-| `C-c v o` | 只显示大纲 |
-| `C-c v c` | 显示标题结构 |
+| `C-c m v b` | 切换 org-bullets |
+| `C-c m v s` | 展开所有内容 |
+| `C-c m v o` | 只显示大纲 |
+| `C-c m v c` | 显示标题结构 |
 
 ### 7.2 HTML 主题
 
 | 快捷键 | 用途 |
 |--------|------|
-| `C-c h t` | 选择并写入 HTML 主题 |
-| `C-c h d` | 应用默认主题 |
-| `C-c h e` | 导出并打开 HTML |
-| `C-c h w` | 用指定主题导出但不修改源 buffer |
-| `C-c h s` | 用缩写选择主题 |
-| `C-c h ?` | 查看主题缩写 |
-| `C-c h r` | 移除主题 SETUPFILE |
-| `C-c h k` | 检查本地主题文件 |
+| `C-c m h t` | 选择并写入 HTML 主题 |
+| `C-c m h d` | 应用默认主题 |
+| `C-c m h e` | 导出并打开 HTML |
+| `C-c m h w` | 用指定主题导出但不修改源 buffer |
+| `C-c m h s` | 用缩写选择主题 |
+| `C-c m h ?` | 查看主题缩写 |
+| `C-c m h r` | 移除主题 SETUPFILE |
+| `C-c m h k` | 检查本地主题文件 |
 
 主题资源在 [`lisp/writing/org/org-html-themes`](../../lisp/writing/org/org-html-themes)。更多细节见 [html-theme-guide.md](html-theme-guide.md)。
 
@@ -273,11 +274,11 @@ Org 基础写作使用 Emacs / Org 默认键即可；本配置额外提供视图
 
 | 快捷键 | 用途 |
 |--------|------|
-| `C-c l q` | 快速导出 PDF |
-| `C-c l p` | 用指定主题导出 PDF |
-| `C-c l t` | 应用 LaTeX 主题 |
-| `C-c l d` | 诊断 LaTeX 字体和依赖 |
-| `C-c l r` | 重新加载 LaTeX 配置 |
+| `C-c m l q` | 快速导出 PDF |
+| `C-c m l p` | 用指定主题导出 PDF |
+| `C-c m l t` | 应用 LaTeX 主题 |
+| `C-c m l d` | 诊断 LaTeX 字体和依赖 |
+| `C-c m l r` | 重新加载 LaTeX 配置 |
 
 Journal 月度文件默认使用 `#+LATEX_CLASS: journal`，适合导出带目录的月度记录。
 
@@ -298,16 +299,16 @@ Journal 月度文件默认使用 `#+LATEX_CLASS: journal`，适合导出带目�
 
 | 快捷键 | 用途 |
 |--------|------|
-| `C-c a n` | 创建轻量想法卡 |
-| `C-c a r` | 创建文献阅读卡 |
-| `C-c a j` | 创建研究项目页 |
-| `C-c a p` | 创建学术论文草稿 |
-| `C-c a c` | 创建会议摘要 |
-| `C-c a P` | 快速创建论文草稿 |
-| `C-c a N` | 快速创建想法卡 |
-| `C-c a b` | 设置 bibliography |
-| `C-c a d` | 学术写作 dashboard |
-| `C-c a i` | 插入引用 |
+| `C-c A n` | 创建轻量想法卡 |
+| `C-c A r` | 创建文献阅读卡 |
+| `C-c A j` | 创建研究项目页 |
+| `C-c A p` | 创建学术论文草稿 |
+| `C-c A c` | 创建会议摘要 |
+| `C-c A P` | 快速创建论文草稿 |
+| `C-c A N` | 快速创建想法卡 |
+| `C-c A b` | 设置 bibliography |
+| `C-c A d` | 学术写作 dashboard |
+| `C-c A i` | 插入引用 |
 
 相关路径可通过 `M-x customize-group RET org-academic` 调整。正式文献阅读卡与 Citar notes 默认使用 `Academic/Reading/`，这是文献笔记的唯一真源；Org-roam 由通用 `org-roam-henri` 模块管理，Academic 不再单独覆盖 `org-roam-directory`。
 
@@ -319,8 +320,8 @@ Journal 月度文件默认使用 `#+LATEX_CLASS: journal`，适合导出带目�
 |------|----------|
 | Markdown 不能预览 | `C-c m c`，确认 `pandoc` 在 PATH |
 | GitHub 风格预览不可用 | 确认 `henri-enable-grip` 为 `t`，并安装 `grip` |
-| Org HTML 主题丢失 | `C-c h k` 检查主题目录 |
-| Org PDF 导出失败 | `C-c l d` 检查字体、XeLaTeX、latexmk |
+| Org HTML 主题丢失 | `C-c m h k` 检查主题目录 |
+| Org PDF 导出失败 | `C-c m l d` 检查字体、XeLaTeX、latexmk |
 | Agenda 太吵 | 确认任务放在 `agenda/*.org`，Journal 只走 `C-c a j` |
 | 新任务不出现在 agenda | 确认使用 `* TODO ...`，不是 checkbox |
 | Org-roam 节点不显示 | 先执行 `M-x org-roam-db-sync`，再确认文件在 `Roam/` 下且包含 `:ID:` |
@@ -329,8 +330,8 @@ Journal 月度文件默认使用 `#+LATEX_CLASS: journal`，适合导出带目�
 
 ```text
 C-c m c      # Markdown 依赖
-C-c h k      # Org HTML 主题
-C-c l d      # Org PDF / LaTeX
+C-c m h k    # Org HTML 主题
+C-c m l d    # Org PDF / LaTeX
 C-c o a      # Agenda Dashboard
 C-c n f      # Org-roam 节点查找/创建
 ```
