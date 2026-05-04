@@ -43,6 +43,7 @@
 |------|----|----------|
 | `C-c c` | capture | `C-c c t` 快速 TODO、`C-c c d` 个人日记 |
 | `C-c a` | agenda / academic | `C-c a` agenda 分发、`C-c a n` 想法卡、`C-c a p` 论文 |
+| `C-c f` | find / file tree | `C-c f n` 查找 Notes 文件、`C-c f p` 打开项目文件树 |
 | `C-c n` | Org-roam | `C-c n f` 查找节点、`C-c n i` 插入链接、`C-c n j` daily |
 | `C-c o` | Org 视图 | `C-c o a` 今日 Dashboard、`C-c o i` Inbox |
 | `C-c h` | HTML 主题 | `C-c h t` 选主题、`C-c h e` 导出并打开 |

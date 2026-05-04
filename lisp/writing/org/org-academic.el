@@ -605,7 +605,8 @@ unless older local customizations still read it."
 (defun org-academic-init ()
   "Initialize the academic writing environment."
   (interactive)
-  (org-academic--ensure-dirs)
+  (unless noninteractive
+    (org-academic--ensure-dirs))
   (org-academic-configure-citations)
   (org-academic-mode 1)
   (message "✓ 学术写作环境初始化完成"))

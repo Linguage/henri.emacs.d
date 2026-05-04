@@ -142,10 +142,10 @@ C-c g → henri/git        C-c h → henri/html-themes
 C-c j → henri/journal    C-c m → henri/markdown
 C-c o → henri/org        C-c v → henri/vc-diff
 C-c w → henri/window     C-c ^ → henri/smerge
-C-c e → henri/eglot      C-c n → henri/neotree
+C-c e → henri/eglot      notes-prefix → henri/neotree
 ```
 
-`C-c` 弹出菜单从平铺单字母变为带语义分组。
+`C-c` 弹出菜单从平铺单字母变为带语义分组。历史说明：当前配置已将 NeoTree 项目入口迁至 `C-c f p`，并将 `C-c n` 保留给 Org-roam。
 
 ### 8.7 治理：忽略与可移植
 

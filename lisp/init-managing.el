@@ -69,7 +69,7 @@
   :ensure t
   :defer t
   :bind (("<f8>" . neotree-toggle)
-         ("C-c n p" . henri/neotree-project-dir))
+         ("C-c f p" . henri/neotree-project-dir))
   :config
   (setq neo-theme (if (display-graphic-p) 'icons 'arrow))
   (setq neo-smart-open t)  ; 智能打开
@@ -192,7 +192,7 @@
   (which-key-add-key-based-replacements
     "C-c f" "henri/find"
     "C-c g" "henri/git"
-    "C-c h" "henri/html-themes"
+    "C-c h" "henri/html"
     "C-c j" "henri/journal"
     "C-c m" "henri/markdown"
     "C-c m e" "henri/md-export"
@@ -205,11 +205,11 @@
     "C-c w e" "henri/vterm"
     "C-c w E" "henri/eshell"
     "C-c w v" "henri/vterm"
-    "C-c w" "henri/window"
+    "C-c w" "henri/window-terminal"
     "C-c F" "henri/font"
     "C-c ^" "henri/smerge"
     "C-c e" "henri/eglot"
-    "C-c n" "henri/neotree"))
+    "C-c n" "henri/roam"))
 
 ;; =============================================================================
 ;; 手动控制选项快捷键

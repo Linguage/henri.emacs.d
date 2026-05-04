@@ -76,8 +76,6 @@
          ("C-c n m" . org-roam-dailies-goto-tomorrow)
          ("C-c n d" . henri-org-roam-open-directory)
          ("C-c n x" . henri-org-roam-open-inbox))
-  :init
-  (henri-org-roam-ensure-directories)
   :config
   (require 'org-roam-dailies)
   (setq org-roam-dailies-directory "daily/")
@@ -112,7 +110,17 @@
            "* %<%H:%M> %?\n"
            :target (file+head "%<%Y-%m-%d>.org"
                               ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n\n* 今日记录\n\n* Done\n\n* 想法\n\n* 待抽取节点\n"))))
-  (org-roam-db-autosync-mode 1))
+  (when (file-directory-p (henri-org-roam-directory))
+    (org-roam-db-autosync-mode 1)))
+
+(defun henri-org-roam-ensure-directories-maybe ()
+  "Create Org-roam directories during interactive startup only."
+  (unless noninteractive
+    (henri-org-roam-ensure-directories)
+    (when (fboundp 'org-roam-db-autosync-mode)
+      (org-roam-db-autosync-mode 1))))
+
+(add-hook 'after-init-hook #'henri-org-roam-ensure-directories-maybe)
 
 (use-package consult-org-roam
   :if (henri-org-roam--package-available-p 'consult-org-roam)

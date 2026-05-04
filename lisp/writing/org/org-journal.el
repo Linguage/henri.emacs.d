@@ -64,6 +64,11 @@
   (henri-agenda-ensure-files)
   (setq org-agenda-files (henri-agenda-files)))
 
+(defun henri-agenda-refresh-files-maybe ()
+  "Refresh agenda files during interactive startup only."
+  (unless noninteractive
+    (henri-agenda-refresh-files)))
+
 (defun henri/open-agenda-inbox ()
   "Open the GTD inbox file."
   (interactive)
@@ -244,7 +249,8 @@ Journal-specific custom agenda commands."
   (henri-journal-ensure-monthly-file 'diary)
   (henri-agenda-refresh-files))
 
-(henri-agenda-refresh-files)
+(setq org-agenda-files (henri-agenda-files))
+(add-hook 'after-init-hook #'henri-agenda-refresh-files-maybe)
 
 (setq org-default-notes-file (henri-agenda-file "inbox.org"))
 

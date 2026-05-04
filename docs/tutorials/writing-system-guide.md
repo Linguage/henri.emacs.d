@@ -18,6 +18,8 @@ Writing 系统分成五条线：
 
 推荐原则：**任务进 agenda，经历进 Journal，长期知识进 Org-roam，成文内容用 Markdown 或 Org**。不要把所有东西都塞进 Journal，否则 agenda 会重新变吵。
 
+快捷键前缀约定：`C-c n` 只服务 Org-roam；项目文件树走 `C-c f p`；终端走 `C-c w e` / `C-c w v` 打开 vterm，`C-c w E` 保留 eshell。
+
 ---
 
 ## 2. 目录约定

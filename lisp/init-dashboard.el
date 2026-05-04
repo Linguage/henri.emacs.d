@@ -98,6 +98,7 @@
         (insert "\n  Shortcuts\n")
         (insert "  C-x C-f  Find file (default)\n")
         (insert "  C-c f n  Find file in Notes\n")
+        (insert "  C-c f p  Open project tree\n")
         (insert "  C-c c    Org capture\n")
         (insert "  C-c a    Org agenda\n")
         (insert "  C-c h 0  Apply default HTML theme\n")

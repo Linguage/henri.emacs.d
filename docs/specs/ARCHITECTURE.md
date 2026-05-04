@@ -80,6 +80,6 @@
 
 1. `init-custom` 必须早于所有使用 `defcustom` 的模块。
 2. `visual-fonts` 会先于 `init-visual` 被加载一次（`init.el` 先 `require 'lib-fonts`）；`init-visual` 再次 `require` 为幂等。
-3. `paths.el` 的目录创建在 `after-init-hook`，保证 `--batch` 加载不产生副作用。
+3. `paths.el` 的运行时目录创建在 `after-init-hook`；个人写作数据目录/文件只在交互式启动或显式命令中创建，避免 `--batch` 加载污染笔记根目录。
 4. `init-org.el` 中 roam 加载先于 academic，确保 `org-roam-directory` 不被 academic 覆盖。
 5. Org academic 的 `org-academic-init` 通过 `after-init-hook` 延迟执行，避免与 roam 初始化竞争。

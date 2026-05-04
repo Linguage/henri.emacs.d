@@ -7,7 +7,7 @@
 
 ## Phase 0: 脚手架搭建
 
-- [x] 建立 `docs/specs/`、`docs/jobs/`、`docs/legacy/`、`docs/reports/`、`docs/work-notes/` 与根目录 `c.md`、`Agents.md` 文档骨架
+- [x] 建立 `docs/specs/`、`docs/jobs/`、`docs/legacy/`、`docs/reports/`、`docs/work-notes/` 与根目录 `c.md`、`AGENTS.md` 文档骨架
 
 ## Phase 1: 可移植性与模块卫生（已收官）
 

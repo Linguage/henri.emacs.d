@@ -24,7 +24,7 @@
 | 快捷键       | 命令                          | 位置                         |
 | --------- | --------------------------- | -------------------------- |
 | `<f8>`    | `neotree-toggle`            | `lisp/init-managing.el:72` |
-| `C-c n p` | `henri/neotree-project-dir` | `lisp/init-managing.el:73` |
+| `C-c f p` | `henri/neotree-project-dir` | `lisp/init-managing.el` |
 
 
 ### 1.3 布局与 Shell（全局）
@@ -32,11 +32,22 @@
 
 | 快捷键       | 命令                          | 位置                          |
 | --------- | --------------------------- | --------------------------- |
-| `C-c w l` | `henri/setup-window-layout` | `lisp/init-managing.el:195` |
-| `C-c w e` | `eshell`                    | `lisp/init-managing.el:196` |
+| `C-c w l` | `henri/setup-window-layout` | `lisp/init-managing.el` |
+| `C-c w e` | `henri/vterm`              | `lisp/init-managing.el` |
+| `C-c w v` | `henri/vterm`              | `lisp/init-managing.el` |
+| `C-c w E` | `eshell`                   | `lisp/init-managing.el` |
 
 
-### 1.4 Git（Magit）
+### 1.4 自检（全局）
+
+| 快捷键       | 命令             | 位置                 |
+| --------- | -------------- | ------------------ |
+| `C-c h d` | `henri/doctor` | `lisp/ops/doctor.el` |
+
+在 Org buffer 中，`C-c h d` 会被 `org-mode-map` 局部绑定覆盖为 `henri/org-html-apply-default-theme`。
+
+
+### 1.5 Git（Magit）
 
 仅在 `**henri-enable-magit` 非 nil** 时安装绑定。
 
@@ -51,7 +62,7 @@
 | `C-c g l` | `magit-log-buffer-file` | `lisp/init-managing.el:211` |
 
 
-### 1.5 diff-hl（在 `diff-hl-mode` 作用 buffer）
+### 1.6 diff-hl（在 `diff-hl-mode` 作用 buffer）
 
 
 | 快捷键       | 命令                      | 位置                          |
@@ -61,7 +72,7 @@
 | `C-c v r` | `diff-hl-revert-hunk`   | `lisp/init-managing.el:224` |
 
 
-### 1.6 smerge（合并冲突：`smerge-mode` 激活时）
+### 1.7 smerge（合并冲突：`smerge-mode` 激活时）
 
 
 | 快捷键       | 命令                  | 位置                          |
@@ -270,6 +281,8 @@
 | `C-c n x` | `henri-org-roam-open-inbox` | `lisp/writing/org/org-roam-henri.el` |
 
 若本机已安装 `consult-org-roam`，还会启用 `C-c n s/r/l` 用于全文搜索、反链和前向链接。
+
+`C-c n` 前缀保留给 Org-roam；项目文件树使用 `C-c f p`。
 
 ---
 
