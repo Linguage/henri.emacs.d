@@ -19,7 +19,23 @@
 ;; =============================================================================
 ;; 核心 LaTeX 配置
 
+(require 'subr-x)
 (require 'ox-latex)
+
+(defvar org-latex-diary-theme-directory
+  (expand-file-name "lisp/writing/LaTeX/themes/latex-diary/" user-emacs-directory)
+  "Directory containing the vendored LaTeX diary theme.")
+
+(defun org-latex--kpsewhich (file)
+  "Return kpsewhich result for FILE, or nil when unavailable."
+  (when-let ((kpsewhich (executable-find "kpsewhich")))
+    (let ((result (string-trim
+                   (shell-command-to-string
+                    (format "%s %s"
+                            (shell-quote-argument kpsewhich)
+                            (shell-quote-argument file))))))
+      (unless (string-empty-p result)
+        result))))
 
 ;; 立即设置编译器（不等待 eval-after-load）
 (setq org-latex-compiler "xelatex")
@@ -27,9 +43,7 @@
 
 ;; PDF 处理流程
 (setq org-latex-pdf-process
-      '("xelatex -interaction nonstopmode -output-directory %o %f"
-        "xelatex -interaction nonstopmode -output-directory %o %f"
-        "xelatex -interaction nonstopmode -output-directory %o %f"))
+      '("latexmk -g -xelatex -synctex=1 -interaction=nonstopmode -outdir=%o %f"))
 
 ;; 默认包配置（支持中文）
 (setq org-latex-default-packages-alist
@@ -98,6 +112,8 @@
   :ensure t
   :mode ("\\.pdf\\'" . pdf-view-mode)
   :config
+  (when (fboundp 'pdf-tools-install)
+    (pdf-tools-install t))
   ;; 设置 PDF-tools 兼容性
   ;; 禁用 PDF 查看模式下的行号显示
   (add-hook 'pdf-view-mode-hook
@@ -173,31 +189,6 @@
                  ("\\paragraph{%s}" . "\\paragraph*{%s}")
                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
 
-  ;; 添加专门的期刊文档类（1cm页边距）
-  (add-to-list 'org-latex-classes
-               '("journal"
-                 "\\documentclass[11pt]{article}
-\\usepackage[UTF8,fontset=fandol]{ctex}
-\\usepackage{amsmath}
-\\usepackage{amssymb}
-\\usepackage{graphicx}
-\\usepackage{hyperref}
-\\usepackage[top=2cm, bottom=2cm, left=1.5cm, right=1.5cm]{geometry}
-\\linespread{1.15}
-\\setlength{\\parskip}{0.5em}
-\\usepackage{fancyhdr}
-\\pagestyle{fancy}
-\\fancyhf{}
-\\rhead{\\thepage}
-\\lhead{日志}
-[NO-DEFAULT-PACKAGES]
-[PACKAGES]
-[EXTRA]"
-                 ("\\section{%s}" . "\\section*{%s}")
-                 ("\\subsection{%s}" . "\\subsection*{%s}")
-                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
 
   ;; =============================================================================
   ;; 自定义 LaTeX 类（主题支持）
@@ -267,10 +258,40 @@
         
         ;; 检查编译器
         (insert (format "当前编译器: %s\n" org-latex-compiler))
-        (let ((xelatex-path (executable-find "xelatex")))
-          (if xelatex-path
-              (insert (format "✅ XeLaTeX 可用: %s\n" xelatex-path))
-            (insert "❌ XeLaTeX 未找到\n")))
+        (let ((texbin (if (boundp 'henri-latex-texbin-directory)
+                          henri-latex-texbin-directory
+                        "/Library/TeX/texbin")))
+          (insert (format "TeX PATH 兜底目录: %s [%s]\n"
+                          texbin
+                          (if (file-directory-p texbin) "存在" "不存在")))
+          (dolist (program '("xelatex" "latexmk" "kpsewhich"))
+            (let ((program-path (executable-find program)))
+              (if program-path
+                  (insert (format "✅ %s 可用: %s\n" program program-path))
+                (insert (format "❌ %s 未找到\n" program)))))
+          (if-let ((ctex-path (org-latex--kpsewhich "ctex.sty")))
+              (insert (format "✅ ctex.sty 可用: %s\n" ctex-path))
+            (insert (if (executable-find "kpsewhich")
+                        "❌ ctex.sty 未找到\n"
+                      "❌ 无法检查 ctex.sty：kpsewhich 未找到\n"))))
+
+        ;; 检查实验 LaTeX Diary 主题资源
+        (insert "\nLaTeX Diary 实验主题检查（非 Journal 默认依赖）:\n")
+        (insert (format "主题目录: %s [%s]\n"
+                        org-latex-diary-theme-directory
+                        (if (file-directory-p org-latex-diary-theme-directory)
+                            "存在"
+                          "不存在")))
+        (dolist (file '("henri-diary.cls" "diary.cls" "fonts/icofont.ttf"))
+          (let ((theme-file (expand-file-name file org-latex-diary-theme-directory)))
+            (if (file-exists-p theme-file)
+                (insert (format "✅ %s 可用\n" file))
+              (insert (format "❌ %s 未找到\n" file)))))
+        (dolist (package '("tikz.sty" "tikzpagenodes.sty" "eso-pic.sty"
+                           "ifoddpage.sty" "xargs.sty" "xstring.sty"))
+          (if-let ((package-path (org-latex--kpsewhich package)))
+              (insert (format "✅ %s 可用: %s\n" package package-path))
+            (insert (format "❌ %s 未找到\n" package))))
         
         ;; 检查字体
         (insert "\n字体检查:\n")
@@ -303,12 +324,13 @@
         
         ;; 建议
         (insert "\n修复建议:\n")
-        (insert "1. 如果字体报错，尝试: brew install font-fandol\n")
-        (insert "2. 使用英文文档类: #+LATEX_CLASS: article-safe\n")
-        (insert "3. 使用中文文档类: #+LATEX_CLASS: ctexart\n")
-        (insert "4. 重新加载配置: M-x org-latex-reload-config\n")
-        (insert "5. 快速导出: C-c l q\n")
-        (insert "6. 主题导出: C-c l p\n")
+        (insert "1. Journal 默认 PDF 已回退为常规 ctex + geometry 模板\n")
+        (insert "2. 如果实验 LaTeX-Diary 主题缺包，BasicTeX 可运行: tlmgr init-usertree\n")
+        (insert "   然后运行: tlmgr --usermode install tikzpagenodes ifoddpage xargs xstring\n")
+        (insert "3. 使用英文文档类: #+LATEX_CLASS: article-safe\n")
+        (insert "4. 使用中文文档类: #+LATEX_CLASS: ctexart\n")
+        (insert "5. 重新加载配置: M-x org-latex-reload-config\n")
+        (insert "6. 快速导出: C-c l q\n")
         
         (goto-char (point-min)))
       (display-buffer diagnosis-buffer)))
@@ -318,10 +340,8 @@
     (interactive)
     (setq org-latex-compiler "xelatex")
     (setq org-latex-pdf-process
-          '("xelatex -interaction nonstopmode -output-directory %o %f"
-            "xelatex -interaction nonstopmode -output-directory %o %f"
-            "xelatex -interaction nonstopmode -output-directory %o %f"))
-    (message "LaTeX 配置已重新加载，使用 XeLaTeX 编译器"))
+          '("latexmk -g -xelatex -synctex=1 -interaction=nonstopmode -outdir=%o %f"))
+    (message "LaTeX 配置已重新加载，使用 latexmk + XeLaTeX"))
 
   (message "Org LaTeX/PDF 统一配置已加载"))
 

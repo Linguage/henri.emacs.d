@@ -63,7 +63,8 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   "本地 org-html-themes 目录路径（默认在配置仓库内）。")
 
 (defvar my/org-html-themes-list
-  `(("Henri Bearblog" . ,(expand-file-name "org/theme-henri-bearblog.setup" my/org-html-themes-dir))
+  `(("Henri Journal" . ,(expand-file-name "org/theme-henri-journal.setup" my/org-html-themes-dir))
+    ("Henri Bearblog" . ,(expand-file-name "org/theme-henri-bearblog.setup" my/org-html-themes-dir))
     ("Henri" . ,(expand-file-name "org/theme-henri.setup" my/org-html-themes-dir))
     ("ReadTheOrg" . ,(expand-file-name "org/theme-readtheorg.setup" my/org-html-themes-dir))
     ("ReadTheOrg Local" . ,(expand-file-name "org/theme-readtheorg-local.setup" my/org-html-themes-dir))
@@ -75,7 +76,7 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
 每个元素是一个 cons cell，格式为 (主题名称 . setup文件路径)。
 默认使用本地主题，如果本地主题不存在，可以使用在线版本。")
 
-(defvar my/org-html-default-theme "Henri Bearblog"
+(defvar my/org-html-default-theme "Henri Journal"
   "默认使用的 HTML 主题名称。")
 
 (defun my/org-html-default-setupfile ()
@@ -86,7 +87,7 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   "Return non-nil if the current Org buffer already declares an HTML theme."
   (save-excursion
     (goto-char (point-min))
-    (re-search-forward "^#\\+SETUPFILE:.*org-html-themes.*$" nil t)))
+    (re-search-forward "^[[:space:]]*#\\+SETUPFILE:.*\\(org-html-themes\\|theme-henri\\).*" nil t)))
 
 (defun my/org-html-insert-setupfile (setup-file)
   "Insert SETUP-FILE into current Org buffer metadata."
@@ -110,8 +111,10 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
 
 ;; 主题编号映射表
 (defvar my/org-html-theme-shortcuts
-  '(("default" . "Henri")
-    ("0" . "Henri Bearblog")
+  '(("default" . "Henri Journal")
+    ("journal" . "Henri Journal")
+    ("hj" . "Henri Journal")
+    ("0" . "Henri Journal")
     ("bear" . "Henri Bearblog")
     ("bearblog" . "Henri Bearblog")
     ("hb" . "Henri Bearblog")
@@ -132,7 +135,7 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   "使用快捷方式应用主题。
 SHORTCUT 可以是数字编号、缩写或主题名称。
 例如：'1', 'rto', 'readtheorg', 'default' 等。"
-  (interactive "sHTML主题 (0=Henri Bearblog, 1=ReadTheOrg, 2=Bigblow, default/bear/rto/bb): ")
+  (interactive "sHTML主题 (0=Henri Journal, bear=Henri Bearblog, 1=ReadTheOrg, 2=Bigblow): ")
   (let* ((normalized-shortcut (downcase (string-trim shortcut)))
          (theme-name (cdr (assoc normalized-shortcut my/org-html-theme-shortcuts))))
     (if theme-name
@@ -144,7 +147,7 @@ SHORTCUT 可以是数字编号、缩写或主题名称。
 (defun my/org-html-show-theme-shortcuts ()
   "显示所有可用的主题快捷方式。"
   (interactive)
-  (message "HTML主题快捷方式:\n0/bear/hb/default -> Henri Bearblog\nh/henri -> Henri\n1/rto/readtheorg -> ReadTheOrg\nlocal/rto-local -> ReadTheOrg Local\n2/bb/bigblow -> Bigblow"))
+  (message "HTML主题快捷方式:\n0/default/journal/hj -> Henri Journal\nbear/hb -> Henri Bearblog\nh/henri -> Henri\n1/rto/readtheorg -> ReadTheOrg\nlocal/rto-local -> ReadTheOrg Local\n2/bb/bigblow -> Bigblow"))
 
 ;; 更简单的主题应用函数
 (defun my/org-html-theme-1 ()

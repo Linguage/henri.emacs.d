@@ -20,6 +20,7 @@
 
 ;; 基础 Org Journal 设置
 (require 'org)
+(require 'ox)
 
 ;; 设置日志存放目录
 (defvar henri-journal-directory
@@ -39,7 +40,7 @@
   "Return default HTML setupfile for Journal exports."
   (let ((setup-file
          (expand-file-name
-          "org/theme-henri-bearblog.setup"
+          "org/theme-henri-journal.setup"
           (file-name-as-directory
            (expand-file-name henri-org-html-themes-directory)))))
     (if (file-exists-p setup-file)
@@ -153,7 +154,7 @@ KIND must be `diary' (shared file for all journal capture types)."
     (unless (file-exists-p file)
       (make-directory (file-name-directory file) t)
       (write-region
-       (format "#+TITLE: %s %s\n#+LATEX_CLASS: journal\n#+STARTUP: content\n%s\n"
+       (format "#+TITLE: %s %s\n#+LATEX_CLASS: journal\n#+OPTIONS: toc:t num:nil H:5\n#+STARTUP: content\n%s\n"
                (henri-journal-kind-label kind)
                (henri-journal-month-string time)
                (if-let ((setup-file (henri-journal-html-setupfile)))
@@ -375,10 +376,70 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 (global-set-key (kbd "C-c j d") 'my/view-diary-by-date)  ;; 直接查看个人日记
 
 ;; =============================================================================
+;; Journal LaTeX 文档类注册（从 org-latex.el 解耦）
+;; 模板文件：lisp/writing/LaTeX/themes/journal/journal.cls
+
+(defvar org-journal-theme-directory
+  (expand-file-name "lisp/writing/LaTeX/themes/journal/" user-emacs-directory)
+  "Directory containing the vendored Journal LaTeX class.")
+
+(with-eval-after-load 'ox-latex
+  (add-to-list 'org-latex-classes
+               '("journal"
+                 "\\documentclass[UTF8,11pt]{ctexart}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{graphicx}
+\\usepackage{hyperref}
+\\usepackage[open=true]{bookmark}
+\\usepackage{fontspec}
+\\usepackage{xeCJK}
+\\setCJKmainfont{KingHwa_OldSong}[BoldFont=KingHwa_OldSong,ItalicFont=KingHwa_OldSong,AutoFakeBold=2,AutoFakeSlant=0.15]
+\\setCJKsansfont{KingHwa_OldSong}
+\\setCJKmonofont{KingHwa_OldSong}
+\\usepackage[paperwidth=176mm,paperheight=250mm,top=2cm,bottom=2cm,left=2cm,right=2cm]{geometry}
+\\linespread{1.15}
+\\setlength{\\parskip}{0.4em}
+\\setcounter{secnumdepth}{0}
+\\setcounter{tocdepth}{3}
+\\hypersetup{bookmarks=true,bookmarksopen=true,bookmarksnumbered=false,colorlinks=true,linkcolor=blue!60!black,urlcolor=blue!80!black}
+[NO-DEFAULT-PACKAGES]
+[PACKAGES]
+[EXTRA]"
+                 ("\\section{%s}" . "\\section{%s}")
+                 ("\\subsection{%s}" . "\\subsection{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph{%s}"))))
+
+;; =============================================================================
 ;; 期刊PDF导出配置
 
+(defun org-journal--journal-latex-export-p (backend info)
+  "Return non-nil when BACKEND and INFO describe a Journal LaTeX export."
+  (and (org-export-derived-backend-p backend 'latex)
+       (or (string= (plist-get info :latex-class) "journal")
+           (save-excursion
+             (goto-char (point-min))
+             (re-search-forward "^#\\+LATEX_CLASS:[ \t]+journal\\b" nil t))
+           (and buffer-file-name
+                (string-match-p "journal\\|diary" buffer-file-name)))))
+
+(defun org-journal-apply-latex-export-options (options backend)
+  "Force Journal diary PDF layout OPTIONS for LaTeX BACKEND exports."
+  (when (org-journal--journal-latex-export-p backend options)
+    (setq options (plist-put options :with-toc t))
+    ;; Let Org emit normal section commands so LaTeX can build the TOC and
+    ;; PDF outline.  The Journal class hides printed numbers via secnumdepth.
+    (setq options (plist-put options :section-numbers t))
+    (setq options (plist-put options :headline-levels 5)))
+  options)
+
+(add-hook 'org-export-filter-options-functions
+          #'org-journal-apply-latex-export-options)
+
 (defun org-journal-setup-pdf-export ()
-  "为期刊文件设置PDF导出的1cm页边距"
+  "为期刊文件设置常规 Journal PDF 导出。"
   (interactive)
   (when (buffer-file-name)
     (save-excursion
@@ -406,7 +467,9 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
             (insert "#+LATEX_CLASS: journal\n")
             (when (called-interactively-p 'any)
               (save-buffer))))))
-    (message "已为当前期刊文件设置1cm页边距的PDF导出")))
+    (when (called-interactively-p 'any)
+      (save-buffer))
+    (message "已为当前期刊文件设置常规 Journal PDF 导出")))
 
 (defun org-journal-auto-setup-pdf ()
   "如果当前文件包含journal标签，自动设置PDF导出"

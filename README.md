@@ -58,7 +58,9 @@
   - fortls (Fortran)
   - pandoc（Markdown 离线预览 / `markdown-mode` 转换）
   - grip（可选，GitHub 风格 Markdown 预览；`henri-enable-grip` 为 t 时使用）
-  - texlive (LaTeX)
+  - BasicTeX/MacTeX 或 texlive (LaTeX)，需提供 `xelatex`、`latexmk`、`kpsewhich`
+  - 实验 LaTeX-Diary 主题额外需要 `tikz`、`tikzpagenodes`、`eso-pic`、`ifoddpage`、`xargs`、`xstring`，但它不再是 Journal PDF 默认依赖
+    - BasicTeX 缺包时优先使用 user-mode：`tlmgr init-usertree`，然后 `tlmgr --usermode install tikzpagenodes ifoddpage xargs xstring`
 
 ## 3. 主要模块
 
@@ -149,7 +151,7 @@
 - **Markdown**：`markdown-mode`；离线预览（`pandoc` + 优先 EWW，见 `C-c m p`）；GitHub 风格预览（`grip` + `C-c m g` / 原 `C-c C-g`）；`C-c m c` 检查依赖是否就绪
 - **Org → HTML**：主题树在 [`lisp/writing/org/org-html-themes`](lisp/writing/org/org-html-themes)（含 fniessen 上游 `src/` 与自定义 `henri-bearblog/`），由 `henri-org-html-themes-directory` 指向；本地 setup 使用占位符 `@@henri-org-html-themes-root@@`，在 HTML 导出时替换为实际路径。旧路径 `~/Documents/EmacsNotes/org-html-themes` 可弃用。无主题目录时可用 [`lisp/writing/org/install-themes.sh`](lisp/writing/org/install-themes.sh) 仅克隆上游（不含 Bearblog，需以仓库内版本为准）。
 - Org Mode
-- LaTeX
+- LaTeX：`.tex` 编辑配置集中在 `lisp/writing/LaTeX/`；AUCTeX 默认使用 `latexmk + XeLaTeX`，macOS 会兜底加入 `/Library/TeX/texbin`；主题库在 `lisp/writing/LaTeX/themes/`。Journal PDF 默认使用常规 `ctex + geometry` 模板，LaTeX-Diary 暂作为实验主题保留。
 
 ### 3.6 运维层与通用库 (`lisp/ops/`)
 
@@ -334,8 +336,8 @@
 
 | 快捷键 | 功能 | 说明 |
 |--------|------|------|
-| `C-c l d` | org-latex-diagnose-fonts | 诊断字体配置 |
-| `C-c l r` | org-latex-reload-config | 重新加载 LaTeX 配置 |
+| `C-c l d` | org-latex-diagnose-fonts | 诊断字体、TeX 命令、`ctex.sty` 与实验 LaTeX-Diary 主题资源 |
+| `C-c l r` | org-latex-reload-config | 重新加载 latexmk + XeLaTeX 导出配置 |
 
 #### Org Academic - 学术写作
 
@@ -346,9 +348,9 @@
 | `C-c a c` | org-academic-create-conference-abstract | 创建会议摘要 |
 | `C-c a P` | org-academic-quick-paper | 快速创建论文 |
 | `C-c a N` | org-academic-quick-note | 快速创建笔记 |
-| `C-c a b` | org-academic-setup-bibliography | 设置参考文献 |
+| `C-c a b` | org-academic-setup-bibliography | 设置 BibTeX、PDF 与文献笔记目录 |
 | `C-c a d` | org-academic-dashboard | 打开学术写作仪表板 |
-| `C-c a i` | org-academic-insert-citation | 插入引用 |
+| `C-c a i` | org-academic-insert-citation | 通过 citar 插入引用（未加载时手动回退） |
 
 ### 5.4 界面操作快捷键
 

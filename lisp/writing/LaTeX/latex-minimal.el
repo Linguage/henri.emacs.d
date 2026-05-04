@@ -7,10 +7,41 @@
 
 ;;; Commentary:
 
-;; 最小化的 LaTeX 配置，主要服务于 Org-mode PDF 导出
-;; 包含基本的 AUCTeX 支持和编译功能
+;; LaTeX 编辑工作台配置。
+;; Org PDF 导出变量由 `org-latex.el' 维护，本文件只负责 .tex/AUCTeX、
+;; 本机 TeX 工具链兜底、PDF 查看和快速输入。
 
 ;;; Code:
+
+(require 'subr-x)
+
+;; =============================================================================
+;; TeX 工具链路径
+
+(defgroup henri-latex nil
+  "LaTeX writing configuration."
+  :group 'henri-writing
+  :prefix "henri-latex-")
+
+(defcustom henri-latex-texbin-directory "/Library/TeX/texbin"
+  "macOS BasicTeX/MacTeX executable directory used as a PATH fallback."
+  :type 'directory
+  :group 'henri-latex)
+
+(defun henri-latex-ensure-texbin ()
+  "Add `henri-latex-texbin-directory' to `exec-path' and PATH when present."
+  (when (file-directory-p henri-latex-texbin-directory)
+    (add-to-list 'exec-path henri-latex-texbin-directory)
+    (let ((path (getenv "PATH")))
+      (unless (and path
+                   (member henri-latex-texbin-directory
+                           (split-string path path-separator t)))
+        (setenv "PATH"
+                (if (and path (not (string-empty-p path)))
+                    (concat henri-latex-texbin-directory path-separator path)
+                  henri-latex-texbin-directory))))))
+
+(henri-latex-ensure-texbin)
 
 ;; =============================================================================
 ;; 基础 AUCTeX 配置
@@ -25,9 +56,16 @@
   (setq TeX-parse-self t)
   (setq-default TeX-master nil)
   (setq TeX-PDF-mode t)
+  (setq TeX-source-correlate-mode t)
+  (setq TeX-source-correlate-method 'synctex)
   
   ;; 编译设置
-  (setq LaTeX-command "pdflatex -synctex=1")
+  (add-to-list 'TeX-command-list
+               '("LatexMk XeLaTeX"
+                 "latexmk -xelatex -synctex=1 -interaction=nonstopmode %s"
+                 TeX-run-TeX nil t
+                 :help "Run latexmk with XeLaTeX"))
+  (setq TeX-command-default "LatexMk XeLaTeX")
   
   ;; 启用基本模式
   (add-hook 'LaTeX-mode-hook #'font-lock-mode)
@@ -40,28 +78,18 @@
               (local-set-key (kbd "C-c C-v") 'TeX-view))))
 
 ;; =============================================================================
-;; 中文支持
+;; 公式输入加速
 
-(setq org-latex-default-packages-alist
-      '(("AUTO" "inputenc" t ("pdflatex"))
-        ("T1" "fontenc" t ("pdflatex"))
-        ("" "graphicx" t)
-        ("" "grffile" t)
-        ("" "longtable" nil)
-        ("" "wrapfig" nil)
-        ("" "rotating" nil)
-        ("normalem" "ulem" t)
-        ("" "amsmath" t)
-        ("" "textcomp" t)
-        ("" "amssymb" t)
-        ("" "capt-of" nil)
-        ("" "hyperref" nil)
-        ("UTF8" "ctex" t)))
+(use-package cdlatex
+  :ensure t
+  :hook ((LaTeX-mode . turn-on-cdlatex)
+         (org-mode . org-cdlatex-mode)))
 
 ;; =============================================================================
 ;; 主题支持
 
 (require 'latex-themes-simple)
+(require 'latex-templates)
 
 ;; =============================================================================
 ;; PDF 查看器设置

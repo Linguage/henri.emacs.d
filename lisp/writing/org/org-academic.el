@@ -15,8 +15,14 @@
 
 ;;; Code:
 
+(require 'seq)
+
 ;; =============================================================================
 ;; 学术写作目录设置
+
+(defgroup org-academic nil
+  "Academic writing workflow."
+  :group 'henri-writing)
 
 (defcustom org-academic-directory
   (if (boundp 'henri-notes-directory)
@@ -43,6 +49,64 @@
   "参考文献数据库文件"
   :type 'file
   :group 'org-academic)
+
+(defcustom org-academic-library-dir
+  (expand-file-name "PDFs" org-academic-directory)
+  "文献 PDF 文件目录。"
+  :type 'directory
+  :group 'org-academic)
+
+(defcustom org-academic-literature-notes-dir
+  (expand-file-name "Literature" org-academic-notes-dir)
+  "文献阅读笔记目录。"
+  :type 'directory
+  :group 'org-academic)
+
+(defcustom org-academic-org-roam-dir
+  org-academic-notes-dir
+  "Org-roam 学术笔记目录。"
+  :type 'directory
+  :group 'org-academic)
+
+;; =============================================================================
+;; 文献与知识库工具
+
+(defun org-academic-configure-citations ()
+  "Configure Org Cite and Citar from the academic path customizations."
+  (setq org-cite-global-bibliography (list org-academic-bibliography-file)
+        org-cite-insert-processor 'citar
+        org-cite-follow-processor 'citar
+        org-cite-activate-processor 'citar
+        citar-bibliography (list org-academic-bibliography-file)
+        citar-library-paths (list org-academic-library-dir)
+        citar-notes-paths (list org-academic-literature-notes-dir)))
+
+(use-package citar
+  :ensure t
+  :commands (citar-insert-citation citar-open)
+  :config
+  (org-academic-configure-citations))
+
+(with-eval-after-load 'oc
+  (org-academic-configure-citations))
+
+(use-package org-roam
+  :ensure t
+  :defer t
+  :custom
+  (org-roam-directory org-academic-org-roam-dir)
+  :config
+  (when (fboundp 'org-roam-db-autosync-mode)
+    (org-roam-db-autosync-mode 1)))
+
+(use-package citar-org-roam
+  :ensure t
+  :after (citar org-roam)
+  :custom
+  (citar-org-roam-subdir
+   (file-relative-name org-academic-literature-notes-dir org-academic-org-roam-dir))
+  :config
+  (citar-org-roam-mode 1))
 
 ;; =============================================================================
 ;; 学术写作模板定义
@@ -149,7 +213,7 @@
 :CUSTOM_ID: references
 :END:
 
-#+BIBLIOGRAPHY: %s plain
+#+bibliography: %s
 
 * 附录
 :PROPERTIES:
@@ -158,7 +222,7 @@
 
 #+BEGIN_COMMENT
 论文写作说明：
-1. 使用 C-c C-l 插入链接和引用
+1. 使用 C-c a i 插入文献引用
 2. 使用 C-c C-x C-l 预览 LaTeX 片段
 3. 使用 C-c C-e 导出为所需格式
 4. 参考文献使用 BibTeX 格式管理
@@ -425,13 +489,13 @@
 
 * 参考文献
 
-#+BIBLIOGRAPHY: %s plain
+#+bibliography: %s
 
 * 附录
 
 #+BEGIN_COMMENT
 论文写作说明：
-1. 使用 C-c C-l 插入链接和引用
+1. 使用 C-c a i 插入文献引用
 2. 使用 C-c C-x C-l 预览 LaTeX 片段
 3. 使用 C-c C-e 导出为所需格式
 4. 参考文献使用 BibTeX 格式管理
@@ -748,9 +812,16 @@
 (defun org-academic-setup-bibliography ()
   "设置参考文献环境"
   (interactive)
+  (dolist (dir (list org-academic-directory
+                     org-academic-library-dir
+                     org-academic-literature-notes-dir))
+    (unless (file-exists-p dir)
+      (make-directory dir t)))
   (unless (file-exists-p org-academic-bibliography-file)
+    (make-directory (file-name-directory org-academic-bibliography-file) t)
     (with-temp-file org-academic-bibliography-file
       (insert "% 参考文献数据库\n% 使用 BibTeX 格式\n\n")))
+  (org-academic-configure-citations)
   
   (find-file org-academic-bibliography-file)
   (message "参考文献数据库已就绪: %s" org-academic-bibliography-file))
@@ -758,8 +829,10 @@
 (defun org-academic-insert-citation ()
   "插入文献引用"
   (interactive)
-  (let ((cite-key (read-string "引用关键字: ")))
-    (insert (format "cite:%s" cite-key))))
+  (if (fboundp 'citar-insert-citation)
+      (citar-insert-citation)
+    (let ((cite-key (read-string "引用关键字: ")))
+      (insert (format "cite:%s" cite-key)))))
 
 ;; =============================================================================
 ;; 学术写作工作流
@@ -784,6 +857,11 @@
       (insert "- `C-c a b` 管理参考文献\n")
       (insert "- `C-c a d` 打开仪表板\n")
       (insert "- `C-c a i` 插入文献引用\n\n")
+      (insert "## 文献工作流\n")
+      (insert (format "- BibTeX: `%s`\n" org-academic-bibliography-file))
+      (insert (format "- PDF: `%s`\n" org-academic-library-dir))
+      (insert (format "- 文献笔记: `%s`\n" org-academic-literature-notes-dir))
+      (insert (format "- Org-roam: `%s`\n\n" org-academic-org-roam-dir))
       
       (insert "## 最近论文\n")
       (when (file-exists-p org-academic-papers-dir)
@@ -852,6 +930,13 @@
     (make-directory org-academic-papers-dir t))
   (unless (file-exists-p org-academic-notes-dir)
     (make-directory org-academic-notes-dir t))
+  (unless (file-exists-p org-academic-library-dir)
+    (make-directory org-academic-library-dir t))
+  (unless (file-exists-p org-academic-literature-notes-dir)
+    (make-directory org-academic-literature-notes-dir t))
+  (unless (file-exists-p org-academic-org-roam-dir)
+    (make-directory org-academic-org-roam-dir t))
+  (org-academic-configure-citations)
   
   ;; 启用学术写作模式
   (org-academic-mode 1)

@@ -65,10 +65,15 @@
   "生成所有主题的 .sty 文件"
   (let ((themes-dir (latex-themes-simple-ensure-directory)))
     (dolist (theme latex-themes-simple-alist)
-      (let ((theme-name (car theme))
-            (theme-content (cdr theme)))
-        (with-temp-file (expand-file-name (concat theme-name ".sty") themes-dir)
-          (insert theme-content))))
+      (let ((theme-content (cdr theme))
+            (theme-file (expand-file-name (concat (car theme) ".sty") themes-dir)))
+        (unless (and (file-exists-p theme-file)
+                     (string= theme-content
+                              (with-temp-buffer
+                                (insert-file-contents theme-file)
+                                (buffer-string))))
+          (with-temp-file theme-file
+            (insert theme-content)))))
     (message "LaTeX 主题文件已生成到: %s" themes-dir)))
 
 ;; =============================================================================
