@@ -40,6 +40,8 @@ Org-roam 在这套配置里是长期知识库。它不是任务系统，不是�
 | `C-c n t` | 打开今天的 daily note |
 | `C-c n y` | 打开昨天的 daily note |
 | `C-c n m` | 打开明天的 daily note |
+| `C-c n E` | 从当前 daily / inbox heading 抽取为长期 note |
+| `C-c n v` | 切换 seedling / budding / evergreen |
 | `C-c n d` | 打开 Roam 根目录 |
 | `C-c n x` | 打开 Roam inbox 目录 |
 | `C-c n ?` | 查看 capture template key |
@@ -92,6 +94,8 @@ Roam/emacs/
 
 Daily 是 org-roam dailies 的独立模板，key 是 `d`，通常通过 `C-c n j` 使用，落点是 `Roam/daily/YYYY-MM-DD.org`。
 
+普通节点默认带 `:seedling:`，表示刚抽出来的想法。写清楚“是什么 / 为什么重要”并至少连到一个旧节点后，可用 `C-c n v` 切到 `:budding:`；被 map 引用、反复被复用后再切到 `:evergreen:`。
+
 ### 3.1 `n` 概念笔记
 
 适合写“以后还会用来思考的东西”。
@@ -119,6 +123,8 @@ AI 编程工作流
 ```
 
 不要一想到什么就建 `notes/`。先放 daily 或 inbox，等它反复出现、值得复用，再抽出来。
+
+抽取时在 daily / inbox 的当前 heading 上按 `C-c n E`，输入目标 note 名；命令会创建 `Roam/notes/` 节点，把当前 subtree 内容带过去，并在原 heading 下留下回链。
 
 ### 3.2 `r` 资料笔记
 

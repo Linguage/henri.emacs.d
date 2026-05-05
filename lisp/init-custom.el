@@ -122,6 +122,15 @@ The default literature-note source is Academic/Reading via
 intentionally want Citar note creation to be handled by `citar-org-roam'
 under `henri-org-roam-directory'/references."
   :type 'boolean
+  :set (lambda (symbol value)
+         (set-default symbol value)
+         (when (fboundp 'org-academic-configure-citations)
+           (org-academic-configure-citations)))
+  :group 'henri-writing)
+
+(defcustom henri-roam-as-agenda-files nil
+  "Include Roam project nodes in the main Org agenda when non-nil."
+  :type 'boolean
   :group 'henri-writing)
 
 ;; Markdown sub-module toggles -----------------------------------------------

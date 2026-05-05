@@ -47,7 +47,7 @@
 | `C-c A` | academic | `C-c A n` 想法卡、`C-c A p` 论文 |
 | `C-c f` | find / file tree | `C-c f n` 查找 Notes 文件、`C-c f p` 打开项目文件树 |
 | `C-c n` | Org-roam | `C-c n f` 查找节点、`C-c n i` 插入链接、`C-c n j` daily |
-| `C-c o` | Org 视图 | `C-c o a` 今日 Dashboard、`C-c o i` Inbox |
+| `C-c o` | Org 视图 | `C-c o a` 今日 Dashboard、`C-c o s` 今日三栏、`C-c o i` Inbox |
 | `C-c h` | help / doctor | `C-c h d` 自检 |
 | `C-c l` | store-link | 保留给 Org link |
 | `C-c m` | mode-local | Markdown 预览；Org 中 `C-c m h/l/v` |

@@ -18,6 +18,8 @@
 
 ;;; Code:
 
+(require 'org)
+(require 'org-id)
 (require 'seq)
 (require 'subr-x)
 
@@ -78,46 +80,29 @@
   :type 'directory
   :group 'org-academic)
 
-(defcustom org-academic-literature-notes-dir
-  org-academic-reading-dir
-  "Academic literature notes directory used by Citar.
-
-By default this points to `org-academic-reading-dir' at load time.  If
-you customize `org-academic-reading-dir', customize this option as well
-so `citar-open-notes' continues to use the same reading-card directory."
-  :type 'directory
-  :group 'org-academic)
-
-(defcustom org-academic-org-roam-dir
-  org-academic-directory
-  "Legacy Org-roam academic notes directory.
-
-Org-roam is now configured by `org-roam-henri' as a general writing
-knowledge base.  This option is kept for compatibility with older
-custom files and should not set `org-roam-directory' directly."
-  :type 'directory
-  :group 'org-academic)
-
-(defcustom org-academic-enable-org-roam nil
-  "Compatibility option for the older academic Org-roam integration.
-
-The active Org-roam setup now lives in `org-roam-henri'.  Keep this nil
-unless older local customizations still read it."
-  :type 'boolean
-  :group 'org-academic)
-
-(make-obsolete-variable
- 'org-academic-org-roam-dir
- 'henri-org-roam-directory
- "2026-05-04")
-
-(make-obsolete-variable
- 'org-academic-enable-org-roam
- 'henri-org-roam-enable-citar-integration
- "2026-05-04")
-
 ;; =============================================================================
 ;; Citations and optional knowledge base
+
+(defun org-academic-literature-notes-dir ()
+  "Return the active literature notes directory for Citar."
+  (if (and (bound-and-true-p henri-org-roam-enable-citar-integration)
+           (fboundp 'henri-org-roam-file))
+      (henri-org-roam-file "references")
+    org-academic-reading-dir))
+
+(defun org-academic--reading-files ()
+  "Return Academic reading cards that should be visible to Org-roam."
+  (when (file-directory-p org-academic-reading-dir)
+    (directory-files org-academic-reading-dir t "\\.org\\'")))
+
+(defun org-academic-configure-roam-extra-files ()
+  "Expose Academic reading cards to Org-roam when Org-roam is loaded."
+  (when (and (featurep 'org-roam)
+             (boundp 'org-roam-extra-files))
+    (setq org-roam-extra-files
+          (delete-dups
+           (append (org-academic--reading-files)
+                   org-roam-extra-files)))))
 
 (defun org-academic-configure-citations ()
   "Configure Org Cite and Citar from academic path customizations."
@@ -127,7 +112,8 @@ unless older local customizations still read it."
         org-cite-activate-processor 'citar
         citar-bibliography (list org-academic-bibliography-file)
         citar-library-paths (list org-academic-library-dir)
-        citar-notes-paths (list org-academic-literature-notes-dir)))
+        citar-notes-paths (list (org-academic-literature-notes-dir)))
+  (org-academic-configure-roam-extra-files))
 
 (use-package citar
   :ensure t
@@ -137,6 +123,9 @@ unless older local customizations still read it."
 
 (with-eval-after-load 'oc
   (org-academic-configure-citations))
+
+(with-eval-after-load 'org-roam
+  (org-academic-configure-roam-extra-files))
 
 ;; =============================================================================
 ;; Internal helpers
@@ -150,7 +139,7 @@ unless older local customizations still read it."
                      org-academic-papers-dir
                      org-academic-notes-dir
                      org-academic-library-dir
-                     org-academic-literature-notes-dir))
+                     (org-academic-literature-notes-dir)))
     (when (and dir (not (file-directory-p dir)))
       (make-directory dir t))))
 
@@ -197,6 +186,15 @@ unless older local customizations still read it."
           (or user-mail-address "email@example.com")
           type
           (or options "toc:nil num:nil ^:nil title:t")))
+
+(defun org-academic--property-drawer (&optional properties)
+  "Return a file-level property drawer containing PROPERTIES."
+  (concat ":PROPERTIES:\n"
+          (mapconcat (lambda (property)
+                       (format ":%s:  %s" (car property) (cdr property)))
+                     properties
+                     "\n")
+          "\n:END:\n\n"))
 
 (defun org-academic--open-new-file (file content message-prefix)
   "Create FILE with CONTENT and show MESSAGE-PREFIX."
@@ -260,7 +258,7 @@ unless older local customizations still read it."
 
 (defun org-academic-format-reading-template (title cite-key bib-file)
   "Create a literature reading note template."
-  (format "%s#+bibliography: %s
+  (format "%s%s#+bibliography: %s
 
 * 文献信息
 
@@ -292,11 +290,17 @@ unless older local customizations still read it."
 - 反驳：
 - 可迁移：
 
+* 相关节点
+
+- 使用 `C-c n i` 插入相关 Roam 概念节点。
+
 * 下一步
 
 - [ ]
 "
           (org-academic--front-matter title "reading")
+          (org-academic--property-drawer
+           `(("ID" . ,(org-id-new))))
           bib-file
           (if (org-academic--blank-string-p cite-key)
               "[cite key]"
@@ -488,11 +492,6 @@ unless older local customizations still read it."
      (org-academic-format-simple-paper-template paper-title bib-file)
      "已创建学术论文")))
 
-(defun org-academic-create-research-note (&optional title)
-  "Compatibility command: create a lightweight idea note."
-  (interactive "s研究笔记标题: ")
-  (org-academic-create-idea-note title))
-
 (defun org-academic-create-conference-abstract (&optional title)
   "Create a conference abstract note."
   (interactive "s摘要标题: ")
@@ -565,6 +564,7 @@ unless older local customizations still read it."
       (insert (format "- PDFs: `%s`\n" org-academic-library-dir))
       (insert (format "- Ideas: `%s`\n" org-academic-ideas-dir))
       (insert (format "- Reading: `%s`\n" org-academic-reading-dir))
+      (insert (format "- Citar Notes: `%s`\n" (org-academic-literature-notes-dir)))
       (insert (format "- Projects: `%s`\n" org-academic-projects-dir))
       (insert (format "- Papers: `%s`\n\n" org-academic-papers-dir))
       (org-academic--insert-file-list "Ideas" org-academic-ideas-dir)

@@ -171,13 +171,6 @@ do NOT scatter set-face-attribute calls elsewhere."
                       ("URGENT" ,(list (all-the-icons-faicon "exclamation")) nil nil :ascent center))))))
 
 ;; =============================================================================
-;; Doom 主题适配（仅调用 doom-themes-org-config，不再重复设 face）
-
-(with-eval-after-load 'doom-themes
-  (when (fboundp 'doom-themes-org-config)
-    (doom-themes-org-config)))
-
-;; =============================================================================
 ;; 交互函数
 
 (defun henri/toggle-org-bullets ()

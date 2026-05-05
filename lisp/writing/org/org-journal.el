@@ -19,6 +19,7 @@
 ;; Org 日志系统配置
 
 ;; 基础 Org Journal 设置
+(require 'cl-lib)
 (require 'org)
 (require 'org-agenda)
 (require 'ox)
@@ -36,8 +37,19 @@
 
 (defun henri-agenda-files ()
   "Return the task-focused files used by the main Org agenda."
-  (mapcar #'henri-agenda-file
-          '("inbox.org" "tasks.org" "projects.org" "someday.org")))
+  (append
+   (mapcar #'henri-agenda-file
+           '("inbox.org" "tasks.org" "projects.org" "someday.org"))
+   (henri-agenda-roam-project-files)))
+
+(defun henri-agenda-roam-project-files ()
+  "Return Roam project files when `henri-roam-as-agenda-files' is enabled."
+  (let ((project-dir (and (bound-and-true-p henri-roam-as-agenda-files)
+                          (boundp 'henri-org-roam-directory)
+                          (expand-file-name "projects" henri-org-roam-directory))))
+    (if (and project-dir (file-directory-p project-dir))
+        (directory-files project-dir t "\\.org\\'")
+      nil)))
 
 (defun henri-agenda--file-title (file)
   "Return a human-friendly title for agenda FILE."
@@ -133,6 +145,25 @@
            org-overriding-default-time)
       (current-time)))
 
+(defun henri-journal--roam-daily-buffer-p (buffer)
+  "Return non-nil when BUFFER visits a Roam daily file."
+  (and (buffer-live-p buffer)
+       (boundp 'henri-org-roam-directory)
+       (with-current-buffer buffer
+         (and buffer-file-name
+              (file-in-directory-p
+               (file-truename buffer-file-name)
+               (file-truename
+                (expand-file-name "daily" henri-org-roam-directory)))))))
+
+(defun henri-journal-warn-when-capturing-from-roam-daily ()
+  "Warn when a Journal capture is started from a Roam daily buffer."
+  (when (and (boundp 'org-capture-plist)
+             (member (plist-get org-capture-plist :key) '("d" "w" "l")))
+    (let ((origin (plist-get org-capture-plist :original-buffer)))
+      (when (henri-journal--roam-daily-buffer-p origin)
+        (message "[henri] 当前在 Roam daily 中；知识线索优先考虑继续写 Roam daily。")))))
+
 (defun henri-journal--goto-or-create-heading (level title &optional limit)
   "Go to heading TITLE at LEVEL before LIMIT, creating it when absent."
   (let ((regexp (format "^\\*\\{%d\\}[ \t]+%s[ \t]*$"
@@ -157,6 +188,7 @@ Leaves point ON the day heading line, so that `org-capture' detects
   (let* ((time (henri-journal-capture-time))
          (month (henri-journal-month-heading time))
          (day (henri-journal-day-heading time)))
+    (henri-journal-warn-when-capturing-from-roam-daily)
     (goto-char (point-min))
     (henri-journal--goto-or-create-heading 1 month)
     (let ((month-start (point)))
@@ -254,33 +286,42 @@ Journal-specific custom agenda commands."
 
 (setq org-default-notes-file (henri-agenda-file "inbox.org"))
 
+(defun henri-org-capture-register-templates (templates)
+  "Register org-capture TEMPLATES by replacing existing entries with same key."
+  (let ((keys (mapcar #'car templates)))
+    (setq org-capture-templates
+          (append
+           (cl-remove-if (lambda (template)
+                           (member (car-safe template) keys))
+                         (bound-and-true-p org-capture-templates))
+           templates))))
+
 ;; 轻量 GTD + 统一日志模板。
 ;; diary / work / study 写入同一月度 journal；模板与 tag 区分。
-(setq org-capture-templates
-      (append (bound-and-true-p org-capture-templates)
-              `(("t" "快速 TODO" entry (file ,(henri-agenda-file "inbox.org"))
-                 "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
-                 :empty-lines 1)
+(henri-org-capture-register-templates
+ `(("t" "快速 TODO" entry (file ,(henri-agenda-file "inbox.org"))
+    "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
+    :empty-lines 1)
 
-                ("p" "项目 TODO" entry (file ,(henri-agenda-file "projects.org"))
-                 "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
-                 :empty-lines 1)
+   ("p" "项目 TODO" entry (file ,(henri-agenda-file "projects.org"))
+    "* TODO %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
+    :empty-lines 1)
 
-                ("s" "Someday" entry (file ,(henri-agenda-file "someday.org"))
-                 "* TODO %? :SOMEDAY:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
-                 :empty-lines 1)
+   ("s" "Someday" entry (file ,(henri-agenda-file "someday.org"))
+    "* TODO %? :SOMEDAY:\n:PROPERTIES:\n:CREATED: %U\n:END:\n%i\n"
+    :empty-lines 1)
 
-                ("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-                 "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
-                 :empty-lines 1)
+   ("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+    "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
+    :empty-lines 1)
 
-                ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-                 "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** 待办记录\n"
-                 :empty-lines 1)
+   ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+    "*** %U %? :journal:work:\n%i\n**** 工作任务描述\n\n**** 要点\n\n**** 待办记录\n"
+    :empty-lines 1)
 
-                ("l" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-                 "*** %U %? :journal:study:\n%i\n**** 主题\n\n**** 概念\n\n**** 解读\n\n**** 类别\n\n"
-                 :empty-lines 1))))
+   ("l" "学习卡片" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
+    "*** %U %? :journal:study:\n%i\n**** 主题\n\n**** 概念\n\n**** 解读\n\n**** 类别\n\n"
+    :empty-lines 1)))
 
 ;; Journal 自动保存 -----------------------------------------------------------
 (defvar-local henri-journal--auto-save-timer nil
@@ -493,12 +534,29 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
   (interactive)
   (org-agenda nil "d"))
 
+(defun henri/today-summary ()
+  "Open Journal, Roam daily, and Agenda as a three-pane daily review."
+  (interactive)
+  (let ((today (format-time-string "%Y-%m-%d")))
+    (delete-other-windows)
+    (henri/view-diary-by-date today)
+    (split-window-right)
+    (other-window 1)
+    (if (fboundp 'org-roam-dailies-goto-today)
+        (org-roam-dailies-goto-today)
+      (message "org-roam dailies is not available"))
+    (split-window-below)
+    (other-window 1)
+    (henri/org-agenda-dashboard)
+    (balance-windows)))
+
 (global-set-key (kbd "C-c c") 'org-capture)            ;; 快速捕获
 (global-set-key (kbd "C-c a") 'org-agenda)             ;; 打开议程视图
 (global-set-key (kbd "C-c o a") 'henri/org-agenda-dashboard) ;; 今日 Dashboard
 (global-set-key (kbd "C-c o i") 'henri/open-agenda-inbox)     ;; 打开 Inbox
 (global-set-key (kbd "C-c o t") 'henri/open-agenda-tasks)     ;; 打开 Tasks
 (global-set-key (kbd "C-c o p") 'henri/open-agenda-projects)  ;; 打开 Projects
+(global-set-key (kbd "C-c o s") 'henri/today-summary)         ;; 今日三栏总览
 (global-set-key (kbd "C-c j s") 'henri/search-journal)      ;; 搜索日志
 (global-set-key (kbd "C-c j d") 'henri/view-diary-by-date)  ;; 直接查看个人日记
 

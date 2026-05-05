@@ -3,6 +3,7 @@
 - [`2026-05-02-emacs-config-review-fixes.md`](2026-05-02-emacs-config-review-fixes.md) — Emacs 配置审查整改（路径/require/启动与运行时目录）
 - [`2026-05-03-journal-capture-lightweight.md`](2026-05-03-journal-capture-lightweight.md) — Journal 三类合流至月度 `journal-*.org` + GTD agenda 轻量化。活文档见 `org-journal.el` 与 [writing-system-guide.md](../tutorials/writing-system-guide.md)。
 - [`2026-05-04-markdown-module-enhancement-plan.md`](2026-05-04-markdown-module-enhancement-plan.md) — Markdown 子模块分层（export / nav / notes / lint / template）。活文档见 `lisp/writing/markdown/` 与 [writing-system-guide.md](../tutorials/writing-system-guide.md)。
+- [`2026-05-05-academic-roam-compat-removal.md`](2026-05-05-academic-roam-compat-removal.md) — Academic / Roam 旧兼容符号移除记录。
 - [`org-roam-settings.md`](org-roam-settings.md) — Org-roam 通用知识库配置。活文档见 `org-roam-henri.el` 与 [writing-system-guide.md](../tutorials/writing-system-guide.md)。
 
 ---

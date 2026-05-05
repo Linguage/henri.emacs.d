@@ -43,7 +43,7 @@
 
 加载入口 [`lisp/writing/init-org.el`](../../lisp/writing/init-org.el) 按 `henri-org-enable-*` 开关条件加载各子模块。
 
-模块边界：Academic 不覆盖 `org-roam-directory`；文献笔记默认归 `Academic/Reading/`（Citar notes 真源）；`Roam/references/` 只放通用资料节点。详见 [Writing 系统使用指南](../tutorials/writing-system-guide.md)。
+模块边界：Academic 不覆盖 `org-roam-directory`；文献笔记默认归 `Academic/Reading/`（Citar notes 真源），Reading card 通过 `org-roam-extra-files` 进入 Roam 图谱；`Roam/references/` 只放通用资料节点，除非显式开启 `henri-org-roam-enable-citar-integration`。详见 [Writing 系统使用指南](../tutorials/writing-system-guide.md)。
 
 ### Markdown 子模块 (`lisp/writing/markdown/`)
 
@@ -83,7 +83,7 @@
 2. `init-keys` 在 `init-managing` 之后加载：which-key 包由 managing 启用，前缀治理由 keys 统一声明。
 3. `visual-fonts` 会先于 `init-visual` 被加载一次（`init.el` 先 `require 'lib-fonts`）；`init-visual` 再次 `require` 为幂等。
 4. `paths.el` 的运行时目录创建在 `after-init-hook`；个人写作数据目录/文件只在交互式启动或显式命令中创建，避免 `--batch` 加载污染笔记根目录。
-5. `init-org.el` 中 roam 加载先于 academic，确保 `org-roam-directory` 不被 academic 覆盖。
+5. `init-org.el` 中 roam 加载先于 academic，确保 `org-roam-directory` 不被 academic 覆盖；Academic 只在 Org-roam 已加载时配置 `org-roam-extra-files`。
 6. Org academic 的 `org-academic-init` 通过 `after-init-hook` 延迟执行，避免与 roam 初始化竞争。
 
 ## 快捷键治理

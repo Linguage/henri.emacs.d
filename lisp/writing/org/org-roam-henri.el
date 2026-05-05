@@ -14,6 +14,7 @@
 
 (require 'org)
 (require 'org-id)
+(require 'org-element)
 (require 'subr-x)
 
 (defgroup henri-org-roam nil
@@ -24,12 +25,20 @@
   '("inbox" "daily" "notes" "references" "projects" "people" "maps")
   "Purpose-based subdirectories under `henri-org-roam-directory'.")
 
+(defconst henri-org-roam-lifecycle-tags
+  '("seedling" "budding" "evergreen")
+  "Lifecycle tags used for durable Org-roam notes.")
+
 (defconst henri-org-roam--file-head
-  "#+title: ${title}\n#+filetags: :%s:\n:PROPERTIES:\n:ID:       %%(org-id-new)\n:CREATED:  %%U\n:UPDATED:  %%U\n:END:\n\n"
+  "#+title: ${title}\n#+filetags: :%s:\n:PROPERTIES:\n:CREATED:  %%U\n:UPDATED:  %%U\n:END:\n\n"
   "File head template for regular Org-roam nodes.")
 
+(defconst henri-org-roam--file-head-seedling
+  "#+title: ${title}\n#+filetags: :%s:seedling:\n:PROPERTIES:\n:CREATED:  %%U\n:UPDATED:  %%U\n:END:\n\n"
+  "File head template for Org-roam nodes that start as seedling (notes, inbox).")
+
 (defconst henri-org-roam--daily-head
-  "#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n:PROPERTIES:\n:ID:       %(org-id-new)\n:CREATED:  %U\n:UPDATED:  %U\n:END:\n\n* 今日记录\n\n* Done\n\n* 想法\n\n* 待抽取节点\n"
+  "#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n:PROPERTIES:\n:CREATED:  %U\n:UPDATED:  %U\n:END:\n\n* 今日记录\n\n* Done\n\n* 想法 (会沉淀为 notes)\n\n* 待抽取节点\n"
   "File head template for Org-roam daily notes.")
 
 (defun henri-org-roam-directory ()
@@ -50,66 +59,26 @@
        (file-in-directory-p (expand-file-name buffer-file-name)
                             (henri-org-roam-directory))))
 
-(defun henri-org-roam--metadata-limit ()
-  "Return the end position of the file-level metadata area."
-  (save-excursion
-    (goto-char (point-min))
-    (or (re-search-forward "^\\* " nil t)
-        (point-max))))
-
 (defun henri-org-roam--ensure-time-metadata ()
   "Ensure CREATED and UPDATED metadata exist in the file property drawer."
-  (let ((timestamp (henri-org-roam--timestamp))
-        (limit (henri-org-roam--metadata-limit)))
+  (let ((timestamp (henri-org-roam--timestamp)))
     (save-excursion
       (goto-char (point-min))
-      (if (re-search-forward "^:PROPERTIES:[ \t]*$" limit t)
-          (let ((drawer-start (point))
-                (drawer-end (save-excursion
-                              (when (re-search-forward "^:END:[ \t]*$" limit t)
-                                (let ((marker (copy-marker (line-beginning-position))))
-                                  (set-marker-insertion-type marker t)
-                                  marker)))))
-            (when drawer-end
-              (goto-char drawer-start)
-              (unless (re-search-forward "^:CREATED:[ \t]+.*$" drawer-end t)
-                (goto-char drawer-end)
-                (insert (format ":CREATED:  %s\n" timestamp)))
-              (goto-char drawer-start)
-              (if (re-search-forward "^:UPDATED:[ \t]+.*$" drawer-end t)
-                  (replace-match (format ":UPDATED:  %s" timestamp) t t)
-                (goto-char drawer-end)
-                (insert (format ":UPDATED:  %s\n" timestamp)))
-              (set-marker drawer-end nil)))
-        (let (id created updated)
-          (goto-char (point-min))
-          (while (looking-at "^#\\+")
-            (forward-line 1))
-          (let ((insert-point (point)))
-            (while (looking-at "^[ \t]*$")
-              (forward-line 1))
-            (let ((metadata-start (point)))
-              (while (looking-at "^:\\(ID\\|CREATED\\|UPDATED\\):[ \t]+\\(.*\\)$")
-                (let ((key (match-string 1))
-                      (value (match-string 2)))
-                  (pcase key
-                    ("ID" (setq id value))
-                    ("CREATED" (setq created value))
-                    ("UPDATED" (setq updated value))))
-                (forward-line 1))
-              (when (> (point) metadata-start)
-                (delete-region metadata-start (point))))
-            (goto-char insert-point)
-            (insert (format ":PROPERTIES:\n%s:CREATED:  %s\n:UPDATED:  %s\n:END:\n"
-                            (if id (format ":ID:       %s\n" id) "")
-                            (or created timestamp)
-                            (or updated timestamp)))))))))
+      (org-id-get-create)
+      (unless (org-entry-get (point-min) "CREATED")
+        (org-entry-put (point-min) "CREATED" timestamp))
+      (org-entry-put (point-min) "UPDATED" timestamp))))
 
 (defun henri-org-roam-update-time-metadata ()
   "Refresh UPDATED metadata for Org-roam files before saving."
   (when (and (derived-mode-p 'org-mode)
              (henri-org-roam--buffer-file-in-roam-p))
     (henri-org-roam--ensure-time-metadata)))
+
+(defun henri-org-roam-enable-buffer-metadata-hook ()
+  "Enable Roam metadata maintenance for the current Org buffer."
+  (when (henri-org-roam--buffer-file-in-roam-p)
+    (add-hook 'before-save-hook #'henri-org-roam-update-time-metadata nil t)))
 
 (defun henri-org-roam-ensure-directories ()
   "Create the Org-roam root and purpose-based subdirectories."
@@ -118,6 +87,10 @@
     (let ((path (henri-org-roam-file dir)))
       (unless (file-directory-p path)
         (make-directory path t)))))
+
+(defun henri-org-roam-ensure-directories-advice (&rest _)
+  "Ensure Roam directories before interactive Roam entrypoints need them."
+  (henri-org-roam-ensure-directories))
 
 (defun henri-org-roam-open-directory ()
   "Open `henri-org-roam-directory' in Dired."
@@ -130,6 +103,118 @@
   (interactive)
   (henri-org-roam-ensure-directories)
   (dired (henri-org-roam-file "inbox")))
+
+(defun henri-org-roam--safe-slug (title)
+  "Return a filesystem-safe slug for Org-roam TITLE."
+  (let ((slug (replace-regexp-in-string "[^[:alnum:]\u4e00-\u9fff]+" "-" title)))
+    (string-trim (downcase slug) "-+" "-+")))
+
+(defun henri-org-roam--current-title ()
+  "Return the current Org heading title or file title."
+  (if (org-before-first-heading-p)
+      (or (cadr (assoc "TITLE" (org-collect-keywords '("TITLE"))))
+          (file-name-base (or buffer-file-name "Org note")))
+    (org-get-heading t t t t)))
+
+(defun henri-org-roam--filetags ()
+  "Return current buffer filetags as a list."
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^#\\+filetags:[ \t]*\\(.*\\)$" nil t)
+      (split-string (match-string 1) ":" t "[ \t\n\r]+"))))
+
+(defun henri-org-roam--set-filetags (tags)
+  "Set current buffer filetags to TAGS."
+  (save-excursion
+    (goto-char (point-min))
+    (let ((line (format "#+filetags: :%s:\n" (string-join tags ":"))))
+      (if (re-search-forward "^#\\+filetags:.*$" nil t)
+          (replace-match (string-trim-right line) t t)
+        (while (looking-at "^#\\+title:.*$")
+          (forward-line 1))
+        (insert line)))))
+
+(defun henri-org-roam-cycle-lifecycle-tag ()
+  "Cycle the current Roam file through seedling, budding, and evergreen."
+  (interactive)
+  (unless (derived-mode-p 'org-mode)
+    (user-error "This command works in Org buffers"))
+  (let* ((tags (henri-org-roam--filetags))
+         (current (seq-find (lambda (tag)
+                              (member tag henri-org-roam-lifecycle-tags))
+                            tags))
+         (next (or (cadr (member current henri-org-roam-lifecycle-tags))
+                   (car henri-org-roam-lifecycle-tags)))
+         (clean-tags (seq-remove (lambda (tag)
+                                   (member tag henri-org-roam-lifecycle-tags))
+                                 tags)))
+    (henri-org-roam--set-filetags (append clean-tags (list next)))
+    (message "Org-roam lifecycle: %s" next)))
+
+(defun henri-org-roam--subtree-body ()
+  "Return the body text of the current Org subtree."
+  (save-excursion
+    (org-back-to-heading t)
+    (let ((start (save-excursion
+                   (forward-line 1)
+                   (while (and (not (eobp))
+                               (looking-at-p "^[ \t]*:\\(PROPERTIES\\|LOGBOOK\\):[ \t]*$"))
+                     (when (re-search-forward "^[ \t]*:END:[ \t]*$" nil t)
+                       (forward-line 1)))
+                   (point)))
+          (end (save-excursion
+                 (org-end-of-subtree t t)
+                 (point))))
+      (string-trim (buffer-substring-no-properties start end)))))
+
+(defun henri-org-roam-extract-pending (title)
+  "Extract the current daily/inbox heading into a durable Roam note TITLE."
+  (interactive
+   (progn
+     (unless (org-at-heading-p)
+       (org-back-to-heading t))
+     (list (read-string "Extract to note title: " (henri-org-roam--current-title)))))
+  (unless (and buffer-file-name
+               (or (file-in-directory-p (file-truename buffer-file-name)
+                                        (file-truename (henri-org-roam-file "daily")))
+                   (file-in-directory-p (file-truename buffer-file-name)
+                                        (file-truename (henri-org-roam-file "inbox")))))
+    (user-error "Run this from a Roam daily or inbox heading"))
+  (henri-org-roam-ensure-directories)
+  (org-back-to-heading t)
+  (let* ((source-buffer (current-buffer))
+         (source-title (henri-org-roam--current-title))
+         (source-id (org-id-get-create))
+         (body (henri-org-roam--subtree-body))
+         (target-title (if (string-empty-p title) source-title title))
+         (target-file (henri-org-roam-file
+                       (format "notes/%s.org"
+                               (henri-org-roam--safe-slug target-title)))))
+    (when (file-exists-p target-file)
+      (user-error "Target note already exists: %s" target-file))
+    (with-current-buffer (find-file-noselect target-file)
+      (erase-buffer)
+      (insert (format "#+title: %s\n#+filetags: :note:seedling:\n:PROPERTIES:\n:CREATED:  %s\n:UPDATED:  %s\n:END:\n\n"
+                      target-title
+                      (henri-org-roam--timestamp)
+                      (henri-org-roam--timestamp)))
+      (insert (format "- Source: [[id:%s][%s]]\n\n" source-id source-title))
+      (unless (string-empty-p body)
+        (insert body "\n"))
+      (goto-char (point-min))
+      (org-mode)
+      (let ((target-id (org-id-get-create)))
+        (save-buffer)
+        (with-current-buffer source-buffer
+          (org-back-to-heading t)
+          (org-end-of-subtree t t)
+          (unless (bolp) (insert "\n"))
+          (insert (format "- Extracted note: [[id:%s][%s]]\n" target-id target-title))
+          (save-buffer))))
+    (when (fboundp 'org-roam-db-sync)
+      (org-roam-db-sync))
+    (find-file target-file)
+    (message "Extracted Roam note: %s" target-file)))
 
 (defun henri-org-roam--package-available-p (package)
   "Return non-nil when PACKAGE can be loaded from the current load path."
@@ -194,22 +279,32 @@
          ("C-c n t" . org-roam-dailies-goto-today)
          ("C-c n y" . org-roam-dailies-goto-yesterday)
          ("C-c n m" . org-roam-dailies-goto-tomorrow)
+         ("C-c n E" . henri-org-roam-extract-pending)
+         ("C-c n v" . henri-org-roam-cycle-lifecycle-tag)
          ("C-c n d" . henri-org-roam-open-directory)
          ("C-c n x" . henri-org-roam-open-inbox)
          ("C-c n ?" . henri-org-roam-show-template-keys))
   :config
   (require 'org-roam-dailies)
   (setq org-roam-dailies-directory "daily/")
+  (dolist (fn '(org-roam-capture
+                org-roam-node-find
+                org-roam-dailies-capture-today
+                org-roam-dailies-goto-today
+                org-roam-dailies-goto-yesterday
+                org-roam-dailies-goto-tomorrow))
+    (advice-remove fn #'henri-org-roam-ensure-directories-advice)
+    (advice-add fn :before #'henri-org-roam-ensure-directories-advice))
   (setq org-roam-capture-templates
         `(("n" "note / 概念笔记" plain
            "%?"
            :target (file+head "notes/${slug}.org"
-                              ,(format henri-org-roam--file-head "note"))
+                              ,(format henri-org-roam--file-head-seedling "note"))
            :unnarrowed t)
           ("i" "inbox / 临时收集" plain
            "%?"
            :target (file+head "inbox/${slug}.org"
-                              ,(format henri-org-roam--file-head "inbox"))
+                              ,(format henri-org-roam--file-head-seedling "inbox"))
            :unnarrowed t)
           ("r" "reference / 资料笔记" plain
            "* Metadata\n- Source:\n- Author:\n- Date:\n- Type:\n\n* 摘要\n%?\n\n* 我的理解\n\n* 相关节点\n"
@@ -238,18 +333,9 @@
            "* %<%H:%M> %?\n"
            :target (file+head "%<%Y-%m-%d>.org"
                               ,henri-org-roam--daily-head))))
-  (add-hook 'before-save-hook #'henri-org-roam-update-time-metadata)
+  (add-hook 'org-mode-hook #'henri-org-roam-enable-buffer-metadata-hook)
   (when (file-directory-p (henri-org-roam-directory))
     (org-roam-db-autosync-mode 1)))
-
-(defun henri-org-roam-ensure-directories-maybe ()
-  "Create Org-roam directories during interactive startup only."
-  (unless noninteractive
-    (henri-org-roam-ensure-directories)
-    (when (fboundp 'org-roam-db-autosync-mode)
-      (org-roam-db-autosync-mode 1))))
-
-(add-hook 'after-init-hook #'henri-org-roam-ensure-directories-maybe)
 
 (use-package consult-org-roam
   :if (henri-org-roam--package-available-p 'consult-org-roam)

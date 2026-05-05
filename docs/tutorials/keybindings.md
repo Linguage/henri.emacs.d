@@ -16,8 +16,8 @@
 | `C-c s` | search | `C-s` swiper；前缀预留 |
 | `C-c t` | toggle / theme | `t` load theme、`b` big font、`l` line numbers |
 | `C-c h` | help / doctor | `d` doctor、`k` keybindings |
-| `C-c o` | Org ops | `a` dashboard、`i/t/p` agenda files、`v` startup folded |
-| `C-c n` | Org-roam | `f/i/b/c/g/j/t/y/m/d/x/?` |
+| `C-c o` | Org ops | `a` dashboard、`s` today summary、`i/t/p` agenda files、`v` startup folded |
+| `C-c n` | Org-roam | `f/i/b/c/g/j/t/y/m/E/v/d/x/?` |
 | `C-c j` | Journal | `s` search、`d` view by date |
 | `C-c r` | Rime | 由 Rime 模块提供 |
 | `C-c l` | store link | 释放给 Org link 语义 |
@@ -95,6 +95,7 @@ F5/F6/F9/F10/F11/F12 不再作为本配置的主力调试入口。
 | `C-c a` | `org-agenda` | `lisp/writing/org/org-journal.el` |
 | `C-c o a` | `henri/org-agenda-dashboard` | `lisp/writing/org/org-journal.el` |
 | `C-c o i/t/p` | open inbox/tasks/projects | `lisp/writing/org/org-journal.el` |
+| `C-c o s` | `henri/today-summary` | `lisp/writing/org/org-journal.el` |
 | `C-c o v` | `henri/cycle-org-startup-folded` | `lisp/writing/org/org-base.el` |
 | `C-c j s` | `henri/search-journal` | `lisp/writing/org/org-journal.el` |
 | `C-c j d` | `henri/view-diary-by-date` | `lisp/writing/org/org-journal.el` |
@@ -140,6 +141,8 @@ F5/F6/F9/F10/F11/F12 不再作为本配置的主力调试入口。
 | `C-c n c` | `org-roam-capture` | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n g` | `org-roam-graph` | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n j/t/y/m` | dailies capture/today/yesterday/tomorrow | `lisp/writing/org/org-roam-henri.el` |
+| `C-c n E` | `henri-org-roam-extract-pending` | `lisp/writing/org/org-roam-henri.el` |
+| `C-c n v` | `henri-org-roam-cycle-lifecycle-tag` | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n d` | `henri-org-roam-open-directory` | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n x` | `henri-org-roam-open-inbox` | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n ?` | `henri-org-roam-show-template-keys` | `lisp/writing/org/org-roam-henri.el` |

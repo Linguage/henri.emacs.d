@@ -16,8 +16,6 @@
   :ensure t
   :demand t
   :config
-  (when (fboundp 'doom-themes-org-config)
-    (doom-themes-org-config))
   (when (fboundp 'henri/apply-current-theme)
     (henri/apply-current-theme)))
 

@@ -87,6 +87,7 @@ Checkbox 只适合局部清单，不是 agenda 任务：
 |--------|------|
 | `C-c a` | 打开 Org Agenda 分发入口 |
 | `C-c o a` | 直接打开今日 GTD Dashboard |
+| `C-c o s` | 打开 Journal + Roam daily + Agenda 今日三栏 |
 | `C-c o i` | 打开 `inbox.org` |
 | `C-c o t` | 打开 `tasks.org` |
 | `C-c o p` | 打开 `projects.org` |
@@ -175,11 +176,13 @@ Journal 和 Roam daily 的区别很简单：**今天发生了什么、做了什�
 | `C-c n t` | 打开今天的 daily note |
 | `C-c n y` | 打开昨天的 daily note |
 | `C-c n m` | 打开明天的 daily note |
+| `C-c n E` | 从 Roam daily / inbox 当前 heading 抽取为 `notes/` 节点 |
+| `C-c n v` | 切换当前 Roam 文件生命周期标签 |
 | `C-c n d` | 打开 Roam 根目录 |
 | `C-c n x` | 打开 Roam inbox 目录 |
 | `C-c n ?` | 查看 capture template key |
 
-模块开关在 `M-x customize-group RET henri-writing` 中维护：`henri-org-enable-roam` 控制是否加载 Org-roam；`henri-org-roam-directory` 控制 Roam 根目录；`henri-org-roam-enable-citar-integration` 默认为 `nil`，只有主动希望 Citar 创建 Roam reference 节点时才开启。
+模块开关在 `M-x customize-group RET henri-writing` 中维护：`henri-org-enable-roam` 控制是否加载 Org-roam；`henri-org-roam-directory` 控制 Roam 根目录；`henri-org-roam-enable-citar-integration` 默认为 `nil`，只有主动希望 Citar 创建 Roam reference 节点时才开启；`henri-roam-as-agenda-files` 默认为 `nil`，打开后会把 `Roam/projects/*.org` 纳入 agenda。
 
 `M-x henri-org-roam-ensure-directories` 可重新创建 `Roam/` 下的用途目录。若本机已安装 `consult-org-roam`，配置会额外启用 `C-c n s/r/l` 用于全文搜索、反链和前向链接。
 
@@ -196,13 +199,15 @@ Journal 和 Roam daily 的区别很简单：**今天发生了什么、做了什�
 | `m` | 索引地图 | `Roam/maps/${slug}.org` |
 | `e` | 人物笔记 | `Roam/people/${slug}.org` |
 
-每日笔记走独立模板，template key 是 `d`：`C-c n j` 会写入 `Roam/daily/YYYY-MM-DD.org`，包含“今日记录 / Done / 想法 / 待抽取节点”。
+每日笔记走独立模板，template key 是 `d`：`C-c n j` 会写入 `Roam/daily/YYYY-MM-DD.org`，包含“今日记录 / Done / 想法 (会沉淀为 notes) / 待抽取节点”。
 
 创建新节点进入 template key 输入时，配置会在 echo area 显示一行 `n/i/r/p/m/e` 的模板提示；忘记时也可以随时按 `C-c n ?` 查看普通节点模板和 daily 模板。
 
 Roam 文件顶部的 `:PROPERTIES:` 会维护 `:CREATED:` 和 `:UPDATED:`。新建节点时两者都会写入；之后保存 Roam 文件时只刷新 `:UPDATED:`，保留原始创建时间。
 
-推荐节奏：日常先写 daily；出现三次以上、值得长期复用的想法，再用 `C-c n f` 抽成节点，并用 `C-c n i` 连接到相关概念或 map。
+普通 Roam 节点默认带 `:seedling:` 标签。用 `C-c n v` 可在 `seedling -> budding -> evergreen` 之间切换，用来标记节点成熟度。
+
+推荐节奏：日常先写 daily；出现三次以上、值得长期复用的想法，在当前 heading 按 `C-c n E` 抽成 `notes/` 节点，并用 `C-c n i` 连接到相关概念或 map。
 
 ---
 
@@ -320,7 +325,7 @@ Journal 月度文件默认使用 `#+LATEX_CLASS: journal`，适合导出带目�
 | `C-c A d` | 学术写作 dashboard |
 | `C-c A i` | 插入引用 |
 
-相关路径可通过 `M-x customize-group RET org-academic` 调整。正式文献阅读卡与 Citar notes 默认使用 `Academic/Reading/`，这是文献笔记的唯一真源；Org-roam 由通用 `org-roam-henri` 模块管理，Academic 不再单独覆盖 `org-roam-directory`。
+相关路径可通过 `M-x customize-group RET org-academic` 调整。正式文献阅读卡与 Citar notes 默认使用 `Academic/Reading/`，这是文献笔记的唯一真源；Reading card 会写入 `:ID:` 并作为 `org-roam-extra-files` 进入 Roam 图谱。只有将 `henri-org-roam-enable-citar-integration` 打开时，Citar notes 才整体切换到 `Roam/references/`。
 
 ---
 

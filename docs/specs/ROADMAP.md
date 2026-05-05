@@ -42,9 +42,10 @@
 ## Phase 4: 可选增强
 
 - [ ] `BLUEPRINT.md` 验收标准加入度量项（启动秒数、健康 JSON 字段）
-- [ ] Org-roam + Academic 联动：reading card 中自动插入 `id:` 链接到 Roam 节点
-- [ ] `citar-org-roam` 开启后的完整工作流验证与文档
-- [ ] Journal 与 Roam daily 的交叉引用约定
+- [x] Org-roam + Academic 联动：Reading card 写入 `:ID:` 并纳入 `org-roam-extra-files`
+- [x] `citar-org-roam` 开启后的 Citar notes 真源切换
+- [x] Journal 与 Roam daily 的交叉入口：`henri/today-summary`
+- [ ] Roam 生命周期标签的长期复盘经验沉淀
 
 ---
 
