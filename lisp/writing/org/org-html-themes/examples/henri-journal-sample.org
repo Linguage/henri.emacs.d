@@ -1,0 +1,44 @@
+#+TITLE: 个人日记 2026-05
+#+AUTHOR: Henri Pogatrain
+#+DATE: 2026-05-03 Sun 00:00
+#+STARTUP: content
+#+SETUPFILE: ../org/theme-henri-journal.setup
+
+* 2026-05 May
+
+** 2026-05-02 Saturday
+
+*** [2026-05-02 Sat 16:18] journal diary :journal:diary:
+
+**** 今日要点
+
+- 五一假期的第二天。
+  - 第一天算是废了，第二天也无精打采的。我可能需要一些新的生活方式，现在的这种生活太拘泥于 *vibe coding* 了。
+  - 晚上，在天府艺术图书馆，感觉极好。图书馆白天人数应该极多，但是到了晚上就好了很多，而且周末和假日可以开到 *11点*。
+- Emacs 的配置重构
+  - 将 Emacs 笔记系统用 Codex 进行了重新配置。
+  - 有多余的 token 就配置一下，也是一种有趣的生活方式。
+
+#+begin_quote
+日记不是为了把生活变成结论，而是给一些松散的感受留出继续生长的位置。
+#+end_quote
+
+**** 花销记录
+
+| 项目 | 金额 | 类别 |
+|------+------+------|
+| 咖啡 |   28 | 餐饮 |
+| 地铁 |    8 | 交通 |
+
+** 2026-05-03 Sunday
+
+*** [2026-05-03 Sun 10:30] journal diary :journal:diary:
+
+**** 今日要点
+
+- 为 Org HTML 导出新增 =henri-journal= 主题。
+- 目标是把默认日记页变成更适合长文阅读的数字花园界面。
+
+#+begin_src emacs-lisp
+(message "henri-journal theme loaded")
+#+end_src

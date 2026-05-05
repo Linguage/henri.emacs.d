@@ -1,0 +1,19 @@
+# -*- mode: org; -*-
+
+#+OPTIONS: html-style:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/css/htmlize.css"/>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/css/readtheorg.css"/>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/css/code-copy.css"/>
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/css/search.css"/>
+
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/src/lib/js/jquery.min.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/src/lib/js/bootstrap.min.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/src/lib/js/jquery.stickytableheaders.min.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/js/search.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/js/readtheorg.js"></script>
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/src/readtheorg_theme/js/code-copy.js"></script>
+
+#+MACRO: enable-search #+HTML_HEAD: <script type="text/javascript">enableSearch();</script>
+#+MACRO: disable-search #+HTML_HEAD: <script type="text/javascript">disableSearch();</script>
+#+MACRO: set-search-limit #+HTML_HEAD: <script type="text/javascript">setSearchLimit($1);</script>
+

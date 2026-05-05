@@ -1,6 +1,6 @@
 # Org Mode HTML 导出主题指南
 
-本说明梳理 **Org → HTML** 多主题共存的目录约定、分层思路与选择器清单，并给出落地顺序建议。主题资源位于仓库 `[lisp/writing/org/org-html-themes](../../lisp/writing/org/org-html-themes)`，路径变量为 `henri-org-html-themes-directory`（见 `[lisp/init-custom.el](../../lisp/init-custom.el)`）。
+本说明梳理 **Org → HTML** 多主题共存的目录约定、分层思路与选择器清单，并给出落地顺序建议。主题资源统一位于仓库 [`lisp/writing/org/org-html-themes`](../../lisp/writing/org/org-html-themes)，路径变量为 `henri-org-html-themes-directory`（见 [`lisp/init-custom.el`](../../lisp/init-custom.el)）。
 
 ---
 
@@ -15,6 +15,10 @@
 | `theme-bigblow`        | fniessen 上游 | 横版宽幅               | 浮动 TOC、jQuery 动效                |
 | `theme-henri`          | 本地          | 简单 setup           | 仅引入 CSS                         |
 | `theme-henri-bearblog` | 本地          | Bearblog + Monokai | 顶栏、浅/深切换、章节折叠、当前小节、移动端 TOC      |
+| `theme-henri-notes`    | 本地          | 默认 Org 导出       | 通用阅读版式、明暗切换、浮窗 TOC                  |
+| `theme-henri-journal`  | 本地          | Journal 专用        | Journal 页头、Activity History 日历             |
+
+未显式指定 `#+SETUPFILE` 主题的 Org 文件导出 HTML 时，会自动使用 `Henri Notes` 主题；这个注入发生在临时导出 buffer 中，不会改写源 Org 文件。若需要为某次导出换主题，用 `C-c m h w`。
 
 
 各主题往往各自覆盖**字号、布局、TOC、代码块、表格、链接**等一整套样式，重复度高、命名又不统一，会带来：
@@ -170,7 +174,7 @@ html[data-theme='dark']  { /* 深色覆盖 */ }
 
 ### 1.5 Emacs 侧可扩展能力
 
-`[lisp/writing/org/org-html.el](../../lisp/writing/org/org-html.el)` 中 `my/org-html-themes-list` 维护「展示名 → setup 路径」。可进一步增加例如：
+[`lisp/writing/org/org-html.el`](../../lisp/writing/org/org-html.el) 中 `henri/org-html-themes-list` 维护「展示名 → setup 路径」。可进一步增加例如：
 
 1. `**my/org-html-theme-validate**`：对固定 `examples/<theme>/sample.org` 导出并比对 DOM 或快照（便于 CI）；
 2. `**my/org-html-theme-scaffold**`：交互生成主题骨架（`tokens.css`、`setup`、`sample.org`），减少从 Bearblog 整文件复制。

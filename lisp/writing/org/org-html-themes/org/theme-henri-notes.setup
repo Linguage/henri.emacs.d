@@ -1,0 +1,5 @@
+# -*- mode: org; -*-
+
+#+OPTIONS: html-style:nil toc:t
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="file://@@henri-org-html-themes-root@@/henri-notes/henri-notes-theme.css"/>
+#+HTML_HEAD: <script type="text/javascript" src="file://@@henri-org-html-themes-root@@/henri-notes/henri-notes.js"></script>

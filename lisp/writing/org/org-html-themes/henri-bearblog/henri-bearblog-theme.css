@@ -1,0 +1,917 @@
+/* Monokai themed bearblog */
+
+@import url('https://fonts.googleapis.com/css2?family=Bree+Serif&family=Bungee+Shade&display=swap');
+
+/* 变量：Monokai 主色系 */
+:root {
+    /*** main text column; TOC width + gap used with --width for grid max-width ***/
+    --width: 760px;
+    --hb-toc-width: 200px;
+    --hb-col-gap: 2rem;
+    --hb-content-max: calc(var(--width) + var(--hb-toc-width) + var(--hb-col-gap));
+    --font-main: 'Bree Serif', serif;
+    --font-secondary: 'Bree Serif', serif;
+    --font-scale: 1.1em;
+
+    /* 品牌色（原链接色） */
+    --brand-color: #66d9ef;
+    --brand-color-alt: #4fb7ce;             /* visited / 次级 */
+    --brand-color-shadow: rgba(102,217,239,0.35);
+
+    /* Monokai palette */
+    --background-color: #272822;
+    --background-alt-color: #1e1f1c;
+    --heading-color: #f8f8f2;
+    --text-color: #f8f8f2;
+    --muted-text-color: #75715e;
+
+    /* 统一链接体系 */
+    --link-color: var(--brand-color);
+    --link-hover-bg: var(--brand-color);
+    --link-hover-text: #272822;
+    --visited-color: var(--brand-color-alt);
+
+    --accent-color: #fd971f;
+    --accent-2-color: #a6e22e; /* 仍保留给代码语法/其他元素用 */
+
+    --border-color: #49483e;
+    --code-background-color: #1e1f1c;
+    --code-color: #f8f8f2;
+    --blockquote-color: #a6e22e;
+
+    --focus-outline: 2px solid var(--brand-color);
+
+    /* 顶栏背景色：暗色模式下使用深色，浅色模式会在后面覆盖为白色 */
+    --topbar-bg: #1e1f1c;
+}
+
+/* 可选：高分辨率下轻微渐变背景层次 */
+body {
+    font-family: var(--font-secondary);
+    font-size: var(--font-scale);
+    margin: 0;
+    /* 略减小左右留白；提高侧向 padding 让整页在宽屏上更匀称 */
+    padding: 24px 48px;
+    max-width: none;
+    text-align: left;
+    background: radial-gradient(circle at 25% 15%, #2f3027 0%, #272822 60%) fixed;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    line-height: 1.55;
+    color: var(--text-color);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 文字 & 标题 */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-main);
+    color: var(--heading-color);
+    letter-spacing: 0.5px;
+}
+
+/* 一级章节标题（HTML h2）更庄严 */
+h2 {
+    font-size: 1.35em;
+    margin-top: 2.6rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+h2 .section-number-2 {
+    font-weight: 700;
+    margin-right: 0.5rem;
+}
+
+p, li {
+    color: var(--text-color);
+}
+
+strong, b {
+    color: var(--heading-color);
+}
+
+/* 链接 */
+a {
+    color: var(--link-color);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color .25s, background .25s, box-shadow .25s;
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+a:hover {
+    text-decoration: none;
+    background: var(--link-hover-bg);
+    color: var(--link-hover-text) !important;
+    box-shadow: 0 0 0 3px var(--brand-color-shadow);
+}
+
+a:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 2px;
+}
+
+a:visited {
+    color: var(--visited-color);
+}
+
+/* Header / Nav / Footer 框架 */
+header {
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+footer {
+    padding: 25px 0;
+    text-align: center;
+    border-top: 2px solid var(--border-color);
+    margin-top: 40px;
+    color: var(--muted-text-color);
+    font-size: 0.9em;
+}
+
+nav a {
+    margin-right: 8px;
+}
+
+nav a:last-child {
+    margin-right: 0;
+}
+
+/* 标题 Logo */
+.title:hover {
+    text-decoration: none;
+    background: transparent;
+}
+
+.title h1 {
+    font-size: 1.8em;
+    font-family: 'Bungee Shade', cursive;
+    color: var(--brand-color);
+    text-shadow: 0 0 6px var(--brand-color-shadow), 0 0 18px rgba(102,217,239,0.15);
+}
+
+/* Org 导出: <h1 class="title"> 也应用同样的字体与发光效果 */
+h1.title {
+    font-size: 1.8em;
+    font-family: 'Bungee Shade', cursive;
+    color: var(--brand-color);
+    text-shadow: 0 0 6px var(--brand-color-shadow), 0 0 18px rgba(102,217,239,0.15);
+}
+ 
+/* 布局容器：左侧目录 + 右侧正文（类似杂志布局）
+   Org 默认结构: <div id="content"><h1 class="title">...<div id="table-of-contents">... */
+#content {
+    display: grid;
+    grid-template-columns: var(--hb-toc-width) minmax(0, 1fr);
+    column-gap: var(--hb-col-gap);
+    max-width: var(--hb-content-max);
+    margin: 0 auto;
+}
+
+/* 页面顶栏：标题 + 作者日期 + 当前小节 + 全局折叠按钮 */
+#hb-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    /* 使用变量控制浅色/深色模式下的封面背景 */
+    background: var(--topbar-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+#hb-topbar-inner {
+    max-width: var(--hb-content-max);
+    margin: 0 auto;
+    padding: 0.45rem 0 0.35rem;
+    display: grid;
+    grid-template-columns: var(--hb-toc-width) minmax(0, 1fr);
+    column-gap: var(--hb-col-gap);
+    align-items: flex-end;
+}
+
+#hb-topbar-left {
+    min-width: 0;
+    grid-column: 1;
+}
+
+#hb-topbar-right {
+    min-width: 0;
+    grid-column: 2;
+    text-align: right;
+}
+
+/* 顶栏中的移动端目录开关按钮，默认隐藏，仅在窄屏下显示 */
+#hb-toc-toggle {
+    display: none;
+}
+
+/* 顶栏紧凑态：仅保留标题与当前小节为单行 */
+#hb-topbar.hb-topbar-compact #hb-topbar-inner {
+    padding: 0.2rem 0 0.15rem;
+}
+
+#hb-topbar.hb-topbar-compact #hb-meta,
+#hb-topbar.hb-topbar-compact #hb-topbar-current-label,
+#hb-topbar.hb-topbar-compact #hb-fold-controls {
+    display: none;
+}
+
+#hb-topbar.hb-topbar-compact #hb-topbar-title,
+#hb-topbar.hb-topbar-compact #hb-current-heading {
+    font-size: 0.95em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 顶栏进入紧凑模式时，“夜间模式”切换按钮仍然保持可见 */
+#hb-topbar.hb-topbar-compact #hb-theme-toggle {
+    display: inline-flex;
+}
+
+#hb-topbar-title {
+    font-family: 'Bungee Shade', cursive;
+    font-size: 1.35em;
+    color: var(--brand-color);
+    text-shadow: 0 0 6px var(--brand-color-shadow), 0 0 18px rgba(102,217,239,0.15);
+}
+
+/* 封面：文件标题位于右侧主列顶部，做成卡片区 */
+#content > h1.title {
+    grid-column: 2;
+    margin: 0 0 1.8rem;
+    padding: 1.6rem 1.8rem;
+    border-radius: 10px;
+    background: radial-gradient(circle at 10% 0%, #37382f 0%, #272822 55%)
+                padding-box;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.65);
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* 默认正文元素落在右侧主列 */
+#content > :not(h1.title):not(#table-of-contents) {
+    grid-column: 2;
+}
+
+/* 目录：左侧固定宽度列，纵向对齐内容（不再使用独立卡片背景） */
+#table-of-contents {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: flex-start;
+    position: sticky;
+    /* 顶部留出给顶栏的高度，略有留白 */
+    top: 110px;
+    max-height: calc(100vh - 110px);
+    transition: top 0.25s ease, max-height 0.25s ease;
+    overflow: auto;
+    padding: 0.2rem 0.4rem 0.6rem 0;
+    background: none;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    font-size: 0.93em;
+}
+
+/* 顶栏进入紧凑模式时，让目录再向上贴近一点，形成跟随滚动的动效 */
+#hb-topbar.hb-topbar-compact + #content #table-of-contents {
+    top: 90px;
+    max-height: calc(100vh - 90px);
+}
+
+#table-of-contents h2 {
+    margin-top: 0;
+    margin-bottom: .6rem;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    color: var(--muted-text-color);
+}
+
+#text-table-of-contents {
+    margin: 0;
+    padding: 0;
+}
+
+#text-table-of-contents ul {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+}
+
+#text-table-of-contents ul li {
+    margin: 0 0 .3rem;
+    padding-left: .4rem;
+    border-left: 2px solid transparent;
+}
+
+#text-table-of-contents ul li a {
+    display: inline-block;
+    width: 100%;
+    padding: 2px 4px 2px 2px;
+    border-radius: 4px;
+    color: var(--muted-text-color);
+    transition: color .2s, background .2s, border-color .2s, box-shadow .2s;
+}
+
+#text-table-of-contents ul li a:hover {
+    color: var(--link-hover-text);
+    background: var(--brand-color);
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--brand-color-shadow);
+}
+
+/* 子级目录缩进和分级线条 */
+#text-table-of-contents ul ul {
+    margin-top: .2rem;
+    margin-bottom: .2rem;
+    margin-left: .6rem;
+    padding-left: .5rem;
+    border-left: 1px dashed rgba(255,255,255,0.12);
+}
+
+#text-table-of-contents ul ul li a {
+    font-size: 0.9em;
+}
+
+/* 结构 */
+main {
+    line-height: 1.65;
+}
+
+hr {
+    border: 0;
+    border-top: 1px dashed var(--border-color);
+    margin: 2.2em 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    /* 三线表：加粗顶线与底线 */
+    border-top: 2px solid var(--text-color);
+    border-bottom: 2px solid var(--text-color);
+    margin: 1.4rem 0;
+}
+
+table th, table td {
+    padding: 6px 10px;
+    /* 去掉纵向边框，只保留水平分隔线 */
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+}
+
+/* 最后一行内部不再画底线，由 table 自己的底线承担 */
+table tr:last-child td {
+    border-bottom: none;
+}
+
+/* 表头加粗，并用更深的下边线与数据区分隔 */
+table th {
+    font-weight: 700;
+    border-bottom: 1px solid var(--text-color);
+}
+
+img {
+    max-width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.inline {
+    width: auto !important;
+}
+
+/* 折叠功能样式 */
+
+/* 折叠后的正文内容隐藏 */
+.hb-section-body.hb-collapsed {
+    display: none;
+}
+
+/* 可折叠标题：鼠标悬停轻微高亮 */
+.hb-collapsible-heading {
+    cursor: pointer;
+    position: relative;
+}
+
+.hb-collapsible-heading:hover {
+    background: rgba(255,255,255,0.02);
+}
+
+/* 折叠小三角图标 */
+.hb-fold-toggle {
+    font-size: 0.8em;
+    margin-left: 0.3rem;
+    color: var(--muted-text-color);
+}
+
+.hb-heading-collapsed {
+    opacity: 0.85;
+}
+
+/* 全局折叠/展开按钮容器 */
+#hb-fold-controls {
+    display: inline-block;
+    margin-left: 0.8rem;
+}
+
+#hb-fold-toggle-all {
+    background: transparent;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    padding: 3px 10px;
+    color: var(--muted-text-color);
+    font-size: 0.82em;
+    cursor: pointer;
+    transition: background .2s, color .2s, box-shadow .2s, border-color .2s;
+}
+
+#hb-fold-toggle-all:hover {
+    background: var(--brand-color);
+    color: var(--link-hover-text);
+    border-color: var(--brand-color);
+    box-shadow: 0 0 0 2px var(--brand-color-shadow);
+}
+
+/* 顶栏中的浅色/深色主题切换按钮 */
+#hb-theme-toggle {
+    background: transparent;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    padding: 3px 10px;
+    margin-left: 0.6rem;
+    color: var(--muted-text-color);
+    font-size: 0.82em;
+    cursor: pointer;
+    transition: background .2s, color .2s, box-shadow .2s, border-color .2s;
+}
+
+#hb-theme-toggle:hover {
+    background: var(--brand-color);
+    color: var(--link-hover-text);
+    border-color: var(--brand-color);
+    box-shadow: 0 0 0 2px var(--brand-color-shadow);
+}
+
+/* 标题下方的元信息（作者 / 创建日期） */
+#hb-meta {
+    margin: 0.2rem 0 0;
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+}
+
+#hb-meta .author,
+#hb-meta .date {
+    margin: 0;
+}
+
+#hb-meta .date {
+    margin-top: 0.15rem;
+}
+
+/* 代码块与行内代码 */
+code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    padding: 2px 5px;
+    background-color: var(--code-background-color);
+    color: var(--code-color);
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.highlight,
+.code {
+    padding: 10px 14px;
+    background-color: var(--code-background-color);
+    color: var(--code-color);
+    border-radius: 6px;
+    margin-block-start: 1.2em;
+    margin-block-end: 1.2em;
+    overflow-x: auto;
+    line-height: 1.45;
+    position: relative;
+    box-shadow: 0 0 0 1px #333, 0 4px 18px -4px rgba(0,0,0,0.65);
+}
+
+.highlight::-webkit-scrollbar,
+.code::-webkit-scrollbar {
+    height: 10px;
+}
+
+.highlight::-webkit-scrollbar-track,
+.code::-webkit-scrollbar-track {
+    background: #1e1f1c;
+}
+
+.highlight::-webkit-scrollbar-thumb,
+.code::-webkit-scrollbar-thumb {
+    background: #3c3d37;
+    border-radius: 20px;
+}
+
+.highlight:hover::-webkit-scrollbar-thumb,
+.code:hover::-webkit-scrollbar-thumb {
+    background: #55564f;
+}
+
+/* 代码语法色彩（常见高亮类名，适配 pygments / prism / highlight.js 部分映射） */
+.highlight .k, .code .k { color: #f92672; }       /* keyword */
+.highlight .kc, .highlight .kd, .highlight .kn,
+.highlight .kp, .highlight .kr, .highlight .kt { color: #f92672; }
+
+.highlight .s, .code .s,
+.highlight .sb, .highlight .sc, .highlight .sd,
+.highlight .s2, .highlight .se, .highlight .sh,
+.highlight .si, .highlight .sx, .highlight .sr,
+.highlight .s1 { color: #e6db74; }                 /* string */
+
+.highlight .c, .code .c,
+.highlight .cm, .highlight .cp, .highlight .c1,
+.highlight .cs { color: #75715e; font-style: italic; } /* comment */
+
+.highlight .fm, .highlight .nf, .code .nf { color: #a6e22e; } /* function */
+.highlight .na, .highlight .no { color: #66d9ef; }            /* name/attr */
+.highlight .nt { color: #f92672; }                            /* tag/keyword-like */
+.highlight .o, .highlight .ow, .code .o { color: #f92672; }   /* operator */
+.highlight .p { color: #f8f8f2; }
+.highlight .nb { color: #66d9ef; }                            /* builtins */
+.highlight .nc, .highlight .nn { color: #a6e22e; }            /* class */
+.highlight .mi, .highlight .il, .highlight .m { color: #ae81ff; } /* numbers */
+.highlight .err { color: #f8f8f2; background: #f92672; }      /* error */
+
+/* 引用 */
+blockquote {
+    border-left: 4px solid var(--accent-color);
+    color: var(--muted-text-color);
+    padding: 8px 18px;
+    font-style: italic;
+    background: rgba(253,151,31,0.06);
+    border-radius: 4px;
+}
+
+/* 按钮（如有） */
+button {
+    margin: 0;
+    cursor: pointer;
+    background: var(--accent-color);
+    color: #272822;
+    border: 1px solid var(--accent-color);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: background .25s, box-shadow .25s;
+}
+
+button:hover {
+    background: #ffa443;
+    box-shadow: 0 0 0 3px rgba(253,151,31,0.35);
+}
+
+button:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: 2px;
+}
+
+/* 时间与元信息 */
+time {
+    font-style: normal;
+    color: var(--muted-text-color);
+}
+
+/* 博客列表 */
+ul.blog-posts {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+ul.blog-posts li {
+    display: flex;
+    margin-bottom: 18px;
+    padding: 10px 12px;
+    background: #1e1f1c;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: border-color .25s, box-shadow .25s;
+}
+
+ul.blog-posts li:hover {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 1px #fd971f, 0 4px 14px -4px rgba(0,0,0,0.7);
+}
+
+ul.blog-posts li span {
+    flex: 0 0 130px;
+    color: var(--muted-text-color);
+}
+
+/* 选区 */
+::selection {
+    background: #49483e;
+    color: #f8f8f2;
+}
+
+/* 响应式：宽度较小时退回到单列布局 */
+@media only screen and (max-width: 1100px) {
+    header {
+        flex-wrap: wrap;
+    }
+
+    .title h1 {
+        font-size: 1.6em;
+    }
+
+    /* 窄屏：content 退回普通块级布局 */
+    #content {
+        display: block;
+        max-width: var(--width);
+        margin: 0 auto;
+    }
+
+    /* 窄屏：目录作为顶栏下方的下拉浮层，不占据正文文档流 */
+    #table-of-contents {
+        position: fixed;
+        left: 50%;
+        top: 60px; /* 紧贴顶栏底部，可按需要微调 */
+        width: min(92vw, var(--width));
+        max-height: calc(100vh - 70px);
+        margin: 0;
+        padding: 0.6rem 1rem 0.9rem;
+        background: var(--background-alt-color);
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.75);
+        z-index: 30;
+        overflow: auto;
+        /* 下拉动效：默认稍微向上并透明 */
+        transform: translate(-50%, -6px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+    }
+
+    body.hb-toc-open #table-of-contents {
+        display: block;
+        transform: translate(-50%, 0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* 窄屏下显示“目录”按钮，作为开关 */
+    #hb-toc-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.4rem;
+        padding: 4px 10px;
+        font-size: 0.85em;
+        background: transparent;
+        color: var(--muted-text-color);
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+    }
+
+    nav {
+        text-align: left;
+        margin-top: 10px;
+        width: 100%;
+    }
+
+    /* 紧凑卡片：去除多余空白，改用块级布局 */
+    ul.blog-posts li {
+        display: block;              /* 取消 flex 造成的拉伸 */
+        padding: 10px 14px 12px;
+        margin-bottom: 14px;
+        line-height: 1.45;
+    }
+
+    ul.blog-posts li span {
+        display: block;
+        margin: 0 0 6px;
+        flex: none;
+        width: auto;                 /* 取消固定 130px */
+        font-size: 0.9em;
+        line-height: 1.2;
+    }
+
+    ul.blog-posts li a {
+        display: inline;             /* 避免在 flex 情况下被拉伸 */
+        padding: 0;
+    }
+}
+
+/* 极小屏进一步压缩 */
+@media only screen and (max-width: 480px) {
+    ul.blog-posts li {
+        padding: 8px 12px 10px;
+    }
+    ul.blog-posts li span {
+        font-size: 0.85em;
+    }
+    .title h1 {
+        font-size: 1.45em;
+    }
+}
+
+/* ========== 1. 跟随系统的浅色模式（未手动强制时生效） ========== */
+@media (prefers-color-scheme: light) {
+  :root {
+		/* 浅色变量覆盖 */
+		--background-color: #f6f1e3;   /* 米黄色主背景 */
+		--background-alt-color: #efe1c9; /* 略深的卡片背景 */
+    --text-color: #272822;
+    --heading-color: #1e1f1c;
+    --muted-text-color: #6d7068;
+
+    --code-background-color: #efefe9;
+    --code-color: #272822;
+
+    --border-color: #d5d4ce;
+    --link-hover-text: #ffffff;
+
+    /* 保留品牌色，可按需换成稍深版本以提升对比 */
+    /* --brand-color: #2aa7c7; */
+    /* --brand-color-alt: #1d7f95; */
+  }
+
+	  body {
+	    /* 顶部略浅、向下过渡为米黄色 */
+	    background: linear-gradient(180deg,#f9f3e5 0%, #f6f1e3 70%) fixed;
+	    color: var(--text-color);
+	  }
+
+  ul.blog-posts li {
+    background: var(--background-alt-color);
+    border-color: var(--border-color);
+  }
+
+  blockquote {
+    background: rgba(253,151,31,0.10);
+  }
+
+  ::selection {
+    background: #cde9f3;
+    color: #0a3942;
+  }
+}
+
+/* ========== 2. 手动主题开关（优先级最高，放在文件末尾） ========== */
+/* 强制浅色 */
+html[data-theme='light'], html.light {
+	--background-color: #f6f1e3;
+	--background-alt-color: #efe1c9;
+  --text-color: #272822;
+  --heading-color: #1e1f1c;
+  --muted-text-color: #6d7068;
+
+  		--code-background-color: #efe1c9;
+		--code-color: #272822;
+
+  		--border-color: #d2c4a4;
+		--link-hover-text: #ffffff;
+
+  /* 浅色模式下顶栏保持米黄色背景 */
+  --topbar-bg: #f6f1e3;
+}
+/* 强制深色（在系统浅色时仍保持夜间） */
+html[data-theme='dark'], html.dark {
+    --background-color: #272822;
+    --background-alt-color: #1e1f1c;
+    --text-color: #f8f8f2;
+    --muted-text-color: #75715e;
+
+    --code-background-color: #1e1f1c;
+    --code-color: #f8f8f2;
+    --border-color: #49483e;
+
+    /* 夜间模式下顶栏封面使用深色背景，与正文一致 */
+    --topbar-bg: #1e1f1c;
+}
+
+/* 根据变量刷新背景（手动切换时立即生效） */
+html[data-theme='light'] body,
+html.light body {
+	    background: linear-gradient(180deg,#f9f3e5 0%, #f6f1e3 70%) fixed;
+	    color: var(--text-color);
+}
+html[data-theme='dark'] body,
+html.dark body {
+    background: radial-gradient(circle at 25% 15%, #2f3027 0%, #272822 60%) fixed;
+}
+
+/* 夜间模式下：正文各级标题使用纯白色，增强层次对比 */
+html[data-theme='dark'] #content h1,
+html[data-theme='dark'] #content h2,
+html[data-theme='dark'] #content h3,
+html[data-theme='dark'] #content h4,
+html[data-theme='dark'] #content h5,
+html[data-theme='dark'] #content h6 {
+    color: #ffffff;
+}
+
+/* 夜间模式下：目录标题与目录链接使用金色，提高可读性 */
+html[data-theme='dark'] #table-of-contents h2,
+html[data-theme='dark'] #text-table-of-contents ul li a {
+    color: #f4d77a;
+}
+
+/* === 补丁：提升浅色主题下标题 & 链接对比度（加深品牌色） === */
+@media (prefers-color-scheme: light) {
+  :root {
+    /* 深一档青色系（原 #66d9ef 过浅） */
+    --brand-color: #0e6a85;          /* 主链接 / 标题 */
+    --brand-color-alt: #094c60;      /* visited */
+    --brand-color-shadow: rgba(14,106,133,0.35);
+
+    /* 关联变量同步（若之前未覆盖） */
+    --link-color: var(--brand-color);
+    --visited-color: var(--brand-color-alt);
+  }
+
+  a,
+  .title h1 { color: var(--brand-color); }
+
+  a:visited { color: var(--brand-color-alt); }
+}
+
+/* 手动强制浅色时同样加深 */
+html[data-theme='light'], html.light {
+  --brand-color: #0e6a85;
+  --brand-color-alt: #094c60;
+  --brand-color-shadow: rgba(14,106,133,0.35);
+  --link-color: var(--brand-color);
+  --visited-color: var(--brand-color-alt);
+}
+
+html[data-theme='light'] a,
+html.light a,
+html[data-theme='light'] .title h1,
+html.light .title h1 {
+  color: var(--brand-color);
+}
+
+html[data-theme='light'] a:visited,
+html.light a:visited {
+  color: var(--brand-color-alt);
+}
+
+/* === Org：嵌套列表与 outline 缩进收敛（深层标题降权） ==================== */
+
+#content ul,
+#content ol {
+    padding-inline-start: 1.4em;
+    margin-block: 0.4em;
+}
+
+#content li > ul,
+#content li > ol {
+    padding-inline-start: 1.1em;
+    margin-block: 0.25em;
+}
+
+#content li {
+    line-height: 1.55;
+}
+
+#content .outline-2,
+#content .outline-3,
+#content .outline-4,
+#content .outline-5,
+#content .outline-6,
+#content .outline-text-2,
+#content .outline-text-3,
+#content .outline-text-4,
+#content .outline-text-5,
+#content .outline-text-6 {
+    margin-left: 0;
+    padding-left: 0;
+}
+
+#content h3 {
+    font-size: 1.18em;
+    margin-top: 1.8rem;
+}
+
+#content h4 {
+    font-size: 1.06em;
+    margin-top: 1.3rem;
+}
+
+#content h5 {
+    font-size: 1.00em;
+    margin-top: 1.1rem;
+    color: var(--muted-text-color);
+}
+
+#content h6 {
+    font-size: 0.95em;
+    margin-top: 0.95rem;
+    color: var(--muted-text-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}

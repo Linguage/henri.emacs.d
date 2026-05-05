@@ -9,6 +9,7 @@
 | [操作清单 c.md](c.md) | 常用命令、路径与诊断入口 |
 | [快捷键速查](docs/tutorials/keybindings.md) | 本仓库**所有显式绑定**的快捷键一览表 |
 | [Writing 系统使用指南](docs/tutorials/writing-system-guide.md) | Agenda / Journal / Org-roam / Academic / Markdown / Org 导出 |
+| [Org-roam 专题指南](docs/tutorials/org-roam-guide.md) | Roam 分类、节点、链接、Map 与复盘操作手册 |
 | [Org HTML 主题指南](docs/tutorials/html-theme-guide.md) | HTML 主题目录约定与维护 |
 | [蓝图](docs/specs/BLUEPRINT.md) | 项目定位、核心挑战与验收标准 |
 | [架构](docs/specs/ARCHITECTURE.md) | 配置分层、模块职责与加载顺序 |

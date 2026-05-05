@@ -24,6 +24,14 @@
   '("inbox" "daily" "notes" "references" "projects" "people" "maps")
   "Purpose-based subdirectories under `henri-org-roam-directory'.")
 
+(defconst henri-org-roam--file-head
+  ":PROPERTIES:\n:ID:       %%(org-id-new)\n:CREATED:  %%U\n:UPDATED:  %%U\n:END:\n#+title: ${title}\n#+filetags: :%s:\n\n"
+  "File head template for regular Org-roam nodes.")
+
+(defconst henri-org-roam--daily-head
+  ":PROPERTIES:\n:ID:       %(org-id-new)\n:CREATED:  %U\n:UPDATED:  %U\n:END:\n#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n\n* 今日记录\n\n* Done\n\n* 想法\n\n* 待抽取节点\n"
+  "File head template for Org-roam daily notes.")
+
 (defun henri-org-roam-directory ()
   "Return the normalized Org-roam root directory."
   (file-name-as-directory (file-truename henri-org-roam-directory)))
@@ -31,6 +39,57 @@
 (defun henri-org-roam-file (relative-path)
   "Return RELATIVE-PATH under `henri-org-roam-directory'."
   (expand-file-name relative-path (henri-org-roam-directory)))
+
+(defun henri-org-roam--timestamp ()
+  "Return an inactive Org timestamp for metadata."
+  (format-time-string "[%Y-%m-%d %a %H:%M]"))
+
+(defun henri-org-roam--buffer-file-in-roam-p ()
+  "Return non-nil when the current buffer file is under Org-roam."
+  (and buffer-file-name
+       (file-in-directory-p (expand-file-name buffer-file-name)
+                            (henri-org-roam-directory))))
+
+(defun henri-org-roam--metadata-limit ()
+  "Return the end position of the file-level metadata area."
+  (save-excursion
+    (goto-char (point-min))
+    (or (re-search-forward "^\\* " nil t)
+        (point-max))))
+
+(defun henri-org-roam--ensure-time-metadata ()
+  "Ensure CREATED and UPDATED metadata exist in the file property drawer."
+  (let ((timestamp (henri-org-roam--timestamp))
+        (limit (henri-org-roam--metadata-limit)))
+    (save-excursion
+      (goto-char (point-min))
+      (if (re-search-forward "^:PROPERTIES:[ \t]*$" limit t)
+          (let ((drawer-start (point))
+                (drawer-end (save-excursion
+                              (when (re-search-forward "^:END:[ \t]*$" limit t)
+                                (let ((marker (copy-marker (line-beginning-position))))
+                                  (set-marker-insertion-type marker t)
+                                  marker)))))
+            (when drawer-end
+              (goto-char drawer-start)
+              (unless (re-search-forward "^:CREATED:[ \t]+.*$" drawer-end t)
+                (goto-char drawer-end)
+                (insert (format ":CREATED:  %s\n" timestamp)))
+              (goto-char drawer-start)
+              (if (re-search-forward "^:UPDATED:[ \t]+.*$" drawer-end t)
+                  (replace-match (format ":UPDATED:  %s" timestamp) t t)
+                (goto-char drawer-end)
+                (insert (format ":UPDATED:  %s\n" timestamp)))
+              (set-marker drawer-end nil)))
+        (goto-char (point-min))
+        (insert (format ":PROPERTIES:\n:CREATED:  %s\n:UPDATED:  %s\n:END:\n"
+                        timestamp timestamp))))))
+
+(defun henri-org-roam-update-time-metadata ()
+  "Refresh UPDATED metadata for Org-roam files before saving."
+  (when (and (derived-mode-p 'org-mode)
+             (henri-org-roam--buffer-file-in-roam-p))
+    (henri-org-roam--ensure-time-metadata)))
 
 (defun henri-org-roam-ensure-directories ()
   "Create the Org-roam root and purpose-based subdirectories."
@@ -56,6 +115,41 @@
   "Return non-nil when PACKAGE can be loaded from the current load path."
   (locate-library (symbol-name package)))
 
+(defun henri-org-roam--capture-template-entries (&optional templates)
+  "Return key and description pairs from Org-roam TEMPLATES."
+  (delq nil
+        (mapcar (lambda (template)
+                  (when (and (consp template)
+                             (stringp (car template))
+                             (stringp (cadr template))
+                             (> (length template) 2))
+                    (cons (car template) (cadr template))))
+                (or templates org-roam-capture-templates))))
+
+(defun henri-org-roam--capture-template-summary (&optional templates)
+  "Return a compact summary for Org-roam TEMPLATES."
+  (string-join
+   (mapcar (lambda (entry)
+             (format "%s=%s" (car entry) (cdr entry)))
+           (henri-org-roam--capture-template-entries templates))
+   "  "))
+
+(defun henri-org-roam-show-template-keys ()
+  "Show Org-roam capture template keys."
+  (interactive)
+  (with-help-window "*Henri Org-roam Templates*"
+    (princ "Org-roam capture template keys\n\n")
+    (dolist (entry (henri-org-roam--capture-template-entries))
+      (princ (format "%-4s %s\n" (car entry) (cdr entry))))))
+
+(defun henri-org-roam--message-template-hint (&rest args)
+  "Show a compact template hint before Org-roam capture using ARGS."
+  (unless (plist-get args :keys)
+    (let ((summary (henri-org-roam--capture-template-summary
+                    (plist-get args :templates))))
+      (unless (string-empty-p summary)
+        (message "Org-roam templates: %s" summary)))))
+
 (use-package org-roam
   :ensure t
   :demand t
@@ -75,41 +169,45 @@
          ("C-c n y" . org-roam-dailies-goto-yesterday)
          ("C-c n m" . org-roam-dailies-goto-tomorrow)
          ("C-c n d" . henri-org-roam-open-directory)
-         ("C-c n x" . henri-org-roam-open-inbox))
+         ("C-c n x" . henri-org-roam-open-inbox)
+         ("C-c n ?" . henri-org-roam-show-template-keys))
   :config
   (require 'org-roam-dailies)
   (setq org-roam-dailies-directory "daily/")
   (setq org-roam-capture-templates
-        '(("n" "note / 概念笔记" plain
+        `(("n" "note / 概念笔记" plain
            "%?"
            :target (file+head "notes/${slug}.org"
-                              ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :note:\n\n")
+                              ,(format henri-org-roam--file-head "note"))
            :unnarrowed t)
           ("r" "reference / 资料笔记" plain
            "* Metadata\n- Source:\n- Author:\n- Date:\n- Type:\n\n* 摘要\n%?\n\n* 我的理解\n\n* 相关节点\n"
            :target (file+head "references/${slug}.org"
-                              ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :reference:\n\n")
+                              ,(format henri-org-roam--file-head "reference"))
            :unnarrowed t)
           ("p" "project / 项目笔记" plain
            "* 目标\n%?\n\n* 当前状态\n\n* 下一步\n\n* 相关节点\n"
            :target (file+head "projects/${slug}.org"
-                              ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :project:\n\n")
+                              ,(format henri-org-roam--file-head "project"))
            :unnarrowed t)
           ("m" "map / 索引地图" plain
            "* 核心节点\n%?\n\n* 相关项目\n\n* 参考资料\n"
            :target (file+head "maps/${slug}.org"
-                              ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :map:\n\n")
+                              ,(format henri-org-roam--file-head "map"))
            :unnarrowed t)
           ("e" "person / 人物笔记" plain
            "* 简介\n%?\n\n* 关键思想/事件\n\n* 相关节点\n"
            :target (file+head "people/${slug}.org"
-                              ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: ${title}\n#+filetags: :person:\n\n")
+                              ,(format henri-org-roam--file-head "person"))
            :unnarrowed t)))
+  (advice-remove 'org-roam-capture- #'henri-org-roam--message-template-hint)
+  (advice-add 'org-roam-capture- :before #'henri-org-roam--message-template-hint)
   (setq org-roam-dailies-capture-templates
-        '(("d" "daily" entry
+        `(("d" "daily" entry
            "* %<%H:%M> %?\n"
            :target (file+head "%<%Y-%m-%d>.org"
-                              ":PROPERTIES:\n:ID:       %(org-id-new)\n:END:\n#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n\n* 今日记录\n\n* Done\n\n* 想法\n\n* 待抽取节点\n"))))
+                              ,henri-org-roam--daily-head))))
+  (add-hook 'before-save-hook #'henri-org-roam-update-time-metadata)
   (when (file-directory-p (henri-org-roam-directory))
     (org-roam-db-autosync-mode 1)))
 

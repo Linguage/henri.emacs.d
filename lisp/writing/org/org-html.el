@@ -9,7 +9,7 @@
 
 ;; Org Mode HTML 导出配置，包含：
 ;; - org-html-themes 集成
-;; - 默认主题设置（ReadTheOrg）
+;; - 默认主题设置（Henri Notes）
 ;; - 可选主题切换功能
 ;; - HTML 导出优化
 ;; - 自定义样式支持
@@ -26,14 +26,17 @@
 `henri/org-html--substitute-themes-root-in-output').")
 
 (defun henri/org-html--substitute-themes-root-in-output (output backend _channel)
-  "Replace `henri/org-html-themes-root-placeholder' with `henri-org-html-themes-directory'.
+  "Replace local theme root placeholders in HTML OUTPUT.
 SETUPFILE is merged after `org-export-before-processing-hook', so replacement
 runs on the final HTML string via `org-export-filter-final-output-functions'."
   (if (org-export-derived-backend-p backend 'html)
-      (replace-regexp-in-string
-       (regexp-quote henri/org-html-themes-root-placeholder)
-       (directory-file-name (expand-file-name henri-org-html-themes-directory))
-       output t t)
+      (let ((result output))
+        (setq result
+              (replace-regexp-in-string
+               (regexp-quote henri/org-html-themes-root-placeholder)
+               (directory-file-name (expand-file-name henri-org-html-themes-directory))
+               result t t))
+        result)
     output))
 
 (add-hook 'org-export-filter-final-output-functions
@@ -63,7 +66,8 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   "本地 org-html-themes 目录路径（默认在配置仓库内）。")
 
 (defvar henri/org-html-themes-list
-  `(("Henri Journal" . ,(expand-file-name "org/theme-henri-journal.setup" henri/org-html-themes-dir))
+  `(("Henri Notes" . ,(expand-file-name "org/theme-henri-notes.setup" henri/org-html-themes-dir))
+    ("Henri Journal" . ,(expand-file-name "org/theme-henri-journal.setup" henri/org-html-themes-dir))
     ("Henri Bearblog" . ,(expand-file-name "org/theme-henri-bearblog.setup" henri/org-html-themes-dir))
     ("Henri" . ,(expand-file-name "org/theme-henri.setup" henri/org-html-themes-dir))
     ("ReadTheOrg" . ,(expand-file-name "org/theme-readtheorg.setup" henri/org-html-themes-dir))
@@ -76,7 +80,7 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
 每个元素是一个 cons cell，格式为 (主题名称 . setup文件路径)。
 默认使用本地主题，如果本地主题不存在，可以使用在线版本。")
 
-(defvar henri/org-html-default-theme "Henri Journal"
+(defvar henri/org-html-default-theme "Henri Notes"
   "默认使用的 HTML 主题名称。")
 
 (defun henri/org-html-default-setupfile ()
@@ -106,15 +110,27 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
     (when (and setup-file (not (henri/org-html-theme-present-p)))
       (henri/org-html-insert-setupfile setup-file))))
 
+(defun henri/org-html-ensure-default-theme-for-export (backend)
+  "Use the default HTML theme for unthemed Org HTML exports.
+This runs in Org's temporary export buffer, so the source file is not changed.
+Existing theme SETUPFILE declarations are respected."
+  (when (org-export-derived-backend-p backend 'html)
+    (henri/org-html-ensure-default-theme)))
+
+(add-hook 'org-export-before-processing-hook
+          #'henri/org-html-ensure-default-theme-for-export)
+
 ;; =============================================================================
 ;; 简化主题映射系统
 
 ;; 主题编号映射表
 (defvar henri/org-html-theme-shortcuts
-  '(("default" . "Henri Journal")
+  '(("default" . "Henri Notes")
+    ("notes" . "Henri Notes")
+    ("hn" . "Henri Notes")
+    ("0" . "Henri Notes")
     ("journal" . "Henri Journal")
     ("hj" . "Henri Journal")
-    ("0" . "Henri Journal")
     ("bear" . "Henri Bearblog")
     ("bearblog" . "Henri Bearblog")
     ("hb" . "Henri Bearblog")
@@ -135,7 +151,7 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   "使用快捷方式应用主题。
 SHORTCUT 可以是数字编号、缩写或主题名称。
 例如：'1', 'rto', 'readtheorg', 'default' 等。"
-  (interactive "sHTML主题 (0=Henri Journal, bear=Henri Bearblog, 1=ReadTheOrg, 2=Bigblow): ")
+  (interactive "sHTML主题 (0=Henri Notes, journal=Henri Journal, bear=Henri Bearblog, 1=ReadTheOrg, 2=Bigblow): ")
   (let* ((normalized-shortcut (downcase (string-trim shortcut)))
          (theme-name (cdr (assoc normalized-shortcut henri/org-html-theme-shortcuts))))
     (if theme-name
@@ -147,7 +163,7 @@ SHORTCUT 可以是数字编号、缩写或主题名称。
 (defun henri/org-html-show-theme-shortcuts ()
   "显示所有可用的主题快捷方式。"
   (interactive)
-  (message "HTML主题快捷方式:\n0/default/journal/hj -> Henri Journal\nbear/hb -> Henri Bearblog\nh/henri -> Henri\n1/rto/readtheorg -> ReadTheOrg\nlocal/rto-local -> ReadTheOrg Local\n2/bb/bigblow -> Bigblow"))
+  (message "HTML主题快捷方式:\n0/default/notes/hn -> Henri Notes\njournal/hj -> Henri Journal\nbear/hb -> Henri Bearblog\nh/henri -> Henri\n1/rto/readtheorg -> ReadTheOrg\nlocal/rto-local -> ReadTheOrg Local\n2/bb/bigblow -> Bigblow"))
 
 ;; 更简单的主题应用函数
 (defun henri/org-html-theme-1 ()
@@ -241,12 +257,9 @@ THEME-NAME 是要设置的主题名称。"
 ;; 导出增强功能
 
 (defun henri/org-html-export-and-open ()
-  "导出当前 Org 文件为 HTML 并在浏览器中打开。"
+  "Export current Org file with the default HTML theme and open it."
   (interactive)
-  (let ((html-file (org-html-export-to-html)))
-    (when html-file
-      (browse-url (concat "file://" (expand-file-name html-file)))
-      (message "HTML 文件已导出并在浏览器中打开: %s" html-file))))
+  (henri/org-html-export-with-theme henri/org-html-default-theme))
 
 (defun henri/org-html-export-with-theme (theme-name)
   "使用指定主题导出当前 Org 文件为 HTML，不修改源 buffer。
@@ -327,7 +340,11 @@ THEME-NAME 是要使用的主题名称。
   (if (henri/org-html-check-local-themes)
       (progn
         (setq henri/org-html-themes-list
-              `(("ReadTheOrg" . ,(expand-file-name "org/theme-readtheorg.setup" henri/org-html-themes-dir))
+              `(("Henri Notes" . ,(expand-file-name "org/theme-henri-notes.setup" henri/org-html-themes-dir))
+                ("Henri Journal" . ,(expand-file-name "org/theme-henri-journal.setup" henri/org-html-themes-dir))
+                ("Henri Bearblog" . ,(expand-file-name "org/theme-henri-bearblog.setup" henri/org-html-themes-dir))
+                ("Henri" . ,(expand-file-name "org/theme-henri.setup" henri/org-html-themes-dir))
+                ("ReadTheOrg" . ,(expand-file-name "org/theme-readtheorg.setup" henri/org-html-themes-dir))
                 ("Bigblow" . ,(expand-file-name "org/theme-bigblow.setup" henri/org-html-themes-dir))))
         (message "已切换到本地主题"))
     (message "本地主题不可用，请先运行 henri/org-html-install-themes")))

@@ -15,9 +15,9 @@
 | `C-c g` | git | `g/d/f/b/l` Magit、`n/p/r` hunk、`m ...` smerge |
 | `C-c s` | search | `C-s` swiper；前缀预留 |
 | `C-c t` | toggle / theme | `t` load theme、`b` big font、`l` line numbers |
-| `C-c h` | help / doctor | `d` doctor |
+| `C-c h` | help / doctor | `d` doctor、`k` keybindings |
 | `C-c o` | Org ops | `a` dashboard、`i/t/p` agenda files、`v` startup folded |
-| `C-c n` | Org-roam | `f/i/b/c/g/j/t/y/m/d/x` |
+| `C-c n` | Org-roam | `f/i/b/c/g/j/t/y/m/d/x/?` |
 | `C-c j` | Journal | `s` search、`d` view by date |
 | `C-c r` | Rime | 由 Rime 模块提供 |
 | `C-c l` | store link | 释放给 Org link 语义 |
@@ -38,6 +38,7 @@
 | `C-c w e` | `eshell` | `lisp/init-managing.el` |
 | `C-c w v` | `henri/vterm` | `lisp/init-managing.el` |
 | `C-c w E` | `eshell` | `lisp/init-managing.el` |
+| `C-c h k` | `henri/open-keybindings-doc` | `lisp/init-keys.el` |
 | `C-c h d` | `henri/doctor` | `lisp/ops/doctor.el` |
 
 ## 3. Git
@@ -141,6 +142,17 @@ F5/F6/F9/F10/F11/F12 不再作为本配置的主力调试入口。
 | `C-c n j/t/y/m` | dailies capture/today/yesterday/tomorrow | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n d` | `henri-org-roam-open-directory` | `lisp/writing/org/org-roam-henri.el` |
 | `C-c n x` | `henri-org-roam-open-inbox` | `lisp/writing/org/org-roam-henri.el` |
+| `C-c n ?` | `henri-org-roam-show-template-keys` | `lisp/writing/org/org-roam-henri.el` |
+
+Org-roam capture template key:
+
+| Key | 模板 | 落点 |
+|-----|------|------|
+| `n` | note / 概念笔记 | `Roam/notes/${slug}.org` |
+| `r` | reference / 资料笔记 | `Roam/references/${slug}.org` |
+| `p` | project / 项目笔记 | `Roam/projects/${slug}.org` |
+| `m` | map / 索引地图 | `Roam/maps/${slug}.org` |
+| `e` | person / 人物笔记 | `Roam/people/${slug}.org` |
 
 若安装 `consult-org-roam`，还会启用 `C-c n s/r/l`。
 

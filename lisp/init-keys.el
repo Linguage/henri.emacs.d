@@ -22,9 +22,16 @@
   (interactive)
   (call-interactively #'load-theme))
 
+(defun henri/open-keybindings-doc ()
+  "Open the keybindings reference document."
+  (interactive)
+  (find-file (expand-file-name "docs/tutorials/keybindings.md"
+                               user-emacs-directory)))
+
 (global-set-key (kbd "C-c t t") #'henri/load-theme-interactively)
 (global-set-key (kbd "C-c t b") #'henri-big-font-mode)
 (global-set-key (kbd "C-c t l") #'henri/toggle-line-numbers)
+(global-set-key (kbd "C-c h k") #'henri/open-keybindings-doc)
 (global-set-key (kbd "C-c l") #'org-store-link)
 
 (with-eval-after-load 'which-key
