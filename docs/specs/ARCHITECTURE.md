@@ -76,6 +76,7 @@
 | `lib-system.el` | OS / 可执行文件检测 |
 | `lib-fonts.el` | 视觉系统兼容层 |
 | `lib-files.el` | 大文件 / `so-long` 策略、`henri-buffer-real-p` |
+| `notes-sync.el` | 笔记仓库批量 Git 工作流：`henri/notes-pull-all` / `henri/notes-sync-all` / `henri/notes-status-all` / `henri/notes-magit`；并行异步、`*Notes Sync*` 日志缓冲；dashboard「Notes Sync (Git)」按钮入口 |
 
 ## 加载顺序要点
 

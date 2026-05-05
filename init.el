@@ -106,6 +106,7 @@
 (require 'lib-fonts)
 (require 'lib-files)
 (require 'doctor)
+(require 'notes-sync)
 (require 'init-dashboard)
 
 ;; =============================================================================

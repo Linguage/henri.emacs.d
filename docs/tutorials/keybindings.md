@@ -12,7 +12,7 @@
 | `C-c f` | file / find | `n` notes、`p` project tree |
 | `C-c b` | buffer / bookmark | 预留治理前缀 |
 | `C-c w` | window / terminal | `l` layout、`e` eshell、`v` vterm、`E` eshell legacy |
-| `C-c g` | git | `g/d/f/b/l` Magit、`n/p/r` hunk、`m ...` smerge |
+| `C-c g` | git | `g/d/f/b/l` Magit、`n/p/r` hunk、`m ...` smerge、`N ...` notes-sync |
 | `C-c s` | search | `C-s` swiper；前缀预留 |
 | `C-c t` | toggle / theme | `t` load theme、`b` big font、`l` line numbers |
 | `C-c h` | help / doctor | `d` doctor、`k` keybindings |
@@ -56,8 +56,21 @@
 | `C-c g r` | `diff-hl-revert-hunk` | `lisp/init-managing.el` |
 | `C-c g m n/p` | `smerge-next` / `smerge-prev` | `lisp/init-managing.el` |
 | `C-c g m u/l/b/a` | keep upper/lower/base/all | `lisp/init-managing.el` |
+| `C-c g N u` | `henri/notes-pull-all` | `lisp/ops/notes-sync.el` |
+| `C-c g N s` | `henri/notes-sync-all`（`C-u` 改提交信息） | `lisp/ops/notes-sync.el` |
+| `C-c g N S` | `henri/notes-status-all` | `lisp/ops/notes-sync.el` |
+| `C-c g N m` | `henri/notes-magit`（选仓库 → magit-status） | `lisp/ops/notes-sync.el` |
 
 `C-c ^ ...` 在 `henri-keybindings-enable-legacy-aliases` 为 non-nil 时仍作为 smerge 过渡别名保留。
+
+### 3.1 Notes Sync 工作流
+
+`C-c g N s`（或 dashboard「⇡ Sync all」按钮）会对 `henri-notes-sync-repos` 中每个仓库**并行异步**执行：`git add -A` → 仅在有改动时 `git commit -m <模板>` → `git pull --rebase --autostash` → `git push`。所有输出汇聚到 `*Notes Sync*` 缓冲，不阻塞 Emacs。
+
+可定制项（`M-x customize-group RET henri-paths`）：
+
+- `henri-notes-sync-repos` —— 笔记根下要同步的子仓库目录名列表。
+- `henri-notes-sync-commit-message-format` —— 自动提交信息的 `format-time-string` 模板。
 
 ## 4. Toggle / Visual
 

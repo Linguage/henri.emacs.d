@@ -36,6 +36,7 @@
 - [x] README 瘦身：移除冗余快捷键表，改为链接 [`tutorials/keybindings.md`](../tutorials/keybindings.md)
 - [x] `docs/specs/ARCHITECTURE.md` 更新为当前模块结构
 - [x] `docs/specs/ROADMAP.md` 反映 Phase 2 完成状态
+- [x] Notes 仓库批量同步工作流（`lisp/ops/notes-sync.el`）：`C-c g N s` 一键 commit + push、dashboard「Notes Sync (Git)」按钮、`henri-notes-sync-repos` 可移植配置
 - [ ] 已完成 jobs 归档到 `docs/legacy/`（markdown-enhancement、journal-capture、org-roam-settings）
 - [ ] `docs/reports/INDEX.md` 补充 Phase 2 阶段经验沉淀
 

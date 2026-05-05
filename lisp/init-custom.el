@@ -368,5 +368,20 @@ Prefers zsh when found; else /bin/sh (portable on NixOS, servers, Termux)."
   :type 'directory
   :group 'henri-paths)
 
+(defcustom henri-notes-sync-repos
+  '("Journal" "Logseq-DailyNotes")
+  "Subdirectory names under `henri-notes-directory' that are Git repos.
+
+Each entry is a relative directory name; resolved at runtime via
+`expand-file-name'.  Used by `henri/notes-sync-all', `henri/notes-pull-all',
+and the dashboard sync buttons.  Add or remove entries per machine."
+  :type '(repeat string)
+  :group 'henri-paths)
+
+(defcustom henri-notes-sync-commit-message-format "chore(notes): auto-sync %F %R"
+  "`format-time-string' template for auto-sync commit messages."
+  :type 'string
+  :group 'henri-paths)
+
 (provide 'init-custom)
 ;;; init-custom.el ends here
