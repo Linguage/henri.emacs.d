@@ -107,7 +107,7 @@
       explicit-shell-file-name henri-shell)
 
 ;; 环境变量同步优化 - 更激进的延迟加载
-;; macOS 下 PATH 注入在 `henri-first-input-hook' 中调用 `henri/initialize-shell-env'，避免与下方 :init 重复执行。
+;; macOS 下 PATH 注入在 `emacs-startup-hook' 中调用 `henri/initialize-shell-env'（见下方 add-hook）。
 (use-package exec-path-from-shell
   :ensure t
   :defer t  ; 完全延迟加载，仅在首次需要时加载

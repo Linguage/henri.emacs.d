@@ -23,7 +23,6 @@
 ;;    - init-writing   -- 写作环境配置
 
 ;;; Code:
-;;; init.el --- Emacs 配置入口文件 -*- lexical-binding: t -*-
 
 (require 'seq)
 
@@ -31,9 +30,6 @@
 ;; 启动性能优化
 
 ;; （已移至 early-init）启动后恢复 file-name-handler-alist
-(defvar default-file-name-handler-alist (or (bound-and-true-p henri--saved-file-name-handler-alist)
-                                           file-name-handler-alist)
-  "Original file-name-handler-alist saved for restoration after startup.")
 (add-hook 'emacs-startup-hook
           (lambda ()
             (when (boundp 'henri--saved-file-name-handler-alist)
@@ -149,7 +145,6 @@
 (setq remote-file-name-inhibit-locks t)             ; 禁用远程文件锁定
 
 ;; 模块延迟加载
-(setq package-enable-at-startup nil)                 ; 禁止启动时加载包
 (setq site-run-file nil)                            ; 禁用 site-start.el
 
 ;; =============================================================================

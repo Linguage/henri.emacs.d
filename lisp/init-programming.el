@@ -206,7 +206,7 @@
 
 ;; 代码大纲：imenu
 (use-package imenu
-  :ensure t
+  :ensure nil
   :config
   (setq imenu-auto-rescan t))              ; 自动重新扫描代码结构
 
@@ -221,6 +221,7 @@
 ;; 调试器支持：realgud
 (use-package realgud
   :ensure t
+  :defer t
   :config
   (require 'realgud)
   ;; 调试快捷键设置

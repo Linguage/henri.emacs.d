@@ -19,7 +19,11 @@
   (cond
    ((eq system-type 'darwin) 'macos)
    ((eq system-type 'gnu/linux)
-    (if (string-match "Microsoft" (shell-command-to-string "uname -r"))
+    (if (and (file-readable-p "/proc/version")
+             (with-temp-buffer
+               (insert-file-contents "/proc/version")
+               (goto-char (point-min))
+               (re-search-forward "Microsoft\\|WSL" nil t)))
         'wsl
       'linux))
    ((eq system-type 'windows-nt) 'windows)
