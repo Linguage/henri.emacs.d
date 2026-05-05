@@ -88,10 +88,17 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   (henri/org-html-get-theme-setup-file henri/org-html-default-theme))
 
 (defun henri/org-html-theme-present-p ()
-  "Return non-nil if the current Org buffer already declares an HTML theme."
+  "Return non-nil if the current Org buffer declares a valid HTML theme.
+A SETUPFILE is considered present only when it references org-html-themes or
+theme-henri AND the target file actually exists (or is a remote URL)."
   (save-excursion
     (goto-char (point-min))
-    (re-search-forward "^[[:space:]]*#\\+SETUPFILE:.*\\(org-html-themes\\|theme-henri\\).*" nil t)))
+    (when (re-search-forward
+           "^[[:space:]]*#\\+SETUPFILE:[[:space:]]*\\(.*\\(?:org-html-themes\\|theme-henri\\).*\\)$" nil t)
+      (let ((path (string-trim (match-string 1))))
+        (or (string-prefix-p "https://" path)
+            (string-prefix-p "http://" path)
+            (file-exists-p path))))))
 
 (defun henri/org-html-insert-setupfile (setup-file)
   "Insert SETUP-FILE into current Org buffer metadata."
@@ -110,11 +117,36 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
     (when (and setup-file (not (henri/org-html-theme-present-p)))
       (henri/org-html-insert-setupfile setup-file))))
 
+(defun henri/org-html--setupfile-to-local-theme (path)
+  "Try to resolve a broken setupfile PATH to a valid local equivalent.
+Extracts the theme filename (e.g. theme-henri-journal.setup) and looks it
+up under `henri/org-html-themes-dir'.  Returns the valid local path, or nil."
+  (when (string-match "\\(theme-[^/]*\\.setup\\)\\'" path)
+    (let ((local (expand-file-name (concat "org/" (match-string 1 path))
+                                   henri/org-html-themes-dir)))
+      (and (file-exists-p local) local))))
+
 (defun henri/org-html-ensure-default-theme-for-export (backend)
   "Use the default HTML theme for unthemed Org HTML exports.
 This runs in Org's temporary export buffer, so the source file is not changed.
-Existing theme SETUPFILE declarations are respected."
+Existing *valid* theme SETUPFILE declarations are respected.  Stale or broken
+ones are replaced with the same theme resolved to the correct local path; if
+that also fails, the default theme is used instead."
   (when (org-export-derived-backend-p backend 'html)
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward
+              "^[[:space:]]*#\\+SETUPFILE:[[:space:]]*\\(.*\\(?:org-html-themes\\|theme-henri\\).*\\)$" nil t)
+        (let* ((path (string-trim (match-string 1)))
+               (valid (or (string-prefix-p "https://" path)
+                          (string-prefix-p "http://" path)
+                          (file-exists-p path))))
+          (unless valid
+            (let ((replacement (henri/org-html--setupfile-to-local-theme path)))
+              (delete-region (line-beginning-position) (line-end-position))
+              (if replacement
+                  (insert (format "#+SETUPFILE: %s" replacement))
+                (delete-region (1- (point)) (point))))))))
     (henri/org-html-ensure-default-theme)))
 
 (add-hook 'org-export-before-processing-hook
