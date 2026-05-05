@@ -18,7 +18,7 @@
 | `theme-henri-notes`    | 本地          | 默认 Org 导出       | 通用阅读版式、明暗切换、浮窗 TOC                  |
 | `theme-henri-journal`  | 本地          | Journal 专用        | Journal 页头、Activity History 日历             |
 
-未显式指定 `#+SETUPFILE` 主题的 Org 文件导出 HTML 时，会自动使用 `Henri Notes` 主题；这个注入发生在临时导出 buffer 中，不会改写源 Org 文件。若需要为某次导出换主题，用 `C-c m h w`。
+未显式指定主题的 Org 文件导出 HTML 时，会自动使用 `Henri Notes` 主题（Journal 月度文件自动使用 `Henri Journal`）。主题在导出时动态注入，不会在源文件中写入绝对路径。用 `C-c m h t` 设置主题时，源文件只写入 `#+HENRI_HTML_THEME: <主题名>` 这个可移植关键字；导出时由 hook 解析为当前设备上 `.setup` 文件的实际路径。若需要为某次导出换主题而不改源文件，用 `C-c m h w`。
 
 
 各主题往往各自覆盖**字号、布局、TOC、代码块、表格、链接**等一整套样式，重复度高、命名又不统一，会带来：

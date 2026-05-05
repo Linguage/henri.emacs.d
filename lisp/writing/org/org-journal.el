@@ -113,20 +113,6 @@
   "Return absolute path for journal file NAME."
   (expand-file-name name henri-journal-directory))
 
-(defun henri-journal-html-setupfile ()
-  "Return default HTML setupfile for Journal exports."
-  (let ((setup-file
-         (expand-file-name
-          "org/theme-henri-journal.setup"
-          (file-name-as-directory
-           (expand-file-name henri-org-html-themes-directory)))))
-    (if (file-exists-p setup-file)
-        setup-file
-      (progn
-        (message "[henri] Journal HTML theme missing: %s — run lisp/writing/org/install-themes.sh"
-                 setup-file)
-        nil))))
-
 (defun henri-journal-month-string (&optional time)
   "Return YYYY-MM month string for TIME, or current time when nil."
   (format-time-string "%Y-%m" (or time (current-time))))
@@ -251,12 +237,9 @@ KIND must be `diary' (shared file for all journal capture types)."
     (unless (file-exists-p file)
       (make-directory (file-name-directory file) t)
       (write-region
-       (format "#+TITLE: %s %s\n#+LATEX_CLASS: journal\n#+OPTIONS: toc:t num:nil H:5\n#+STARTUP: content\n%s\n"
+       (format "#+TITLE: %s %s\n#+LATEX_CLASS: journal\n#+OPTIONS: toc:t num:nil H:5\n#+STARTUP: content\n"
                (henri-journal-kind-label kind)
-               (henri-journal-month-string time)
-               (if-let ((setup-file (henri-journal-html-setupfile)))
-                   (format "#+SETUPFILE: %s\n" setup-file)
-                 ""))
+               (henri-journal-month-string time))
        nil file nil 'silent))
     file))
 

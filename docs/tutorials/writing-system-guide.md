@@ -283,7 +283,7 @@ Org 基础写作使用 Emacs / Org 默认键即可；本配置额外提供视图
 
 主题资源在 [`lisp/writing/org/org-html-themes`](../../lisp/writing/org/org-html-themes)。更多细节见 [html-theme-guide.md](html-theme-guide.md)。
 
-未显式指定 `#+SETUPFILE` 主题的 Org 文件导出 HTML 时，默认采用通用 `Henri Notes` 主题，且不会修改源文件；需要临时换主题可用 `C-c m h w`，Journal 专用外观仍可显式选择 `Henri Journal`。
+用 `C-c m h t` 设置主题时，源文件只写入 `#+HENRI_HTML_THEME: <主题名>` 关键字，不含绝对路径，可跨设备使用。未指定主题的 Org 文件导出 HTML 时，默认采用 `Henri Notes` 主题；Journal 月度文件（`journal-YYYY-MM.org`）自动使用 `Henri Journal` 主题。两者均在导出时动态解析为当前设备上的 `.setup` 路径。需要临时换主题可用 `C-c m h w`。
 
 ### 7.3 PDF / LaTeX
 

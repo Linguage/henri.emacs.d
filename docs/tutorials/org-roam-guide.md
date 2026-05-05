@@ -48,7 +48,7 @@ Org-roam 在这套配置里是长期知识库。它不是任务系统，不是�
 
 如果节点不显示，先执行 `M-x org-roam-db-sync`。仍然不显示时，检查文件是否在 `Roam/` 下、文件顶部是否有 `:ID:`。
 
-没有显式 `#+SETUPFILE` 主题的 Org 文件导出 HTML 时，默认采用通用 `Henri Notes` 主题；这只影响导出的 HTML，不会把 `#+SETUPFILE` 写回源 Org 文件。若临时想换主题，用 `C-c m h w` 选择主题导出。
+没有显式 `#+SETUPFILE` 主题的 Org 文件导出 HTML 时，默认采用通用 `Henri Notes` 主题；Journal 月度文件自动使用 `Henri Journal` 主题。两者均只在导出时动态注入，不会把 `#+SETUPFILE` 写回源文件，因此可跨设备使用。若临时想换主题，用 `C-c m h w` 选择主题导出。
 
 ---
 
@@ -538,7 +538,7 @@ Academic/Reading/
 
 ### 8.5 HTML 导出不要手动复制主题文件头
 
-未显式指定主题的 Org HTML 导出已经默认使用通用 `Henri Notes` 主题。不要为了统一外观手动复制主题文件头；需要固定主题时优先使用普通 HTML 导出，或用 `C-c m h w` 临时选择 `Henri Journal` / Bearblog / ReadTheOrg 等其它主题。
+未显式指定主题的 Org HTML 导出已经默认使用通用 `Henri Notes` 主题（Journal 月度文件自动使用 `Henri Journal`），均为导出时动态注入，不写入源文件。不要为了统一外观手动复制主题文件头；需要固定主题时优先使用普通 HTML 导出，或用 `C-c m h w` 临时选择其它主题。
 
 ---
 

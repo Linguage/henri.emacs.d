@@ -87,18 +87,27 @@ runs on the final HTML string via `org-export-filter-final-output-functions'."
   "Return the setup file for the default HTML theme."
   (henri/org-html-get-theme-setup-file henri/org-html-default-theme))
 
-(defun henri/org-html-theme-present-p ()
-  "Return non-nil if the current Org buffer declares a valid HTML theme.
-A SETUPFILE is considered present only when it references org-html-themes or
-theme-henri AND the target file actually exists (or is a remote URL)."
+(defun henri/org-html--read-theme-keyword ()
+  "Return the theme name from #+HENRI_HTML_THEME: in the current buffer, or nil."
   (save-excursion
     (goto-char (point-min))
     (when (re-search-forward
-           "^[[:space:]]*#\\+SETUPFILE:[[:space:]]*\\(.*\\(?:org-html-themes\\|theme-henri\\).*\\)$" nil t)
-      (let ((path (string-trim (match-string 1))))
-        (or (string-prefix-p "https://" path)
-            (string-prefix-p "http://" path)
-            (file-exists-p path))))))
+           "^#\\+HENRI_HTML_THEME:[[:space:]]*\\(.+\\)$" nil t)
+      (string-trim (match-string 1)))))
+
+(defun henri/org-html-theme-present-p ()
+  "Return non-nil if the current Org buffer declares a valid HTML theme.
+Checks for a #+HENRI_HTML_THEME: keyword first, then falls back to a valid
+existing #+SETUPFILE: line (for backward compatibility with older files)."
+  (or (henri/org-html--read-theme-keyword)
+      (save-excursion
+        (goto-char (point-min))
+        (when (re-search-forward
+               "^[[:space:]]*#\\+SETUPFILE:[[:space:]]*\\(.*\\(?:org-html-themes\\|theme-henri\\).*\\)$" nil t)
+          (let ((path (string-trim (match-string 1))))
+            (or (string-prefix-p "https://" path)
+                (string-prefix-p "http://" path)
+                (file-exists-p path)))))))
 
 (defun henri/org-html-insert-setupfile (setup-file)
   "Insert SETUP-FILE into current Org buffer metadata."
@@ -126,13 +135,39 @@ up under `henri/org-html-themes-dir'.  Returns the valid local path, or nil."
                                    henri/org-html-themes-dir)))
       (and (file-exists-p local) local))))
 
+(defun henri/org-html--journal-file-p ()
+  "Return non-nil when the exported file is a Journal monthly file."
+  (and buffer-file-name
+       (string-match-p "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"
+                       (file-name-nondirectory buffer-file-name))))
+
 (defun henri/org-html-ensure-default-theme-for-export (backend)
-  "Use the default HTML theme for unthemed Org HTML exports.
-This runs in Org's temporary export buffer, so the source file is not changed.
-Existing *valid* theme SETUPFILE declarations are respected.  Stale or broken
-ones are replaced with the same theme resolved to the correct local path; if
-that also fails, the default theme is used instead."
+  "Use the appropriate HTML theme for Org HTML exports.
+
+This runs in Org's temporary export buffer; the source file is not changed.
+
+Theme resolution order:
+1. #+HENRI_HTML_THEME: keyword — resolved to a local setup file at export
+   time, fully portable across machines.
+2. Existing #+SETUPFILE: pointing to org-html-themes / theme-henri — kept
+   if the file exists or is a remote URL; stale paths are repaired or removed.
+3. Journal monthly files automatically receive the Henri Journal theme.
+4. Everything else receives the default Henri Notes theme."
   (when (org-export-derived-backend-p backend 'html)
+    ;; Phase 1: resolve #+HENRI_HTML_THEME: to an actual #+SETUPFILE:.
+    (let ((declared-theme (henri/org-html--read-theme-keyword)))
+      (when declared-theme
+        ;; Remove any stale #+SETUPFILE: lines from org-html-themes so the
+        ;; keyword takes precedence.
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward
+                  "^#\\+SETUPFILE:.*\\(?:org-html-themes\\|theme-henri\\).*$" nil t)
+            (delete-region (line-beginning-position) (1+ (line-end-position)))))
+        (let ((setup-file (henri/org-html-get-theme-setup-file declared-theme)))
+          (when setup-file
+            (henri/org-html-insert-setupfile setup-file)))))
+    ;; Phase 2: repair broken legacy #+SETUPFILE: lines (files without keyword).
     (save-excursion
       (goto-char (point-min))
       (while (re-search-forward
@@ -147,7 +182,14 @@ that also fails, the default theme is used instead."
               (if replacement
                   (insert (format "#+SETUPFILE: %s" replacement))
                 (delete-region (1- (point)) (point))))))))
-    (henri/org-html-ensure-default-theme)))
+    ;; Phase 3: if no theme at all, inject the default (or Journal theme).
+    (let ((theme-name (if (henri/org-html--journal-file-p)
+                          "Henri Journal"
+                        henri/org-html-default-theme)))
+      (when (not (henri/org-html-theme-present-p))
+        (let ((setup-file (henri/org-html-get-theme-setup-file theme-name)))
+          (when setup-file
+            (henri/org-html-insert-setupfile setup-file)))))))
 
 (add-hook 'org-export-before-processing-hook
           #'henri/org-html-ensure-default-theme-for-export)
@@ -295,40 +337,48 @@ THEME-NAME 是主题名称。如果本地文件不存在，返回在线版本。
         nil))))
 
 (defun henri/org-html-set-theme (theme-name)
-  "为当前 Org 文件设置 HTML 主题。
-THEME-NAME 是要设置的主题名称。"
-  (interactive 
-   (list (completing-read "选择 HTML 主题: " 
+  "Set the HTML theme for the current Org file to THEME-NAME.
+
+Writes a portable #+HENRI_HTML_THEME: keyword to the source file.  The
+actual #+SETUPFILE: path is resolved at export time from the current
+machine's `henri-org-html-themes-directory', so the source file remains
+portable across devices."
+  (interactive
+   (list (completing-read "选择 HTML 主题: "
                           (mapcar #'car henri/org-html-themes-list)
                           nil t)))
-  (let ((setup-file (henri/org-html-get-theme-setup-file theme-name)))
-    (if setup-file
-        (progn
-          (save-excursion
-            (goto-char (point-min))
-            ;; 删除现有的 SETUPFILE 行
-            (while (re-search-forward "^#\\+SETUPFILE:.*org-html-themes.*$" nil t)
-              (delete-region (line-beginning-position) (1+ (line-end-position))))
-            ;; 在文件开头插入新的 SETUPFILE
-            (goto-char (point-min))
-            (if (looking-at "^#\\+TITLE:")
-                (forward-line 1)
-              (goto-char (point-min)))
-            (insert (format "#+SETUPFILE: %s\n" setup-file)))
-          (message "已设置 HTML 主题为: %s" theme-name))
-      (message "未找到主题: %s" theme-name))))
+  (save-excursion
+    (goto-char (point-min))
+    ;; Remove existing #+HENRI_HTML_THEME: line.
+    (while (re-search-forward "^#\\+HENRI_HTML_THEME:.*$" nil t)
+      (delete-region (line-beginning-position) (1+ (line-end-position))))
+    ;; Remove legacy #+SETUPFILE: lines referencing org-html-themes.
+    (goto-char (point-min))
+    (while (re-search-forward "^#\\+SETUPFILE:.*\\(?:org-html-themes\\|theme-henri\\).*$" nil t)
+      (delete-region (line-beginning-position) (1+ (line-end-position))))
+    ;; Insert the portable keyword after other #+KEYWORD: lines.
+    (goto-char (point-min))
+    (when (looking-at "^#\\+TITLE:") (forward-line 1))
+    (while (looking-at "^#\\+\\(AUTHOR\\|DATE\\|EMAIL\\|LANGUAGE\\|LATEX_CLASS\\|OPTIONS\\|STARTUP\\):")
+      (forward-line 1))
+    (insert (format "#+HENRI_HTML_THEME: %s\n" theme-name)))
+  (message "已设置 HTML 主题为: %s" theme-name))
 
 (defun henri/org-html-apply-default-theme ()
-  "为当前 Org 文件应用默认的 HTML 主题。"
+  "Apply the default HTML theme to the current Org file.
+Writes a portable #+HENRI_HTML_THEME: keyword; no absolute paths in source."
   (interactive)
   (henri/org-html-set-theme henri/org-html-default-theme))
 
 (defun henri/org-html-remove-theme ()
-  "移除当前 Org 文件的 HTML 主题设置。"
+  "Remove the HTML theme setting from the current Org file."
   (interactive)
   (save-excursion
     (goto-char (point-min))
-    (while (re-search-forward "^#\\+SETUPFILE:.*org-html-themes.*$" nil t)
+    (while (re-search-forward "^#\\+HENRI_HTML_THEME:.*$" nil t)
+      (delete-region (line-beginning-position) (1+ (line-end-position))))
+    (goto-char (point-min))
+    (while (re-search-forward "^#\\+SETUPFILE:.*\\(?:org-html-themes\\|theme-henri\\).*$" nil t)
       (delete-region (line-beginning-position) (1+ (line-end-position))))
     (message "已移除 HTML 主题设置")))
 
@@ -341,10 +391,8 @@ THEME-NAME 是要设置的主题名称。"
   (henri/org-html-export-with-theme henri/org-html-default-theme))
 
 (defun henri/org-html-export-with-theme (theme-name)
-  "使用指定主题导出当前 Org 文件为 HTML，不修改源 buffer。
-THEME-NAME 是要使用的主题名称。
-做法：在独立的临时 buffer 内复制源文本并注入 SETUPFILE，源 buffer
-内容与 marker / overlay / undo 历史均不受影响。"
+  "Export current Org file as HTML with THEME-NAME, without modifying the source.
+Works in a temporary buffer; the source buffer is not changed."
   (interactive
    (list (completing-read "选择导出主题: "
                           (mapcar #'car henri/org-html-themes-list)
@@ -358,27 +406,29 @@ THEME-NAME 是要使用的主题名称。
         (unwind-protect
             (with-current-buffer export-buf
               (insert-buffer-substring src-buf)
-              ;; SETUPFILE 用相对路径时需要 buffer-file-name 提供 base
               (when src-file (setq buffer-file-name src-file))
               (let ((delay-mode-hooks t)) (org-mode))
               (goto-char (point-min))
-              ;; 移除已有的 org-html-themes SETUPFILE 行
-              (while (re-search-forward
-                      "^#\\+SETUPFILE:.*org-html-themes.*$" nil t)
+              ;; Remove #+HENRI_HTML_THEME: and legacy #+SETUPFILE: lines.
+              (while (re-search-forward "^#\\+HENRI_HTML_THEME:.*$" nil t)
                 (delete-region (line-beginning-position)
                                (1+ (line-end-position))))
-              ;; 在 #+TITLE: 之后插入新的 SETUPFILE
+              (goto-char (point-min))
+              (while (re-search-forward
+                      "^#\\+SETUPFILE:.*\\(?:org-html-themes\\|theme-henri\\).*$" nil t)
+                (delete-region (line-beginning-position)
+                               (1+ (line-end-position))))
+              ;; Insert the resolved SETUPFILE.
               (goto-char (point-min))
               (when (looking-at "^#\\+TITLE:") (forward-line 1))
               (insert (format "#+SETUPFILE: %s\n" setup-file))
-              ;; 导出
+              ;; Export.
               (let ((html-file (org-html-export-to-html)))
                 (when html-file
                   (browse-url (concat "file://" (expand-file-name html-file)))
                   (message "使用 %s 主题导出完成: %s"
                            theme-name html-file))))
           (when (buffer-live-p export-buf)
-            ;; 防止误触发 ask-user-about-supersession-threat
             (with-current-buffer export-buf
               (set-buffer-modified-p nil))
             (kill-buffer export-buf)))))))
