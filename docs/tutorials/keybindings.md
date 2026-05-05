@@ -149,10 +149,12 @@ Org-roam capture template key:
 | Key | 模板 | 落点 |
 |-----|------|------|
 | `n` | note / 概念笔记 | `Roam/notes/${slug}.org` |
+| `i` | inbox / 临时收集 | `Roam/inbox/${slug}.org` |
 | `r` | reference / 资料笔记 | `Roam/references/${slug}.org` |
 | `p` | project / 项目笔记 | `Roam/projects/${slug}.org` |
 | `m` | map / 索引地图 | `Roam/maps/${slug}.org` |
 | `e` | person / 人物笔记 | `Roam/people/${slug}.org` |
+| `d` | daily / 每日笔记 | `Roam/daily/YYYY-MM-DD.org`，通过 `C-c n j` 使用 |
 
 若安装 `consult-org-roam`，还会启用 `C-c n s/r/l`。
 

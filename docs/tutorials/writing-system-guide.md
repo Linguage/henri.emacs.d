@@ -190,14 +190,15 @@ Journal 和 Roam daily 的区别很简单：**今天发生了什么、做了什�
 | 键 | 模板 | 落点 |
 |----|------|------|
 | `n` | 概念笔记 | `Roam/notes/${slug}.org` |
+| `i` | 临时收集 | `Roam/inbox/${slug}.org` |
 | `r` | 资料笔记 | `Roam/references/${slug}.org` |
 | `p` | 项目笔记 | `Roam/projects/${slug}.org` |
 | `m` | 索引地图 | `Roam/maps/${slug}.org` |
 | `e` | 人物笔记 | `Roam/people/${slug}.org` |
 
-每日笔记走独立模板：`C-c n j` 会写入 `Roam/daily/YYYY-MM-DD.org`，包含“今日记录 / Done / 想法 / 待抽取节点”。
+每日笔记走独立模板，template key 是 `d`：`C-c n j` 会写入 `Roam/daily/YYYY-MM-DD.org`，包含“今日记录 / Done / 想法 / 待抽取节点”。
 
-创建新节点进入 template key 输入时，配置会在 echo area 显示一行 `n/r/p/m/e` 的模板提示；忘记时也可以随时按 `C-c n ?` 查看。
+创建新节点进入 template key 输入时，配置会在 echo area 显示一行 `n/i/r/p/m/e` 的模板提示；忘记时也可以随时按 `C-c n ?` 查看普通节点模板和 daily 模板。
 
 Roam 文件顶部的 `:PROPERTIES:` 会维护 `:CREATED:` 和 `:UPDATED:`。新建节点时两者都会写入；之后保存 Roam 文件时只刷新 `:UPDATED:`，保留原始创建时间。
 

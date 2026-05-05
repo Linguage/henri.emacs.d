@@ -84,10 +84,13 @@ Roam/emacs/
 | Key | 模板 | 落点 | 适合内容 |
 |-----|------|------|----------|
 | `n` | note / 概念笔记 | `Roam/notes/${slug}.org` | 概念、判断、方法、反复出现的想法 |
+| `i` | inbox / 临时收集 | `Roam/inbox/${slug}.org` | 暂时没判断、先收起来的想法、摘录、转写 |
 | `r` | reference / 资料笔记 | `Roam/references/${slug}.org` | 网页、视频、书、文章、非正式摘录 |
 | `p` | project / 项目笔记 | `Roam/projects/${slug}.org` | 有明确产出的项目 |
 | `m` | map / 索引地图 | `Roam/maps/${slug}.org` | 主题入口、知识地图、工作台 |
 | `e` | person / 人物笔记 | `Roam/people/${slug}.org` | 作者、研究者、协作者、思想来源 |
+
+Daily 是 org-roam dailies 的独立模板，key 是 `d`，通常通过 `C-c n j` 使用，落点是 `Roam/daily/YYYY-MM-DD.org`。
 
 ### 3.1 `n` 概念笔记
 
@@ -450,7 +453,7 @@ C-c n b
 ### 7.2 写正式节点时
 
 1. `C-c n f` 输入节点名。
-2. 选择模板 key：`n/r/p/m/e`。
+2. 选择模板 key：`n/i/r/p/m/e`。
 3. 写清楚它是什么。
 4. 插入至少一个相关节点链接。
 5. 如果它属于某个主题，打开对应 map，把它挂进去。

@@ -25,11 +25,11 @@
   "Purpose-based subdirectories under `henri-org-roam-directory'.")
 
 (defconst henri-org-roam--file-head
-  ":PROPERTIES:\n:ID:       %%(org-id-new)\n:CREATED:  %%U\n:UPDATED:  %%U\n:END:\n#+title: ${title}\n#+filetags: :%s:\n\n"
+  "#+title: ${title}\n#+filetags: :%s:\n:PROPERTIES:\n:ID:       %%(org-id-new)\n:CREATED:  %%U\n:UPDATED:  %%U\n:END:\n\n"
   "File head template for regular Org-roam nodes.")
 
 (defconst henri-org-roam--daily-head
-  ":PROPERTIES:\n:ID:       %(org-id-new)\n:CREATED:  %U\n:UPDATED:  %U\n:END:\n#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n\n* 今日记录\n\n* Done\n\n* 想法\n\n* 待抽取节点\n"
+  "#+title: %<%Y-%m-%d>\n#+filetags: :daily:\n:PROPERTIES:\n:ID:       %(org-id-new)\n:CREATED:  %U\n:UPDATED:  %U\n:END:\n\n* 今日记录\n\n* Done\n\n* 想法\n\n* 待抽取节点\n"
   "File head template for Org-roam daily notes.")
 
 (defun henri-org-roam-directory ()
@@ -81,9 +81,29 @@
                 (goto-char drawer-end)
                 (insert (format ":UPDATED:  %s\n" timestamp)))
               (set-marker drawer-end nil)))
-        (goto-char (point-min))
-        (insert (format ":PROPERTIES:\n:CREATED:  %s\n:UPDATED:  %s\n:END:\n"
-                        timestamp timestamp))))))
+        (let (id created updated)
+          (goto-char (point-min))
+          (while (looking-at "^#\\+")
+            (forward-line 1))
+          (let ((insert-point (point)))
+            (while (looking-at "^[ \t]*$")
+              (forward-line 1))
+            (let ((metadata-start (point)))
+              (while (looking-at "^:\\(ID\\|CREATED\\|UPDATED\\):[ \t]+\\(.*\\)$")
+                (let ((key (match-string 1))
+                      (value (match-string 2)))
+                  (pcase key
+                    ("ID" (setq id value))
+                    ("CREATED" (setq created value))
+                    ("UPDATED" (setq updated value))))
+                (forward-line 1))
+              (when (> (point) metadata-start)
+                (delete-region metadata-start (point))))
+            (goto-char insert-point)
+            (insert (format ":PROPERTIES:\n%s:CREATED:  %s\n:UPDATED:  %s\n:END:\n"
+                            (if id (format ":ID:       %s\n" id) "")
+                            (or created timestamp)
+                            (or updated timestamp)))))))))
 
 (defun henri-org-roam-update-time-metadata ()
   "Refresh UPDATED metadata for Org-roam files before saving."
@@ -139,8 +159,14 @@
   (interactive)
   (with-help-window "*Henri Org-roam Templates*"
     (princ "Org-roam capture template keys\n\n")
+    (princ "Regular node templates (`C-c n f` / `C-c n c`)\n\n")
     (dolist (entry (henri-org-roam--capture-template-entries))
-      (princ (format "%-4s %s\n" (car entry) (cdr entry))))))
+      (princ (format "%-4s %s\n" (car entry) (cdr entry))))
+    (when (boundp 'org-roam-dailies-capture-templates)
+      (princ "\nDaily templates (`C-c n j`)\n\n")
+      (dolist (entry (henri-org-roam--capture-template-entries
+                      org-roam-dailies-capture-templates))
+        (princ (format "%-4s %s\n" (car entry) (cdr entry)))))))
 
 (defun henri-org-roam--message-template-hint (&rest args)
   "Show a compact template hint before Org-roam capture using ARGS."
@@ -179,6 +205,11 @@
            "%?"
            :target (file+head "notes/${slug}.org"
                               ,(format henri-org-roam--file-head "note"))
+           :unnarrowed t)
+          ("i" "inbox / 临时收集" plain
+           "%?"
+           :target (file+head "inbox/${slug}.org"
+                              ,(format henri-org-roam--file-head "inbox"))
            :unnarrowed t)
           ("r" "reference / 资料笔记" plain
            "* Metadata\n- Source:\n- Author:\n- Date:\n- Type:\n\n* 摘要\n%?\n\n* 我的理解\n\n* 相关节点\n"

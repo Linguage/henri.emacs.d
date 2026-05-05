@@ -73,6 +73,31 @@ document.addEventListener('DOMContentLoaded', function () {
     return (text || '').replace(/\s+/g, ' ').trim();
   }
 
+  function isMetadataLine(line) {
+    return /^:(?:PROPERTIES|END|ID|CREATED|UPDATED|ROAM_[A-Z0-9_]+|CUSTOM_ID|FILETAGS|LAST_MODIFIED|REFS?):\s*/i.test(line);
+  }
+
+  function removeExportedMetadataParagraphs() {
+    var stopTags = { H2: true, H3: true, H4: true, H5: true, H6: true };
+    var candidates = Array.prototype.slice.call(content.children);
+
+    candidates.some(function (el) {
+      if (stopTags[el.tagName]) return true;
+      if (el.id === 'table-of-contents') return false;
+      if (el.classList.contains('outline-2')) return true;
+      if (el.tagName !== 'P') return false;
+
+      var lines = (el.textContent || '').split(/\n+/).map(function (line) {
+        return line.trim();
+      }).filter(Boolean);
+
+      if (lines.length && lines.every(isMetadataLine)) {
+        el.parentNode.removeChild(el);
+      }
+      return false;
+    });
+  }
+
   function documentTitle() {
     var titleHeading = content.querySelector('h1.title');
     return cleanText(titleHeading ? titleHeading.textContent : document.title) || 'Untitled';
@@ -255,6 +280,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   cleanupLegacyThemes();
   initTheme();
+  removeExportedMetadataParagraphs();
   var toc = sourceToc();
   buildHeader(Boolean(toc));
   buildTocModal(toc);

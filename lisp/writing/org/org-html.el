@@ -120,6 +120,53 @@ Existing theme SETUPFILE declarations are respected."
 (add-hook 'org-export-before-processing-hook
           #'henri/org-html-ensure-default-theme-for-export)
 
+(defconst henri/org-html-file-metadata-properties
+  '("ID" "CREATED" "UPDATED" "ROAM_REFS" "ROAM_ALIASES" "CUSTOM_ID"
+    "FILETAGS" "LAST_MODIFIED" "REF")
+  "File-level Org metadata properties hidden from HTML body exports.")
+
+(defun henri/org-html--metadata-property-line-p ()
+  "Return non-nil when point is on a file-level metadata property line."
+  (and (looking-at "^:\\([A-Z0-9_]+\\):[ \t]*")
+       (member (match-string 1) henri/org-html-file-metadata-properties)))
+
+(defun henri/org-html--delete-following-blank-lines ()
+  "Delete blank lines following point."
+  (while (looking-at "^[ \t]*$")
+    (delete-region (line-beginning-position) (line-beginning-position 2))))
+
+(defun henri/org-html-remove-file-metadata-for-export (backend)
+  "Remove file-level Org-roam metadata from temporary HTML export buffers.
+The source Org file is not changed.  This hides top-level property drawers and
+legacy bare property lines such as :ID:, :CREATED: and :UPDATED: from HTML
+body output while keeping those values available in the Org source."
+  (when (org-export-derived-backend-p backend 'html)
+    (save-excursion
+      (goto-char (point-min))
+      (let ((continue t))
+        (while continue
+          (cond
+           ((looking-at "^[ \t]*$")
+            (forward-line 1))
+           ((looking-at "^#\\+")
+            (forward-line 1))
+           ((looking-at "^:PROPERTIES:[ \t]*$")
+            (let ((start (point)))
+              (if (re-search-forward "^:END:[ \t]*$" nil t)
+                  (progn
+                    (delete-region start (line-beginning-position 2))
+                    (henri/org-html--delete-following-blank-lines))
+                (setq continue nil))))
+           ((henri/org-html--metadata-property-line-p)
+            (while (henri/org-html--metadata-property-line-p)
+              (delete-region (line-beginning-position) (line-beginning-position 2)))
+            (henri/org-html--delete-following-blank-lines))
+           (t
+            (setq continue nil))))))))
+
+(add-hook 'org-export-before-processing-hook
+          #'henri/org-html-remove-file-metadata-for-export)
+
 ;; =============================================================================
 ;; 简化主题映射系统
 
