@@ -11,9 +11,8 @@
 ;; 本配置文件提供 Emacs 的基础管理功能，包含以下主要模块：
 
 ;; 1. 搜索与补全
-;;    - ivy          -- 通用补全框架
-;;    - counsel      -- 命令补全增强
-;;    - swiper       -- 交互式搜索
+;;    - ivy/counsel/swiper -- 默认补全与搜索栈
+;;    - vertico/consult    -- 可选实验补全与搜索栈
 ;;    - which-key    -- 按键提示
 
 ;; 2. 文件管理
@@ -39,26 +38,95 @@
 ;; =============================================================================
 ;; 搜索与补全配置
 
-;; Ivy - 轻量级补全框架
-(use-package ivy
-  :ensure t
-  :defer 0.1
-  :diminish
-  :config
-  (ivy-mode 1))
+(global-set-key (kbd "C-c f n") #'henri/find-file-in-notes)
 
-;; Counsel - 增强的命令补全
-(use-package counsel
-  :ensure t
-  :after ivy
-  :bind (("M-x" . counsel-M-x)
-         ("C-c f n" . henri/find-file-in-notes)))
+(defun henri/install-vertico-buffer-frame ()
+  "Install `vertico-buffer-frame' from GitHub via `package-vc'."
+  (interactive)
+  (unless (require 'package-vc nil t)
+    (user-error "`package-vc-install' is unavailable in this Emacs"))
+  (package-vc-install
+   "https://github.com/kn66/vertico-buffer-frame.git"
+   nil nil 'vertico-buffer-frame))
 
-;; Swiper - 交互式搜索工具
-(use-package swiper
-  :ensure t
-  :after ivy
-  :bind (("C-s" . swiper)))
+(pcase henri-experimental-completion-backend
+  ('ivy
+   ;; Ivy - default completion stack.
+   (use-package ivy
+     :ensure t
+     :demand t
+     :diminish
+     :config
+     (ivy-mode 1))
+
+   ;; Counsel - command completion enhancements.
+   (use-package counsel
+     :ensure t
+     :after ivy
+     :demand t
+     :bind (("M-x" . counsel-M-x)))
+
+   ;; Swiper - interactive search.
+   (use-package swiper
+     :ensure t
+     :after ivy
+     :demand t
+     :bind (("C-s" . swiper))))
+
+  ('vertico
+   ;; Vertico/Consult - experimental completion stack.
+   (use-package vertico
+     :ensure t
+     :pin gnu
+     :demand t
+     :init
+     (setq vertico-cycle t)
+     :config
+     (vertico-mode 1))
+
+   (use-package orderless
+     :ensure t
+     :pin gnu
+     :init
+     (setq completion-styles '(orderless basic)
+           completion-category-defaults nil
+           completion-category-overrides
+           '((file (styles basic partial-completion)))))
+
+   (use-package marginalia
+     :ensure t
+     :pin gnu
+     :after vertico
+     :config
+     (marginalia-mode 1))
+
+   (use-package consult
+     :ensure t
+     :pin gnu
+     :bind (("C-s" . consult-line)
+            ("C-c s l" . consult-line)
+            ("C-c s r" . consult-ripgrep)
+            ("C-c b b" . consult-buffer)))
+
+   (if (and henri-vertico-enable-buffer-frame
+            (locate-library "vertico-buffer-frame"))
+       (progn
+         (use-package vertico-buffer-frame
+           :ensure nil
+           :after vertico
+           :init
+           (setq vertico-buffer-frame-preview t
+                 vertico-buffer-frame-preview-layout 'overlay)
+           :config
+           (vertico-buffer-frame-mode 1)
+           (define-key vertico-map (kbd "C-t")
+                       #'vertico-buffer-frame-toggle-preview)))
+     (when henri-vertico-enable-buffer-frame
+       (message "[henri] vertico-buffer-frame not installed; run M-x henri/install-vertico-buffer-frame to enable the experimental child-frame UI."))))
+
+  (_
+   (message "[henri] Unknown completion backend %S; falling back to built-in completion."
+            henri-experimental-completion-backend)))
 
 ;; =============================================================================
 ;; 文件管理配置

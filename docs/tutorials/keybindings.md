@@ -10,10 +10,10 @@
 | `C-c a` | agenda | `org-agenda` |
 | `C-c A` | academic | `n/r/j/p/c/P/N/b/d/i` |
 | `C-c f` | file / find | `n` notes、`p` project tree |
-| `C-c b` | buffer / bookmark | 预留治理前缀 |
+| `C-c b` | buffer / bookmark | Vertico 实验栈中 `b` 为 `consult-buffer` |
 | `C-c w` | window / terminal | `l` layout、`e` eshell、`v` vterm、`E` eshell legacy |
 | `C-c g` | git | `g/d/f/b/l` Magit、`n/p/r` hunk、`m ...` smerge、`N ...` notes-sync |
-| `C-c s` | search | `C-s` swiper；前缀预留 |
+| `C-c s` | search | 默认 `C-s` swiper；Vertico 实验栈中 `l/r` 为 consult |
 | `C-c t` | toggle / theme | `t` load theme、`b` big font、`l` line numbers |
 | `C-c h` | help / doctor | `d` doctor、`k` keybindings |
 | `C-c o` | Org ops | `a` dashboard、`s` today summary、`i/t/p` agenda files、`v` startup folded |
@@ -40,6 +40,33 @@
 | `C-c w E` | `eshell` | `lisp/init-managing.el` |
 | `C-c h k` | `henri/open-keybindings-doc` | `lisp/init-keys.el` |
 | `C-c h d` | `henri/doctor` | `lisp/ops/doctor.el` |
+
+### 2.1 Vertico / Consult 实验栈
+
+默认补全栈仍是 Ivy / Counsel / Swiper。若在 profile 或更早配置中设置：
+
+```elisp
+(setq henri-experimental-completion-backend 'vertico)
+```
+
+则 `lisp/init-managing.el` 会改用 Vertico / Consult 实验栈：
+
+| 快捷键 | 命令 | 说明 |
+|--------|------|------|
+| `M-x` | `execute-extended-command` | 由 Vertico 接管候选 UI |
+| `C-s` | `consult-line` | 替代 `swiper` |
+| `C-c s l` | `consult-line` | 行搜索 |
+| `C-c s r` | `consult-ripgrep` | 项目 / 目录 ripgrep |
+| `C-c b b` | `consult-buffer` | buffer / recent / bookmark 候选 |
+| `C-t` | `vertico-buffer-frame-toggle-preview` | 仅安装并启用 `vertico-buffer-frame` 后，在 completion session 中切换 preview |
+
+`vertico-buffer-frame` 是 GitHub 实验包，不会在启动时自动安装。需要时先执行：
+
+```elisp
+M-x henri/install-vertico-buffer-frame
+```
+
+回退到默认栈时，将 `henri-experimental-completion-backend` 设回 `ivy`。
 
 ## 3. Git
 

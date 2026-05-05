@@ -244,6 +244,15 @@ Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(
 (defcustom henri-experimental-completion-backend 'ivy
   "Completion stack selection (experimental)." :type '(choice (const ivy) (const vertico) (const corfu)) :group 'henri-experiments)
 
+(defcustom henri-vertico-enable-buffer-frame t
+  "Enable `vertico-buffer-frame' when the experimental Vertico backend is active.
+
+This option never installs the GitHub package automatically.  Run
+`henri/install-vertico-buffer-frame' explicitly to install it through
+`package-vc'."
+  :type 'boolean
+  :group 'henri-experiments)
+
 (defcustom henri-enable-byte-compile-check t
   "Whether to run batch byte-compile in CI helper scripts." :type 'boolean :group 'henri-performance)
 
