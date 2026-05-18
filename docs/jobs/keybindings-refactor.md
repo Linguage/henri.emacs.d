@@ -46,7 +46,7 @@
 | `C-c b` | buffer / bookmark | `+buffer` | `b` switch、`k` kill |
 | `C-c w` | window / workspace | `+window` | `l` layout、`v` vterm、`e` eshell |
 | `C-c g` | git (Magit + diff-hl + smerge) | `+git` | `g/d/f/b/l` Magit；`n/p/r` hunk；`m {n/p/u/l/b/a}` smerge |
-| `C-c s` | search | `+search` | `s` swiper、`r` ripgrep、`o` consult-outline |
+| `C-c s` | search | `+search` | `l` consult-line、`r` consult-ripgrep、`o` consult-outline |
 | `C-c t` | toggle / theme | `+toggle` | `t` doom-theme、`b` big-font、`l` line-num |
 | `C-c h` | help / doctor | `+help` | `d` doctor、`f/v/k/F/C` helpful（保留） |
 | `C-c o` | org ops（跨 buffer） | `+org` | `a` agenda-dashboard、`i/t/p` inbox/tasks/projects、`f` emergency-fix、`v` startup-fold |

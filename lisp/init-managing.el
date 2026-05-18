@@ -11,8 +11,8 @@
 ;; 本配置文件提供 Emacs 的基础管理功能，包含以下主要模块：
 
 ;; 1. 搜索与补全
-;;    - ivy/counsel/swiper -- 默认补全与搜索栈
-;;    - vertico/consult    -- 可选实验补全与搜索栈
+;;    - vertico/consult    -- 默认补全与搜索栈
+;;    - ivy/counsel/swiper -- legacy 可回退补全与搜索栈
 ;;    - which-key    -- 按键提示
 
 ;; 2. 文件管理

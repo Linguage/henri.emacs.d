@@ -267,6 +267,9 @@ Org 基础写作使用 Emacs / Org 默认键即可；本配置额外提供视图
 | `C-c m v s` | 展开所有内容 |
 | `C-c m v o` | 只显示大纲 |
 | `C-c m v c` | 显示标题结构 |
+| `C-c m x` | 插入 checkbox list item |
+
+`M-S-RET` 保留 Org 默认行为：在 plain list 中会新建 checkbox；如果终端或 macOS 没有把这个组合键传给 Emacs，用 `C-c m x`。
 
 ### 7.2 HTML 主题
 

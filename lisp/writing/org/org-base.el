@@ -231,12 +231,26 @@ do NOT scatter set-face-attribute calls elsewhere."
     (cond ((fboundp 'org-cycle-content) (org-cycle-content))
           ((fboundp 'org-content) (org-content)))))
 
+(defun henri/org-insert-checkbox ()
+  "Insert a new Org checkbox list item.
+When point is already in a plain list, keep the current list level.
+Otherwise start a new `- [ ]' item at point or on the next line."
+  (interactive)
+  (unless (org-insert-item t)
+    (unless (looking-at-p "[ \t]*$")
+      (end-of-line)
+      (insert "\n"))
+    (delete-horizontal-space)
+    (insert "- [ ] ")))
+
 ;; =============================================================================
 ;; 快捷键
 
 (global-set-key (kbd "C-c o v") 'henri/cycle-org-startup-folded)
 
 (with-eval-after-load 'org
+  (define-key org-mode-map (kbd "M-S-<return>") 'org-insert-todo-heading)
+  (define-key org-mode-map (kbd "C-c m x") 'henri/org-insert-checkbox)
   (define-key org-mode-map (kbd "C-c m v b") 'henri/toggle-org-bullets)
   (define-key org-mode-map (kbd "C-c m v s") 'henri/org-show-all)
   (define-key org-mode-map (kbd "C-c m v o") 'henri/org-overview)

@@ -70,8 +70,29 @@
   "Call `eglot-ensure' when `major-mode' is in `henri-eglot-auto-major-modes'."
   (when (and (boundp 'henri-eglot-auto-major-modes)
              henri-eglot-auto-major-modes
-             (memq major-mode henri-eglot-auto-major-modes))
-    (eglot-ensure)))
+             (memq major-mode henri-eglot-auto-major-modes)
+             (require 'eglot nil t)
+             (boundp 'eglot-server-programs))
+    (let* ((server-entry (seq-find
+                          (lambda (entry)
+                            (let ((modes (car entry)))
+                              (if (listp modes)
+                                  (memq major-mode modes)
+                                (eq major-mode modes))))
+                          eglot-server-programs))
+           (server-command (cadr server-entry)))
+      (cond
+       ((null server-command)
+        (message "[henri] Skip eglot: no server configured for %s" major-mode))
+       ((and (stringp server-command)
+             (not (executable-find server-command)))
+        (message "[henri] Skip eglot: executable not found: %s" server-command))
+       ((and (listp server-command)
+             (stringp (car server-command))
+             (not (executable-find (car server-command))))
+        (message "[henri] Skip eglot: executable not found: %s" (car server-command)))
+       (t
+        (eglot-ensure))))))
 
 ;; =============================================================================
 ;; 语言服务器协议(LSP)支持：eglot
@@ -122,21 +143,29 @@
   :config
   (setq treesit-font-lock-level 4)         ; 设置语法高亮级别
   :init
+  (defun henri--treesit-mode-remap (language from-mode to-mode)
+    "Return a major-mode remap when LANGUAGE grammar is available."
+    (when (and (fboundp 'treesit-language-available-p)
+               (treesit-language-available-p language))
+      (cons from-mode to-mode)))
+
   ;; 设置模式映射表
   (setq major-mode-remap-alist 
-        '((sh-mode        . bash-ts-mode)
-          (c-mode         . c-ts-mode)
-          (c++-mode       . c++-ts-mode)
-          (c-or-c++-mode  . c-or-c++-ts-mode)
-          (css-mode       . css-ts-mode)
-          (js-mode        . js-ts-mode)
-          (java-mode      . java-ts-mode)
-          (js-json-mode   . json-ts-mode)
-          (julia-mode     . julia-ts-mode)
-          (makefile-mode  . cmake-ts-mode)
-          (python-mode    . python-ts-mode)
-          (ruby-mode      . ruby-ts-mode)
-          (conf-toml-mode . toml-ts-mode)))
+        (delq nil
+              (list
+               (henri--treesit-mode-remap 'bash 'sh-mode 'bash-ts-mode)
+               (henri--treesit-mode-remap 'c 'c-mode 'c-ts-mode)
+               (henri--treesit-mode-remap 'cpp 'c++-mode 'c++-ts-mode)
+               (henri--treesit-mode-remap 'cpp 'c-or-c++-mode 'c-or-c++-ts-mode)
+               (henri--treesit-mode-remap 'css 'css-mode 'css-ts-mode)
+               (henri--treesit-mode-remap 'javascript 'js-mode 'js-ts-mode)
+               (henri--treesit-mode-remap 'java 'java-mode 'java-ts-mode)
+               (henri--treesit-mode-remap 'json 'js-json-mode 'json-ts-mode)
+               (henri--treesit-mode-remap 'julia 'julia-mode 'julia-ts-mode)
+               (henri--treesit-mode-remap 'cmake 'makefile-mode 'cmake-ts-mode)
+               (henri--treesit-mode-remap 'python 'python-mode 'python-ts-mode)
+               (henri--treesit-mode-remap 'ruby 'ruby-mode 'ruby-ts-mode)
+               (henri--treesit-mode-remap 'toml 'conf-toml-mode 'toml-ts-mode))))
   ;; 配置语言源
   (setq treesit-language-source-alist
         '((bash       . ("https://github.com/tree-sitter/tree-sitter-bash"))
@@ -277,10 +306,106 @@
   :if (and (boundp 'henri-enable-leetcode) henri-enable-leetcode)
   :commands (leetcode)
   :config
-  (setq leetcode-prefer-language "python")
+  (setq leetcode-prefer-language "c")
   (setq leetcode-save-solutions t)
   (setq leetcode-directory (directory-file-name (expand-file-name henri-leetcode-directory)))
-  (setq leetcode-coding-preference 'contest))
+  (setq leetcode-coding-preference 'contest)
+
+  (defun henri-leetcode--quiet-solution-buffer ()
+    "Disable noisy diagnostics in LeetCode solution buffers."
+    (setq-local henri-eglot-auto-major-modes nil)
+    (when (bound-and-true-p flycheck-mode)
+      (flycheck-mode -1))
+    (when (and (fboundp 'eglot-managed-p)
+               (eglot-managed-p))
+      (ignore-errors (eglot-shutdown))))
+
+  (add-hook 'leetcode-solution-mode-hook #'henri-leetcode--quiet-solution-buffer)
+
+  (defun leetcode--cookie-get-all ()
+    "Get valid LeetCode cookies with `my_cookies'."
+    (let* ((my-cookies-output (shell-command-to-string (leetcode--my-cookies-path)))
+           (cookies-list (seq-filter (lambda (s) (not (string-empty-p s)))
+                                     (s-split "\n" my-cookies-output 'OMIT-NULLS)))
+           (cookies-pairs (seq-map (lambda (s)
+                                     (s-split-up-to " " s 1 'OMIT-NULLS))
+                                   cookies-list)))
+      (seq-filter (lambda (pair)
+                    (member (car pair) '("LEETCODE_SESSION" "csrftoken")))
+                  cookies-pairs)))
+
+  (defun henri-leetcode--difficulty-name (level)
+    "Convert LeetCode REST difficulty LEVEL to a package difficulty string."
+    (pcase level
+      (1 "Easy")
+      (2 "Medium")
+      (3 "Hard")
+      (_ "")))
+
+  (defun henri-leetcode--rest-problem-from-alist (item)
+    "Build a `leetcode-problem' from one REST API ITEM."
+    (let-alist item
+      (let* ((submitted (or .stat.total_submitted 0))
+             (acceptance (if (zerop submitted)
+                             "0.0%"
+                           (format "%.1f%%"
+                                   (* 100.0 (/ (float .stat.total_acs) submitted))))))
+        (make-leetcode-problem
+         :status     .status
+         :id         (number-to-string .stat.frontend_question_id)
+         :backend-id (number-to-string .stat.question_id)
+         :title      .stat.question__title
+         :title-slug .stat.question__title_slug
+         :acceptance acceptance
+         :difficulty (henri-leetcode--difficulty-name .difficulty.level)
+         :paid-only  (eq .paid_only t)
+         :tags       '()))))
+
+  (aio-defun henri-leetcode--fetch-all-problems-rest ()
+    "Fetch all LeetCode problems with the legacy REST endpoint."
+    (let* ((url-request-method "GET")
+           (url-request-extra-headers `(,leetcode--User-Agent))
+           (response (aio-await (aio-url-retrieve leetcode--url-all-problems)))
+           (response-status (car response))
+           (response-buffer (cdr response)))
+      (unwind-protect
+          (if-let ((error (plist-get response-status :error)))
+              (user-error "LeetCode problem list fetch failed: %S" error)
+            (let-alist (with-current-buffer response-buffer
+                         (goto-char url-http-end-of-headers)
+                         (json-read))
+              (cons .num_total
+                    (sort
+                     (mapcar #'henri-leetcode--rest-problem-from-alist
+                             (seq-filter
+                              (lambda (item)
+                                (let-alist item
+                                  (not (eq .stat.question__hide t))))
+                              .stat_status_pairs))
+                     (lambda (a b)
+                       (< (string-to-number (leetcode-problem-id a))
+                          (string-to-number (leetcode-problem-id b))))))))
+        (when (buffer-live-p response-buffer)
+          (kill-buffer response-buffer)))))
+
+  (aio-defun leetcode-refresh-fetch ()
+    "Refresh problems and update `tabulated-list-entries'.
+This compatibility override uses LeetCode's full REST problem list.  The
+package's original GraphQL refresh currently assumes a 4000 item response, but
+the endpoint caps the returned page and can fail during activation."
+    (interactive)
+    (message "LeetCode refreshing question list...")
+    (let* ((result (aio-await (henri-leetcode--fetch-all-problems-rest)))
+           (total (car result))
+           (problems (cdr result)))
+      (setq leetcode--problems
+            (make-leetcode-problems
+             :num total
+             :tag "all"
+             :problems problems))
+      (setq leetcode--all-tags nil)
+      (setq leetcode--display-tags leetcode-prefer-tag-display)
+      (leetcode-reset-filter-and-refresh))))
 
 
 (provide 'init-programming)

@@ -10,10 +10,10 @@
 | `C-c a` | agenda | `org-agenda` |
 | `C-c A` | academic | `n/r/j/p/c/P/N/b/d/i` |
 | `C-c f` | file / find | `n` notes、`p` project tree |
-| `C-c b` | buffer / bookmark | Vertico 实验栈中 `b` 为 `consult-buffer` |
+| `C-c b` | buffer / bookmark | `b` consult-buffer |
 | `C-c w` | window / terminal | `l` layout、`e` eshell、`v` vterm、`E` eshell legacy |
 | `C-c g` | git | `g/d/f/b/l` Magit、`n/p/r` hunk、`m ...` smerge、`N ...` notes-sync |
-| `C-c s` | search | 默认 `C-s` swiper；Vertico 实验栈中 `l/r` 为 consult |
+| `C-c s` | search | `C-s` / `l` consult-line；`r` consult-ripgrep |
 | `C-c t` | toggle / theme | `t` load theme、`b` big font、`l` line numbers |
 | `C-c h` | help / doctor | `d` doctor、`k` keybindings |
 | `C-c o` | Org ops | `a` dashboard、`s` today summary、`i/t/p` agenda files、`v` startup folded |
@@ -29,8 +29,11 @@
 
 | 快捷键 | 命令 | 位置 |
 |--------|------|------|
-| `M-x` | `counsel-M-x` | `lisp/init-managing.el` |
-| `C-s` | `swiper` | `lisp/init-managing.el` |
+| `M-x` | `execute-extended-command`（Vertico 接管候选 UI） | `lisp/init-managing.el` |
+| `C-s` | `consult-line` | `lisp/init-managing.el` |
+| `C-c s l` | `consult-line` | `lisp/init-managing.el` |
+| `C-c s r` | `consult-ripgrep` | `lisp/init-managing.el` |
+| `C-c b b` | `consult-buffer` | `lisp/init-managing.el` |
 | `C-c f n` | `henri/find-file-in-notes` | `lisp/init-managing.el` |
 | `C-c f p` | `henri/neotree-project-dir` | `lisp/init-managing.el` |
 | `<f8>` | `neotree-toggle` | `lisp/init-managing.el` |
@@ -41,20 +44,20 @@
 | `C-c h k` | `henri/open-keybindings-doc` | `lisp/init-keys.el` |
 | `C-c h d` | `henri/doctor` | `lisp/ops/doctor.el` |
 
-### 2.1 Vertico / Consult 实验栈
+### 2.1 Vertico / Consult 默认栈
 
-默认补全栈仍是 Ivy / Counsel / Swiper。若在 profile 或更早配置中设置：
+默认补全栈是 Vertico / Consult。`lisp/init-custom.el` 中的默认值为：
 
 ```elisp
 (setq henri-experimental-completion-backend 'vertico)
 ```
 
-则 `lisp/init-managing.el` 会改用 Vertico / Consult 实验栈：
+主力入口：
 
 | 快捷键 | 命令 | 说明 |
 |--------|------|------|
 | `M-x` | `execute-extended-command` | 由 Vertico 接管候选 UI |
-| `C-s` | `consult-line` | 替代 `swiper` |
+| `C-s` | `consult-line` | 默认行搜索 |
 | `C-c s l` | `consult-line` | 行搜索 |
 | `C-c s r` | `consult-ripgrep` | 项目 / 目录 ripgrep |
 | `C-c b b` | `consult-buffer` | buffer / recent / bookmark 候选 |
@@ -66,7 +69,13 @@
 M-x henri/install-vertico-buffer-frame
 ```
 
-回退到默认栈时，将 `henri-experimental-completion-backend` 设回 `ivy`。
+需要回退到 legacy Ivy / Counsel / Swiper 时，在 profile 或更早配置中设置：
+
+```elisp
+(setq henri-experimental-completion-backend 'ivy)
+```
+
+回退后 `M-x` 使用 `counsel-M-x`，`C-s` 使用 `swiper`。
 
 ## 3. Git
 
@@ -148,6 +157,8 @@ F5/F6/F9/F10/F11/F12 不再作为本配置的主力调试入口。
 | `C-c m v s` | `henri/org-show-all` | `lisp/writing/org/org-base.el` |
 | `C-c m v o` | `henri/org-overview` | `lisp/writing/org/org-base.el` |
 | `C-c m v c` | `henri/org-content` | `lisp/writing/org/org-base.el` |
+| `C-c m x` | `henri/org-insert-checkbox` | `lisp/writing/org/org-base.el` |
+| `M-S-RET` | `org-insert-todo-heading` | Org 默认键；在 plain list 中新建 checkbox |
 | `C-c m h t/d/e/w/c/r/i/k` | Org HTML theme/export commands | `lisp/writing/org/org-html.el` |
 | `C-c m h s/?/1/2/0` | Org HTML shortcut themes | `lisp/writing/org/org-html.el` |
 | `C-c m l t/p/q/d/r` | Org LaTeX/PDF commands | `lisp/writing/org/org-latex.el` |

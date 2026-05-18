@@ -10,7 +10,7 @@
 | core | `init.el` | 包初始化；加载 `init-custom` / `init-managing` / `init-styling` / `init-programming` / `init-writing` / ops |
 | customization | [`lisp/init-custom.el`](../../lisp/init-custom.el) | 全部 `defgroup` / `defcustom`：主题策略、模块开关、路径、性能阈值 |
 | visual | [`lisp/visual/`](../../lisp/visual/) | 字体 / 主题包 / UI 组件三分离；`init-visual.el` 统一加载 |
-| managing | [`lisp/init-managing.el`](../../lisp/init-managing.el) | Ivy/Counsel/Swiper 默认补全栈；Vertico/Consult 实验栈；neotree / which-key / Magit / diff-hl |
+| managing | [`lisp/init-managing.el`](../../lisp/init-managing.el) | Vertico/Consult 默认补全栈；Ivy/Counsel/Swiper legacy 回退栈；neotree / which-key / Magit / diff-hl |
 | keys | [`lisp/init-keys.el`](../../lisp/init-keys.el) | 全局快捷键治理、which-key 前缀标题、跨模块轻量入口 |
 | programming | [`lisp/init-programming.el`](../../lisp/init-programming.el) | company / eglot / tree-sitter / flycheck；语言桥接 |
 | writing | [`lisp/init-writing.el`](../../lisp/init-writing.el) | Markdown / Org / LaTeX / PDF 总线 |
@@ -81,7 +81,7 @@
 ## 加载顺序要点
 
 1. `init-custom` 必须早于所有使用 `defcustom` 的模块。
-2. `init-managing` 根据 `henri-experimental-completion-backend` 互斥加载补全栈：默认 `ivy`，实验 `vertico`；切换值应放在 profile 或更早的配置中。
+2. `init-managing` 根据 `henri-experimental-completion-backend` 互斥加载补全栈：默认 `vertico`，可设为 `ivy` 回退到 legacy 栈；切换值应放在 profile 或更早的配置中。
 3. `init-keys` 在 `init-managing` 之后加载：which-key 包由 managing 启用，前缀治理由 keys 统一声明。
 4. `visual-fonts` 会先于 `init-visual` 被加载一次（`init.el` 先 `require 'lib-fonts`）；`init-visual` 再次 `require` 为幂等。
 5. `paths.el` 的运行时目录创建在 `after-init-hook`；个人写作数据目录/文件只在交互式启动或显式命令中创建，避免 `--batch` 加载污染笔记根目录。

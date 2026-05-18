@@ -58,6 +58,7 @@
     "C-c m t" "+md-toc"
     "C-c m T" "+md-template"
     "C-c m v" "+org-view"
+    "C-c m x" "org-checkbox"
     "C-c n" "+roam"
     "C-c o" "+org"
     "C-c r" "+rime"

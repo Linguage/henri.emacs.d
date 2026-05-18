@@ -241,11 +241,16 @@ Symbols understood: flycheck font-lock tree-sitter eglot line-numbers." :type '(
 (defcustom henri-large-file-minor-highlighting-level 1
   "Value for `font-lock-maximum-decoration' in large buffers." :type 'integer :group 'henri-performance)
 
-(defcustom henri-experimental-completion-backend 'ivy
-  "Completion stack selection (experimental)." :type '(choice (const ivy) (const vertico) (const corfu)) :group 'henri-experiments)
+(defcustom henri-experimental-completion-backend 'vertico
+  "Completion stack selection.
+
+The default is `vertico'.  Set this to `ivy' to use the legacy
+Ivy/Counsel/Swiper stack."
+  :type '(choice (const vertico) (const ivy) (const corfu))
+  :group 'henri-experiments)
 
 (defcustom henri-vertico-enable-buffer-frame t
-  "Enable `vertico-buffer-frame' when the experimental Vertico backend is active.
+  "Enable `vertico-buffer-frame' when the Vertico backend is active.
 
 This option never installs the GitHub package automatically.  Run
 `henri/install-vertico-buffer-frame' explicitly to install it through
@@ -351,7 +356,7 @@ Prefers zsh when found; else /bin/sh (portable on NixOS, servers, Termux)."
   :type 'directory
   :group 'henri-paths)
 
-(defcustom henri-leetcode-directory "~/leetcode/"
+(defcustom henri-leetcode-directory "~/Documents/Learn/leetcode/emacs/"
   "Directory used by `leetcode' package for solutions."
   :type 'directory
   :group 'henri-paths)
