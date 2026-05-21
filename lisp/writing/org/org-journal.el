@@ -23,6 +23,7 @@
 (require 'org)
 (require 'org-agenda)
 (require 'ox)
+(require 'subr-x)
 
 ;; =============================================================================
 ;; 轻量 GTD Agenda 配置
@@ -107,6 +108,17 @@
 (defcustom henri-journal-auto-save-delay 10
   "Seconds to wait after Journal edits before saving the visited file."
   :type 'integer
+  :group 'henri-writing)
+
+(defcustom henri-journal-expense-bills-directory
+  (expand-file-name "bills/" henri-journal-directory)
+  "Directory for generated monthly Journal expense bills."
+  :type 'directory
+  :group 'henri-writing)
+
+(defcustom henri-journal-expense-heading-regexp "花销记录"
+  "Regexp matching Journal headings that contain expense tables."
+  :type 'regexp
   :group 'henri-writing)
 
 (defun henri-journal-file (name)
@@ -402,6 +414,276 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
     (org-search-view nil keyword)))
 
 ;; =============================================================================
+;; Journal 花销账单
+
+(defun henri-journal-expense-bill-file (month)
+  "Return generated expense bill path for MONTH (YYYY-MM)."
+  (expand-file-name (format "bill-%s.org" month)
+                    henri-journal-expense-bills-directory))
+
+(defun henri-journal-expense--parse-month (month)
+  "Return a time value for MONTH in YYYY-MM form."
+  (unless (string-match "\\`\\([0-9]\\{4\\}\\)-\\([0-9]\\{2\\}\\)\\'" month)
+    (user-error "月份格式应为 YYYY-MM: %s" month))
+  (encode-time 0 0 0 1
+               (string-to-number (match-string 2 month))
+               (string-to-number (match-string 1 month))))
+
+(defun henri-journal-expense--previous-date (date)
+  "Return the date before DATE (YYYY-MM-DD)."
+  (unless (string-match "\\`\\([0-9]\\{4\\}\\)-\\([0-9]\\{2\\}\\)-\\([0-9]\\{2\\}\\)\\'" date)
+    (user-error "日期格式应为 YYYY-MM-DD: %s" date))
+  (format-time-string
+   "%Y-%m-%d"
+   (time-subtract
+    (encode-time 0 0 0
+                 (string-to-number (match-string 3 date))
+                 (string-to-number (match-string 2 date))
+                 (string-to-number (match-string 1 date)))
+    (days-to-time 1))))
+
+(defun henri-journal-expense--table-row-cells (line)
+  "Return trimmed Org table cells from LINE, or nil when LINE is not data."
+  (when (string-match-p "\\`[ \t]*|" line)
+    (unless (string-match-p "\\`[ \t]*|[-+ \t]+|[ \t]*\\'" line)
+      (mapcar #'string-trim
+              (split-string
+               (replace-regexp-in-string
+                "\\`[ \t]*|\\|[ \t]*|[ \t]*\\'" "" line)
+               "|")))))
+
+(defun henri-journal-expense--header-index (header name)
+  "Return zero-based index of NAME in HEADER."
+  (cl-position name header :test #'string=))
+
+(defun henri-journal-expense--parse-amount (value)
+  "Parse expense amount VALUE, returning a number or nil."
+  (let ((text (replace-regexp-in-string "[,，[:space:]]+" "" value)))
+    (when (string-match "\\`[+-]?[0-9]+\\(?:\\.[0-9]+\\)?\\'" text)
+      (string-to-number text))))
+
+(defun henri-journal-expense--format-amount (amount)
+  "Format AMOUNT compactly for Org tables."
+  (let ((text (format "%.2f" amount)))
+    (setq text (replace-regexp-in-string "\\.?0+\\'" "" text))
+    (if (string-empty-p text) "0" text)))
+
+(defun henri-journal-expense--sanitize-cell (value)
+  "Return VALUE safe enough for an Org table cell."
+  (replace-regexp-in-string "|" "¦" (or value "")))
+
+(defun henri-journal-expense--collect-from-file (file)
+  "Collect expense entries from monthly journal FILE.
+Return a plist with :entries and :invalid-count."
+  (let ((entries nil)
+        (invalid-count 0)
+        current-date
+        expense-date
+        expense-source
+        header
+        item-index
+        amount-index
+        category-index
+        in-expense-table)
+    (with-temp-buffer
+      (insert-file-contents file)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((line (buffer-substring-no-properties
+                     (line-beginning-position)
+                     (line-end-position))))
+          (cond
+           ((string-match "^\\*\\{2\\}[ \t]+\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\b" line)
+            (setq current-date (match-string 1 line)
+                  in-expense-table nil
+                  header nil))
+           ((string-match "^\\*+[ \t]+\\(.+\\)$" line)
+            (let ((heading (match-string 1 line)))
+              (setq in-expense-table
+                    (string-match-p henri-journal-expense-heading-regexp heading)
+                    expense-source (string-trim heading)
+                    expense-date (cond
+                                  ((not current-date) nil)
+                                  ((string-match-p "昨日" heading)
+                                   (henri-journal-expense--previous-date current-date))
+                                  (t current-date))
+                    header nil
+                    item-index nil
+                    amount-index nil
+                    category-index nil)))
+           (in-expense-table
+            (let ((cells (henri-journal-expense--table-row-cells line)))
+              (cond
+               ((and cells
+                     (member "项目" cells)
+                     (member "金额" cells)
+                     (member "类别" cells))
+                (setq header cells
+                      item-index (henri-journal-expense--header-index header "项目")
+                      amount-index (henri-journal-expense--header-index header "金额")
+                      category-index (henri-journal-expense--header-index header "类别")))
+               ((and cells header item-index amount-index category-index expense-date)
+                (let* ((item (or (nth item-index cells) ""))
+                       (amount-text (or (nth amount-index cells) ""))
+                       (category (or (nth category-index cells) ""))
+                       (amount (and amount-text
+                                    (henri-journal-expense--parse-amount amount-text))))
+                  (unless (and (string-empty-p item)
+                               (or (null amount-text) (string-empty-p amount-text))
+                               (string-empty-p category))
+                    (if amount
+                        (push (list :date expense-date
+                                    :item item
+                                    :amount amount
+                                    :category category
+                                    :source expense-source)
+                              entries)
+                      (cl-incf invalid-count)))))))))
+          (forward-line 1))))
+    (list :entries (nreverse entries)
+          :invalid-count invalid-count)))
+
+(defun henri-journal-expense--summarize (entries key)
+  "Summarize ENTRIES by plist KEY."
+  (let ((table (make-hash-table :test #'equal)))
+    (dolist (entry entries)
+      (let ((name (or (plist-get entry key) "")))
+        (puthash name
+                 (+ (gethash name table 0)
+                    (plist-get entry :amount))
+                 table)))
+    (sort
+     (let (rows)
+       (maphash (lambda (name amount)
+                  (push (cons name amount) rows))
+                table)
+       rows)
+     (lambda (a b) (string< (car a) (car b))))))
+
+(defun henri-journal-expense--insert-detail-table (entries)
+  "Insert detail table for expense ENTRIES."
+  (insert "#+ATTR_LATEX: :environment longtable :align p{2.2cm}p{1.7cm}r p{5.2cm}p{2.3cm}\n")
+  (insert "| 日期 | 项目 | 金额 | 类别 | 来源 |\n")
+  (insert "|------+------+------+------+------|\n")
+  (dolist (entry entries)
+    (insert
+     (format "| %s | %s | %s | %s | %s |\n"
+             (plist-get entry :date)
+             (henri-journal-expense--sanitize-cell (plist-get entry :item))
+             (henri-journal-expense--format-amount (plist-get entry :amount))
+             (henri-journal-expense--sanitize-cell (plist-get entry :category))
+             (henri-journal-expense--sanitize-cell (plist-get entry :source))))))
+
+(defun henri-journal-expense--insert-summary-table (rows label)
+  "Insert summary ROWS with first column LABEL."
+  (insert "#+ATTR_LATEX: :environment longtable :align p{7cm}r\n")
+  (insert (format "| %s | 金额 |\n" label))
+  (insert "|------+------|\n")
+  (dolist (row rows)
+    (insert
+     (format "| %s | %s |\n"
+             (henri-journal-expense--sanitize-cell (car row))
+             (henri-journal-expense--format-amount (cdr row))))))
+
+(defun henri-journal-expense--insert-daily-total-table (entries total)
+  "Insert daily totals for ENTRIES, ending with TOTAL."
+  (insert "#+ATTR_LATEX: :environment longtable :align p{7cm}r\n")
+  (insert "| 日期 | 金额 |\n")
+  (insert "|------+------|\n")
+  (dolist (row (henri-journal-expense--summarize entries :date))
+    (insert
+     (format "| %s | %s |\n"
+             (henri-journal-expense--sanitize-cell (car row))
+             (henri-journal-expense--format-amount (cdr row)))))
+  (insert "|------+------|\n")
+  (insert (format "| 总计 | %s |\n"
+                  (henri-journal-expense--format-amount total))))
+
+(defun henri-journal-expense--render-bill (month entries invalid-count)
+  "Return Org bill text for MONTH from ENTRIES."
+  (let ((total (cl-loop for entry in entries sum (plist-get entry :amount))))
+    (with-temp-buffer
+      (insert (format "#+TITLE: %s 花销账单\n" month))
+      (insert "#+LATEX_CLASS: ctexart\n")
+      (insert "#+LATEX_HEADER: \\usepackage{longtable}\n")
+      (insert "#+OPTIONS: toc:t num:nil H:3\n")
+      (insert "#+STARTUP: content\n\n")
+      (insert "* 明细\n")
+      (if entries
+          (henri-journal-expense--insert-detail-table entries)
+        (insert "本月暂无花销记录。\n"))
+      (insert "\n* 按项目汇总\n")
+      (henri-journal-expense--insert-summary-table
+       (henri-journal-expense--summarize entries :item)
+       "项目")
+      (insert "\n* 按类别汇总\n")
+      (henri-journal-expense--insert-summary-table
+       (henri-journal-expense--summarize entries :category)
+       "类别")
+      (insert "\n* 每日汇总\n")
+      (henri-journal-expense--insert-daily-total-table entries total)
+      (when (> invalid-count 0)
+        (insert (format "\n* 跳过记录\n%d 条花销记录金额无法解析，已跳过。\n"
+                        invalid-count)))
+      (buffer-string))))
+
+(defun henri-journal-expense-generate-bill (month)
+  "Generate monthly expense bill for MONTH (YYYY-MM), returning output file."
+  (let* ((time (henri-journal-expense--parse-month month))
+         (journal-file (henri-journal-monthly-file 'diary time))
+         (bill-file (henri-journal-expense-bill-file month)))
+    (unless (file-exists-p journal-file)
+      (user-error "未找到月份 journal 文件: %s" journal-file))
+    (let* ((result (henri-journal-expense--collect-from-file journal-file))
+           (entries (plist-get result :entries))
+           (invalid-count (plist-get result :invalid-count)))
+      (make-directory henri-journal-expense-bills-directory t)
+      (write-region
+       (henri-journal-expense--render-bill month entries invalid-count)
+       nil bill-file nil 'silent)
+      (message "已生成 %s（%d 条，跳过 %d 条）"
+               bill-file (length entries) invalid-count)
+      bill-file)))
+
+(defun henri/journal-expense-generate-current-month ()
+  "Generate expense bill for the current monthly Journal."
+  (interactive)
+  (find-file
+   (henri-journal-expense-generate-bill
+    (henri-journal-month-string))))
+
+(defun henri/journal-expense-generate-month (month)
+  "Generate expense bill for selected MONTH."
+  (interactive
+   (list
+    (completing-read
+     "生成账单月份: "
+     (mapcar (lambda (file)
+               (string-remove-prefix
+                "journal-"
+                (file-name-sans-extension (file-name-nondirectory file))))
+             (directory-files
+              henri-journal-directory t
+              "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))
+     nil nil (henri-journal-month-string))))
+  (find-file (henri-journal-expense-generate-bill month)))
+
+(defun henri/journal-expense-regenerate-all ()
+  "Regenerate expense bills for all monthly Journal files."
+  (interactive)
+  (let ((months (mapcar (lambda (file)
+                          (string-remove-prefix
+                           "journal-"
+                           (file-name-sans-extension
+                            (file-name-nondirectory file))))
+                        (directory-files
+                         henri-journal-directory t
+                         "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))))
+    (dolist (month months)
+      (henri-journal-expense-generate-bill month))
+    (message "已重建 %d 个月度花销账单" (length months))))
+
+;; =============================================================================
 ;; Agenda 自定义视图
 
 ;; 统一 Agenda 视图名称和结构
@@ -542,6 +824,7 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
 (global-set-key (kbd "C-c o s") 'henri/today-summary)         ;; 今日三栏总览
 (global-set-key (kbd "C-c j s") 'henri/search-journal)      ;; 搜索日志
 (global-set-key (kbd "C-c j d") 'henri/view-diary-by-date)  ;; 直接查看个人日记
+(global-set-key (kbd "C-c j e") 'henri/journal-expense-generate-current-month) ;; 生成月度花销账单
 
 ;; =============================================================================
 ;; Journal LaTeX 文档类注册（从 org-latex.el 解耦）

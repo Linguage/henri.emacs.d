@@ -135,7 +135,16 @@ Journal/journal-YYYY-MM.org
 |--------|------|
 | `C-c j d` | 按日期打开当天 Journal |
 | `C-c j s` | 搜索 Journal 内容 |
+| `C-c j e` | 生成当前月花销账单 |
 | `C-c a j` | Journal 概览 |
+
+个人日记里的 `花销记录` 表可以生成独立月账单：
+
+```text
+Journal/bills/bill-YYYY-MM.org
+```
+
+账单包含逐笔明细、按项目汇总、按类别汇总和每日汇总（末行月总计）；源 journal 文件保持不变。
 
 Calendar 中按 `RET` 也可以打开选中日期的 Journal。
 
