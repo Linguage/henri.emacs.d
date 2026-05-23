@@ -121,6 +121,23 @@
   :type 'regexp
   :group 'henri-writing)
 
+(defcustom henri-journal-large-transaction-threshold 300
+  "Minimum single expense amount collected as a large Journal transaction."
+  :type 'number
+  :group 'henri-writing)
+
+(defcustom henri-journal-large-transactions-file
+  (expand-file-name "large-transactions.org" henri-journal-expense-bills-directory)
+  "Single Org file collecting large income and expense records."
+  :type 'file
+  :group 'henri-writing)
+
+(defcustom henri-journal-day-status-template
+  "- 天气：温度  ℃；状况\n  - [ ] 晴\n  - [ ] 阴\n  - [ ] 雨\n- 睡眠：\n  - 质量：\n  - 时间长度：\n- 体重： kg\n- 活动场所：\n- 大额收支\n  - 收入：项目 金额 类别/备注\n  - 支出：项目 金额 类别/备注\n\n"
+  "Template inserted once under a newly created Journal day heading."
+  :type 'string
+  :group 'henri-writing)
+
 (defun henri-journal-file (name)
   "Return absolute path for journal file NAME."
   (expand-file-name name henri-journal-directory))
@@ -163,17 +180,27 @@
         (message "[henri] 当前在 Roam daily 中；知识线索优先考虑继续写 Roam daily。")))))
 
 (defun henri-journal--goto-or-create-heading (level title &optional limit)
-  "Go to heading TITLE at LEVEL before LIMIT, creating it when absent."
+  "Go to heading TITLE at LEVEL before LIMIT, creating it when absent.
+Return non-nil when the heading was newly created."
   (let ((regexp (format "^\\*\\{%d\\}[ \t]+%s[ \t]*$"
                         level
                         (regexp-quote title))))
     (if (re-search-forward regexp limit t)
-        (goto-char (match-beginning 0))
+        (progn
+          (goto-char (match-beginning 0))
+          nil)
       (goto-char (or limit (point-max)))
       (unless (bolp) (insert "\n"))
       (let ((pos (point)))
         (insert (make-string level ?*) " " title "\n")
-        (goto-char pos)))))
+        (goto-char pos)
+        t))))
+
+(defun henri-journal-insert-day-status-template ()
+  "Insert the daily status template below the current day heading."
+  (save-excursion
+    (end-of-line)
+    (insert "\n" henri-journal-day-status-template)))
 
 (defun henri-journal-goto-month-day ()
   "Move point to this capture's month/day subtree, creating it if needed.
@@ -194,7 +221,8 @@ Leaves point ON the day heading line, so that `org-capture' detects
       (let ((month-end (point)))
         (goto-char month-start)
         (forward-line 1)
-        (henri-journal--goto-or-create-heading 2 day month-end)))))
+        (when (henri-journal--goto-or-create-heading 2 day month-end)
+          (henri-journal-insert-day-status-template))))))
 
 (defun henri-journal-flatten-year-headings ()
   "Remove top-level year headings from the current monthly journal buffer.
@@ -472,10 +500,31 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
   "Return VALUE safe enough for an Org table cell."
   (replace-regexp-in-string "|" "¦" (or value "")))
 
+(defun henri-journal-large-transaction--from-text (date type text)
+  "Return a large transaction parsed from DATE, TYPE, and TEXT.
+TEXT should use: item amount category/notes."
+  (let ((content (string-trim (or text ""))))
+    (when (and date
+               (not (string-empty-p content))
+               (string-match "\\([0-9]+\\(?:[.,][0-9]+\\)?\\)" content))
+      (let* ((amount-text (match-string 1 content))
+             (item (string-trim (substring content 0 (match-beginning 1))))
+             (category (string-trim (substring content (match-end 1))))
+             (amount (henri-journal-expense--parse-amount amount-text))
+             )
+        (when amount
+          (list :date date
+                :type type
+                :item (if (string-empty-p item) "未命名" item)
+                :amount amount
+                :category category
+                :source "大额收支"))))))
+
 (defun henri-journal-expense--collect-from-file (file)
   "Collect expense entries from monthly journal FILE.
 Return a plist with :entries and :invalid-count."
   (let ((entries nil)
+        (large-transactions nil)
         (invalid-count 0)
         current-date
         expense-date
@@ -484,7 +533,8 @@ Return a plist with :entries and :invalid-count."
         item-index
         amount-index
         category-index
-        in-expense-table)
+        in-expense-table
+        in-large-transaction-block)
     (with-temp-buffer
       (insert-file-contents file)
       (goto-char (point-min))
@@ -496,11 +546,13 @@ Return a plist with :entries and :invalid-count."
            ((string-match "^\\*\\{2\\}[ \t]+\\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\b" line)
             (setq current-date (match-string 1 line)
                   in-expense-table nil
+                  in-large-transaction-block nil
                   header nil))
            ((string-match "^\\*+[ \t]+\\(.+\\)$" line)
             (let ((heading (match-string 1 line)))
               (setq in-expense-table
                     (string-match-p henri-journal-expense-heading-regexp heading)
+                    in-large-transaction-block nil
                     expense-source (string-trim heading)
                     expense-date (cond
                                   ((not current-date) nil)
@@ -511,6 +563,21 @@ Return a plist with :entries and :invalid-count."
                     item-index nil
                     amount-index nil
                     category-index nil)))
+           ((string-match "^[ \t]*-[ \t]+大额收支[ \t]*$" line)
+            (setq in-large-transaction-block t
+                  in-expense-table nil
+                  header nil))
+           ((and in-large-transaction-block
+                 (string-match "^[ \t]+-[ \t]+\\(收入\\|支出\\)[：:][ \t]*\\(.*\\)$" line))
+            (when-let ((transaction
+                        (henri-journal-large-transaction--from-text
+                         current-date
+                         (match-string 1 line)
+                         (match-string 2 line))))
+              (push transaction large-transactions)))
+           ((and in-large-transaction-block
+                 (string-match "^[^ \t]" line))
+            (setq in-large-transaction-block nil))
            (in-expense-table
             (let ((cells (henri-journal-expense--table-row-cells line)))
               (cond
@@ -532,15 +599,19 @@ Return a plist with :entries and :invalid-count."
                                (or (null amount-text) (string-empty-p amount-text))
                                (string-empty-p category))
                     (if amount
-                        (push (list :date expense-date
-                                    :item item
-                                    :amount amount
-                                    :category category
-                                    :source expense-source)
-                              entries)
+                        (let ((entry (list :date expense-date
+                                           :item item
+                                           :amount amount
+                                           :category category
+                                           :source expense-source)))
+                          (push entry entries)
+                          (when (> amount henri-journal-large-transaction-threshold)
+                            (push (append (list :type "支出") entry)
+                                  large-transactions)))
                       (cl-incf invalid-count)))))))))
           (forward-line 1))))
     (list :entries (nreverse entries)
+          :large-transactions (nreverse large-transactions)
           :invalid-count invalid-count)))
 
 (defun henri-journal-expense--summarize (entries key)
@@ -599,7 +670,93 @@ Return a plist with :entries and :invalid-count."
   (insert (format "| 总计 | %s |\n"
                   (henri-journal-expense--format-amount total))))
 
-(defun henri-journal-expense--render-bill (month entries invalid-count)
+(defun henri-journal-large-transaction--sort (transactions)
+  "Return TRANSACTIONS sorted by date and type."
+  (sort (copy-sequence transactions)
+        (lambda (a b)
+          (let ((date-a (plist-get a :date))
+                (date-b (plist-get b :date)))
+            (if (string= date-a date-b)
+                (string< (plist-get a :type) (plist-get b :type))
+              (string< date-a date-b))))))
+
+(defun henri-journal-large-transaction--insert-table (transactions)
+  "Insert an Org table for large TRANSACTIONS."
+  (insert "#+ATTR_LATEX: :environment longtable :align p{2.2cm}p{1.2cm}p{3cm}r p{4cm}p{2cm}\n")
+  (insert "| 日期 | 类型 | 项目 | 金额 | 类别/备注 | 来源 |\n")
+  (insert "|------+------+------+------+-----------+------|\n")
+  (dolist (transaction (henri-journal-large-transaction--sort transactions))
+    (insert
+     (format "| %s | %s | %s | %s | %s | %s |\n"
+             (plist-get transaction :date)
+             (henri-journal-expense--sanitize-cell (plist-get transaction :type))
+             (henri-journal-expense--sanitize-cell (plist-get transaction :item))
+             (henri-journal-expense--format-amount (plist-get transaction :amount))
+             (henri-journal-expense--sanitize-cell (plist-get transaction :category))
+             (henri-journal-expense--sanitize-cell (plist-get transaction :source))))))
+
+(defun henri-journal-large-transaction--read-existing-file ()
+  "Read existing large transaction records from the global file."
+  (let (transactions)
+    (when (file-exists-p henri-journal-large-transactions-file)
+      (with-temp-buffer
+        (insert-file-contents henri-journal-large-transactions-file)
+        (goto-char (point-min))
+        (while (not (eobp))
+          (let* ((line (buffer-substring-no-properties
+                        (line-beginning-position)
+                        (line-end-position)))
+                 (cells (henri-journal-expense--table-row-cells line)))
+            (when (and cells
+                       (= (length cells) 6)
+                       (not (member "日期" cells)))
+              (let ((amount (henri-journal-expense--parse-amount (nth 3 cells))))
+                (when amount
+                  (push (list :date (nth 0 cells)
+                              :type (nth 1 cells)
+                              :item (nth 2 cells)
+                              :amount amount
+                              :category (nth 4 cells)
+                              :source (nth 5 cells))
+                        transactions))))
+            (forward-line 1)))))
+    (nreverse transactions)))
+
+(defun henri-journal-large-transaction--merge-month (month transactions)
+  "Merge TRANSACTIONS for MONTH into the existing global records."
+  (henri-journal-large-transaction--sort
+   (append
+    (cl-remove-if
+     (lambda (transaction)
+       (string-prefix-p month (or (plist-get transaction :date) "")))
+     (henri-journal-large-transaction--read-existing-file))
+    transactions)))
+
+(defun henri-journal-large-transaction--render-file (transactions)
+  "Return Org text for the global large TRANSACTIONS file."
+  (with-temp-buffer
+    (insert "#+TITLE: 大额收支管理\n")
+    (insert "#+LATEX_CLASS: ctexart\n")
+    (insert "#+LATEX_HEADER: \\usepackage{longtable}\n")
+    (insert "#+OPTIONS: toc:t num:nil H:3\n")
+    (insert "#+STARTUP: content\n\n")
+    (insert "* 大额收支记录\n")
+    (if transactions
+        (henri-journal-large-transaction--insert-table transactions)
+      (insert "暂无大额收支记录。\n"))
+    (buffer-string)))
+
+(defun henri-journal-large-transaction-write-file (month transactions)
+  "Update MONTH in the large transaction management file with TRANSACTIONS."
+  (let ((merged-transactions
+         (henri-journal-large-transaction--merge-month month transactions)))
+    (make-directory (file-name-directory henri-journal-large-transactions-file) t)
+    (write-region
+     (henri-journal-large-transaction--render-file merged-transactions)
+     nil henri-journal-large-transactions-file nil 'silent)
+    merged-transactions))
+
+(defun henri-journal-expense--render-bill (month entries large-transactions invalid-count)
   "Return Org bill text for MONTH from ENTRIES."
   (let ((total (cl-loop for entry in entries sum (plist-get entry :amount))))
     (with-temp-buffer
@@ -622,6 +779,10 @@ Return a plist with :entries and :invalid-count."
        "类别")
       (insert "\n* 每日汇总\n")
       (henri-journal-expense--insert-daily-total-table entries total)
+      (insert "\n* 大额收支\n")
+      (if large-transactions
+          (henri-journal-large-transaction--insert-table large-transactions)
+        (insert "本月暂无大额收支记录。\n"))
       (when (> invalid-count 0)
         (insert (format "\n* 跳过记录\n%d 条花销记录金额无法解析，已跳过。\n"
                         invalid-count)))
@@ -636,11 +797,14 @@ Return a plist with :entries and :invalid-count."
       (user-error "未找到月份 journal 文件: %s" journal-file))
     (let* ((result (henri-journal-expense--collect-from-file journal-file))
            (entries (plist-get result :entries))
+           (large-transactions (plist-get result :large-transactions))
            (invalid-count (plist-get result :invalid-count)))
       (make-directory henri-journal-expense-bills-directory t)
       (write-region
-       (henri-journal-expense--render-bill month entries invalid-count)
+       (henri-journal-expense--render-bill
+        month entries large-transactions invalid-count)
        nil bill-file nil 'silent)
+      (henri-journal-large-transaction-write-file month large-transactions)
       (message "已生成 %s（%d 条，跳过 %d 条）"
                bill-file (length entries) invalid-count)
       bill-file)))
