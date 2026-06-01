@@ -54,13 +54,23 @@
 ;; =============================================================================
 ;; 代码补全配置：company-mode
 ;; 提供智能的代码补全功能，支持多种后端补全源
+(defvar henri-company-blacklisted-modes '(org-mode markdown-mode gfm-mode text-mode fundamental-mode)
+  "Modes where `company-mode' should NOT activate.")
+
+(defun henri--global-company-maybe-enable ()
+  "Enable `company-mode' unless current major-mode is blacklisted."
+  (unless (apply #'derived-mode-p henri-company-blacklisted-modes)
+    (company-mode 1)))
+
 (use-package company
   :ensure t
   :defer 1
-  :hook (after-init . global-company-mode)
+  :hook (after-init . (lambda ()
+                        (add-hook 'after-change-major-mode-hook
+                                  #'henri--global-company-maybe-enable)))
   :config
-  (setq company-idle-delay 0.2)            ; 设置延迟显示建议的时间
-  (setq company-minimum-prefix-length 2))   ; 设置触发补全的最小前缀长度
+  (setq company-idle-delay 0.2)
+  (setq company-minimum-prefix-length 2))
 
 ;; -----------------------------------------------------------------------------
 ;; 为新语言接 LSP 时：在 `:config' 里加 `eglot-server-programs'，并把对应

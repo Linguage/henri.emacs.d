@@ -57,11 +57,9 @@
 (require 'package)
 
 ;; 配置包管理源
-(setq package-archives '(("gnu"    . "https://mirrors.tuna.tsinghua.edu.cn/elpa/gnu/")
-                         ("nongnu" . "https://mirrors.tuna.tsinghua.edu.cn/elpa/nongnu/")
-                         ;; TUNA's MELPA mirror can temporarily reference missing
-                         ;; tarballs; keep MELPA official for first-time bootstrap.
-                         ("melpa"  . "https://melpa.org/packages/")))
+(setq package-archives '(("gnu"    . "https://mirrors.ustc.edu.cn/elpa/gnu/")
+                          ("nongnu" . "https://mirrors.ustc.edu.cn/elpa/nongnu/")
+                          ("melpa"  . "https://mirrors.ustc.edu.cn/elpa/melpa/")))
 
 ;; (setq package-archives
 ;;       '(("gnu" . "https://elpa.gnu.org/packages/")
