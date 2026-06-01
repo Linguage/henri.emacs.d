@@ -137,16 +137,18 @@ Journal/journal-YYYY-MM.org
 |--------|------|
 | `C-c j d` | 按日期打开当天 Journal |
 | `C-c j s` | 搜索 Journal 内容 |
-| `C-c j e` | 生成当前月花销账单 |
+| `C-c j e` | 选择月份生成花销账单；在 `journal-YYYY-MM.org` 中默认选中当前 buffer 月份 |
 | `C-c a j` | Journal 概览 |
 
-个人日记里的 `花销记录` 表可以生成独立月账单：
+个人日记里的 `花销记录` 表可以生成独立月账单。默认表格包含 `项目 / 金额 / 类别 / 详情` 四列；账单汇总只读取前三列，`详情` 仅作为日记里的补充说明保留：
 
 ```text
 Journal/bills/bill-YYYY-MM.org
 ```
 
 账单包含逐笔明细、按项目汇总、按类别汇总、每日汇总（末行月总计）和当月大额收支；源 journal 文件保持不变。单笔超过 300 的花销会自动进入大额收支，日期前置区的“大额收支”收入/支出也会同步进入：
+
+交互命令会列出已有 `journal-YYYY-MM.org` 月份供选择；如果当前 buffer 是某个月的 Journal 或账单文件，默认月份会优先使用当前文件名中的 `YYYY-MM`。
 
 ```text
 Journal/bills/large-transactions.org

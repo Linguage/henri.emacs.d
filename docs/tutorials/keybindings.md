@@ -148,7 +148,7 @@ F5/F6/F9/F10/F11/F12 不再作为本配置的主力调试入口。
 | `C-c o v` | `henri/cycle-org-startup-folded` | `lisp/writing/org/org-base.el` |
 | `C-c j s` | `henri/search-journal` | `lisp/writing/org/org-journal.el` |
 | `C-c j d` | `henri/view-diary-by-date` | `lisp/writing/org/org-journal.el` |
-| `C-c j e` | `henri/journal-expense-generate-current-month` | `lisp/writing/org/org-journal.el` |
+| `C-c j e` | `henri/journal-expense-generate-month` | `lisp/writing/org/org-journal.el` |
 
 ### 6.1 Org Mode Local
 

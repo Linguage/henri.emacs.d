@@ -41,6 +41,28 @@
              (if (boundp 'henri-enable-grip) henri-enable-grip 'unbound)
              (if (member "/opt/homebrew/bin" exec-path) "是" "否（重启 Emacs 让 exec-path-from-shell 生效）"))))
 
+(defconst henri/markdown-flycheck-markdownlint-checkers
+  '(markdown-markdownlint-cli2 markdown-markdownlint-cli markdown-mdl)
+  "Flycheck Markdown lint checkers that depend on optional external CLIs.")
+
+(defvar flycheck-disabled-checkers)
+
+(defun henri/markdown--lint-cli-available-p ()
+  "Return non-nil when a node-backed markdownlint CLI is available."
+  (and (henri/executable-p "node")
+       (or (henri/executable-p "markdownlint-cli2")
+           (henri/executable-p "markdownlint"))))
+
+(defun henri/markdown-setup-flycheck ()
+  "Avoid noisy optional markdownlint Flycheck failures in Markdown buffers."
+  (unless (and (boundp 'henri-md-enable-lint)
+               henri-md-enable-lint
+               (henri/markdown--lint-cli-available-p))
+    (setq-local flycheck-disabled-checkers
+                (append henri/markdown-flycheck-markdownlint-checkers
+                        (and (boundp 'flycheck-disabled-checkers)
+                             flycheck-disabled-checkers)))))
+
 ;; -----------------------------------------------------------------------------
 ;; HTML 预览主题系统
 
@@ -317,6 +339,7 @@ of the source document directory."
                           henri--markdown-face-remap-cookies)))))))))))
 
 (add-hook 'markdown-mode-hook #'henri/markdown-setup-body-font)
+(add-hook 'markdown-mode-hook #'henri/markdown-setup-flycheck)
 (add-hook 'markdown-mode-hook
           (lambda ()
             (let ((buffer (current-buffer)))

@@ -335,7 +335,7 @@ Journal-specific custom agenda commands."
     :empty-lines 1)
 
    ("d" "个人日记" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
-    "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 |\n|------+------+------|\n|      |      |      |\n"
+    "*** %U %? :journal:diary:\n%i\n**** 今日要点\n\n**** 花销记录\n| 项目 | 金额 | 类别 | 详情 |\n|------+------+------+------|\n|      |      |      |      |\n"
     :empty-lines 1)
 
    ("w" "工作记录" entry (file+function henri-journal-current-diary-file henri-journal-goto-month-day)
@@ -448,6 +448,33 @@ JOURNAL-TYPE diary / work / study 现为同一跳转（日历入口保留类型�
   "Return generated expense bill path for MONTH (YYYY-MM)."
   (expand-file-name (format "bill-%s.org" month)
                     henri-journal-expense-bills-directory))
+
+(defun henri-journal-expense--month-from-file-name (&optional file)
+  "Return YYYY-MM parsed from journal or bill FILE name."
+  (when-let ((name (and (or file buffer-file-name)
+                        (file-name-nondirectory (or file buffer-file-name)))))
+    (when (string-match
+           "\\`\\(?:journal\\|bill\\)-\\([0-9]\\{4\\}-[0-9]\\{2\\}\\)\\.org\\'"
+           name)
+      (match-string 1 name))))
+
+(defun henri-journal-expense--available-months ()
+  "Return months that have monthly Journal files."
+  (when (file-directory-p henri-journal-directory)
+    (sort
+     (mapcar (lambda (file)
+               (string-remove-prefix
+                "journal-"
+                (file-name-sans-extension (file-name-nondirectory file))))
+             (directory-files
+              henri-journal-directory t
+              "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))
+     #'string<)))
+
+(defun henri-journal-expense--default-month ()
+  "Return the default month for expense bill generation."
+  (or (henri-journal-expense--month-from-file-name)
+      (henri-journal-month-string)))
 
 (defun henri-journal-expense--parse-month (month)
   "Return a time value for MONTH in YYYY-MM form."
@@ -817,32 +844,21 @@ Return a plist with :entries and :invalid-count."
     (henri-journal-month-string))))
 
 (defun henri/journal-expense-generate-month (month)
-  "Generate expense bill for selected MONTH."
+  "Generate expense bill for selected MONTH.
+When called from a journal or bill buffer, default to that buffer's month."
   (interactive
-   (list
-    (completing-read
-     "生成账单月份: "
-     (mapcar (lambda (file)
-               (string-remove-prefix
-                "journal-"
-                (file-name-sans-extension (file-name-nondirectory file))))
-             (directory-files
-              henri-journal-directory t
-              "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))
-     nil nil (henri-journal-month-string))))
+   (let* ((months (henri-journal-expense--available-months))
+          (default-month (henri-journal-expense--default-month)))
+     (list
+      (completing-read
+       (format "生成账单月份（默认 %s）: " default-month)
+       months nil nil nil nil default-month))))
   (find-file (henri-journal-expense-generate-bill month)))
 
 (defun henri/journal-expense-regenerate-all ()
   "Regenerate expense bills for all monthly Journal files."
   (interactive)
-  (let ((months (mapcar (lambda (file)
-                          (string-remove-prefix
-                           "journal-"
-                           (file-name-sans-extension
-                            (file-name-nondirectory file))))
-                        (directory-files
-                         henri-journal-directory t
-                         "\\`journal-[0-9]\\{4\\}-[0-9]\\{2\\}\\.org\\'"))))
+  (let ((months (henri-journal-expense--available-months)))
     (dolist (month months)
       (henri-journal-expense-generate-bill month))
     (message "已重建 %d 个月度花销账单" (length months))))
@@ -988,7 +1004,7 @@ Return a plist with :entries and :invalid-count."
 (global-set-key (kbd "C-c o s") 'henri/today-summary)         ;; 今日三栏总览
 (global-set-key (kbd "C-c j s") 'henri/search-journal)      ;; 搜索日志
 (global-set-key (kbd "C-c j d") 'henri/view-diary-by-date)  ;; 直接查看个人日记
-(global-set-key (kbd "C-c j e") 'henri/journal-expense-generate-current-month) ;; 生成月度花销账单
+(global-set-key (kbd "C-c j e") 'henri/journal-expense-generate-month) ;; 选择月份生成花销账单
 
 ;; =============================================================================
 ;; Journal LaTeX 文档类注册（从 org-latex.el 解耦）
