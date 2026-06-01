@@ -159,6 +159,7 @@ F5/F6/F9/F10/F11/F12 不再作为本配置的主力调试入口。
 | `C-c m v o` | `henri/org-overview` | `lisp/writing/org/org-base.el` |
 | `C-c m v c` | `henri/org-content` | `lisp/writing/org/org-base.el` |
 | `C-c m x` | `henri/org-insert-checkbox` | `lisp/writing/org/org-base.el` |
+| `C-c m w` | `henri/org-word-count` | `lisp/writing/org/org-base.el` |
 | `M-S-RET` | `org-insert-todo-heading` | Org 默认键；在 plain list 中新建 checkbox |
 | `C-c m h t/d/e/w/c/r/i/k` | Org HTML theme/export commands | `lisp/writing/org/org-html.el` |
 | `C-c m h s/?/1/2/0` | Org HTML shortcut themes | `lisp/writing/org/org-html.el` |

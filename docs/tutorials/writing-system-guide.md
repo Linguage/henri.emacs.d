@@ -293,8 +293,11 @@ Org 基础写作使用 Emacs / Org 默认键即可；本配置额外提供视图
 | `C-c m v o` | 只显示大纲 |
 | `C-c m v c` | 显示标题结构 |
 | `C-c m x` | 插入 checkbox list item |
+| `C-c m w` | 显示当前 Org buffer 字数 |
 
 `M-S-RET` 保留 Org 默认行为：在 plain list 中会新建 checkbox；如果终端或 macOS 没有把这个组合键传给 Emacs，用 `C-c m x`。
+
+Org buffer 默认会在 mode-line 中显示 `字数:N`。统计规则与 Markdown 字数统计保持一致：中文字符逐字计数，英文/数字连续片段按词计数；大文件会跳过自动 mode-line 统计，可用 `C-c m w` 手动统计。
 
 ### 7.2 HTML 主题
 

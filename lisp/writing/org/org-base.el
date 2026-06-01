@@ -15,6 +15,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'seq)
 (require 'visual-fonts)
 
@@ -157,6 +158,130 @@ do NOT scatter set-face-attribute calls elsewhere."
 (setq org-image-actual-width '(300))
 
 ;; =============================================================================
+;; Org 字数统计
+
+(defcustom henri-org-word-count-enable-mode-line t
+  "Non-nil means show a lightweight Org word count in the mode line."
+  :type 'boolean
+  :group 'henri-writing)
+
+(defcustom henri-org-word-count-idle-delay 1.5
+  "Idle seconds before refreshing Org word count after edits."
+  :type 'number
+  :group 'henri-writing)
+
+(defcustom henri-org-word-count-max-buffer-size 500000
+  "Maximum Org buffer size to count automatically for the mode line.
+Buffers larger than this still support manual `henri/org-word-count', but the
+mode-line updater will skip them to avoid UI stalls."
+  :type 'integer
+  :group 'henri-writing)
+
+(defvar-local henri-org-word-count--total nil
+  "Cached Org word count for the current buffer.")
+
+(defvar-local henri-org-word-count--timer nil
+  "Idle timer used to refresh Org word count.")
+
+(defun henri-org-word-count--cjk-char-p (char)
+  "Return non-nil when CHAR is in a common CJK unified ideograph range."
+  (or (and (>= char #x4e00) (<= char #x9fff))
+      (and (>= char #x3400) (<= char #x4dbf))
+      (and (>= char #x20000) (<= char #x2a6df))))
+
+(defun henri-org-word-count--count (&optional respect-size-limit)
+  "Return (TOTAL CJK ENGLISH) for the current Org buffer.
+When RESPECT-SIZE-LIMIT is non-nil, return nil for very large buffers."
+  (when (or (not respect-size-limit)
+            (<= (buffer-size) henri-org-word-count-max-buffer-size))
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (let ((cjk 0)
+              (english 0))
+          (while (not (eobp))
+            (cond
+             ((henri-org-word-count--cjk-char-p (following-char))
+              (cl-incf cjk)
+              (forward-char 1))
+             ((looking-at "[[:alnum:]_$]+")
+              (cl-incf english)
+              (goto-char (match-end 0)))
+             (t
+              (forward-char 1))))
+          (list (+ cjk english) cjk english))))))
+
+(defun henri-org-word-count--mode-line ()
+  "Return the Org word-count lighter for the current buffer."
+  (cond
+   (henri-org-word-count--total
+    (propertize
+     (format " 字数:%d" henri-org-word-count--total)
+     'help-echo "Org 字数统计：中文字符 + 英文词数"))
+   ((> (buffer-size) henri-org-word-count-max-buffer-size)
+    (propertize " 字数:大文件" 'help-echo "Buffer 太大，已跳过自动字数统计"))
+   (t " 字数:...")))
+
+(defun henri-org-word-count--refresh (&optional respect-size-limit)
+  "Refresh cached Org word count.
+When RESPECT-SIZE-LIMIT is non-nil, skip very large buffers."
+  (let ((counts (henri-org-word-count--count respect-size-limit)))
+    (setq henri-org-word-count--total (car counts))
+    (force-mode-line-update)))
+
+(defun henri-org-word-count--schedule (&rest _)
+  "Schedule a delayed Org word-count refresh for the current buffer."
+  (when (and henri-org-word-count-mode
+             (derived-mode-p 'org-mode))
+    (when (timerp henri-org-word-count--timer)
+      (cancel-timer henri-org-word-count--timer))
+    (setq henri-org-word-count--timer
+          (run-with-idle-timer
+           henri-org-word-count-idle-delay nil
+           (lambda (buffer)
+             (when (buffer-live-p buffer)
+               (with-current-buffer buffer
+                 (when henri-org-word-count-mode
+                   (henri-org-word-count--refresh t)))))
+           (current-buffer)))))
+
+;;;###autoload
+(defun henri/org-word-count ()
+  "Count words in the current Org buffer and show details in the minibuffer.
+Chinese characters count individually; English and numeric runs count as words."
+  (interactive)
+  (unless (derived-mode-p 'org-mode)
+    (user-error "当前不是 org-mode"))
+  (pcase-let ((`(,total ,cjk ,english) (henri-org-word-count--count nil)))
+    (setq henri-org-word-count--total total)
+    (force-mode-line-update)
+    (message "Org 字数: %d（中文字符: %d，英文/数字词: %d）"
+             total cjk english)))
+
+(define-minor-mode henri-org-word-count-mode
+  "Show a lightweight Org word count in the mode line."
+  :lighter (:eval (henri-org-word-count--mode-line))
+  (if henri-org-word-count-mode
+      (progn
+        (add-hook 'after-change-functions
+                  #'henri-org-word-count--schedule nil t)
+        (henri-org-word-count--refresh t))
+    (remove-hook 'after-change-functions
+                 #'henri-org-word-count--schedule t)
+    (when (timerp henri-org-word-count--timer)
+      (cancel-timer henri-org-word-count--timer))
+    (setq henri-org-word-count--timer nil
+          henri-org-word-count--total nil)))
+
+(defun henri-org-word-count-enable-mode-line ()
+  "Enable Org word-count mode-line display when configured."
+  (when henri-org-word-count-enable-mode-line
+    (henri-org-word-count-mode 1)))
+
+(add-hook 'org-mode-hook #'henri-org-word-count-enable-mode-line)
+
+;; =============================================================================
 ;; 图标支持
 
 (require 'all-the-icons nil t)
@@ -251,6 +376,7 @@ Otherwise start a new `- [ ]' item at point or on the next line."
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "M-S-<return>") 'org-insert-todo-heading)
   (define-key org-mode-map (kbd "C-c m x") 'henri/org-insert-checkbox)
+  (define-key org-mode-map (kbd "C-c m w") 'henri/org-word-count)
   (define-key org-mode-map (kbd "C-c m v b") 'henri/toggle-org-bullets)
   (define-key org-mode-map (kbd "C-c m v s") 'henri/org-show-all)
   (define-key org-mode-map (kbd "C-c m v o") 'henri/org-overview)

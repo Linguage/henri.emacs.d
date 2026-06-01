@@ -22,6 +22,7 @@
 (require 'cl-lib)
 (require 'org)
 (require 'org-agenda)
+(require 'org-capture)
 (require 'ox)
 (require 'subr-x)
 
@@ -108,6 +109,15 @@
 (defcustom henri-journal-auto-save-delay 10
   "Seconds to wait after Journal edits before saving the visited file."
   :type 'integer
+  :group 'henri-writing)
+
+(defcustom henri-journal-enable-visited-file-auto-save nil
+  "Non-nil means save visited Journal files shortly after edits.
+
+This writes the real visited file, unlike Emacs' built-in auto-save backup
+files.  It is disabled by default because large Org journal buffers can make
+background `save-buffer' calls feel like random UI freezes."
+  :type 'boolean
   :group 'henri-writing)
 
 (defcustom henri-journal-expense-bills-directory
@@ -386,16 +396,46 @@ Journal-specific custom agenda commands."
 
 (defun henri-journal-enable-auto-save ()
   "Enable delayed visited-file auto-save for Journal org buffers."
-  (when (henri-journal-buffer-p)
+  (when (and henri-journal-enable-visited-file-auto-save
+             (henri-journal-buffer-p))
     (setq-local auto-save-default t)
     (auto-save-mode 1)
     (add-hook 'after-change-functions #'henri-journal-schedule-auto-save nil t)))
 
+(defun henri-journal-disable-auto-save-in-open-buffers ()
+  "Remove Henri's visited-file auto-save hooks from open Journal buffers."
+  (dolist (buffer (buffer-list))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+        (when (henri-journal-buffer-p)
+          (when (timerp henri-journal--auto-save-timer)
+            (cancel-timer henri-journal--auto-save-timer))
+          (setq henri-journal--auto-save-timer nil)
+          (remove-hook 'after-change-functions
+                       #'henri-journal-schedule-auto-save t))))))
+
+(defun henri-journal-after-capture-finalize ()
+  "Refresh lightweight agenda state after Org capture."
+  (henri-journal-refresh-agenda-files))
+
+(defun henri-journal--remove-obsolete-capture-save-hooks ()
+  "Remove old anonymous capture hooks that saved every Journal buffer."
+  (setq org-capture-after-finalize-hook
+        (cl-remove-if
+         (lambda (hook)
+           (string-match-p
+            "henri-journal-save-all-buffers"
+            (prin1-to-string hook)))
+         org-capture-after-finalize-hook)))
+
 (add-hook 'org-mode-hook #'henri-journal-enable-auto-save)
+(unless henri-journal-enable-visited-file-auto-save
+  (henri-journal-disable-auto-save-in-open-buffers))
+(henri-journal--remove-obsolete-capture-save-hooks)
+(remove-hook 'org-capture-after-finalize-hook
+             #'henri-journal-after-capture-finalize)
 (add-hook 'org-capture-after-finalize-hook
-          (lambda ()
-            (henri-journal-refresh-agenda-files)
-            (henri-journal-save-all-buffers)))
+          #'henri-journal-after-capture-finalize)
 
 ;; =============================================================================
 ;; 日志查看和搜索功能
